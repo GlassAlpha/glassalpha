@@ -34,7 +34,7 @@ dependencies = [
     # XGBoost 3.x includes GPU support by default (295MB+ CUDA libraries)
     # Phase 1 focus is CPU-only inference/auditing, not training large models
     # Future: Consider "xgboost[gpu]" in optional enterprise dependencies for large-scale audits
-    "xgboost>=2.0.0,<3.0.0", # XGBoost model support (CPU-only, no CUDA overhead)
+    "xgboost>=2.0.0,<4.0.0", # XGBoost model support (CPU-only, no CUDA overhead)
     "lightgbm>=4.0.0",       # LightGBM model support
     "shap>=0.43.0",          # SHAP explainability
     "matplotlib>=3.7.0",     # Plotting for reports
