@@ -1,6 +1,6 @@
 # MkDocs core
 mkdocs==1.6.1  # Changed from 1.5.3 to be compatible with material 9.6.20
-mkdocs-material==9.6.20
+mkdocs-material==9.6.21
 
 # MkDocs plugins
 mkdocs-open-in-new-tab>=1.0.8
