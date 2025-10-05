@@ -1,4 +1,4 @@
 pip>=25,<26
-setuptools>=75,<76
+setuptools>=75,<81
 build>=1.2,<2
 wheel>=0.45,<0.46
