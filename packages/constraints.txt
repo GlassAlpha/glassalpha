@@ -30,7 +30,7 @@ pydyf==0.11.0
 cffi==2.0.0
 tinyhtml5==2.0.0
 tinycss2==1.4.0
-cssselect2==0.7.0
+cssselect2==0.8.0
 pyphen==0.17.2
 pillow==11.3.0
 fonttools==4.60.1
