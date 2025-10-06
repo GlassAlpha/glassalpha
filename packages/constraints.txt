@@ -15,7 +15,7 @@ shap==0.48.0
 
 # Configuration and validation
 pydantic==2.11.10
-pyyaml==6.0.2
+pyyaml==6.0.3
 
 # CLI and utilities
 typer==0.19.2
