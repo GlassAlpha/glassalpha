@@ -452,6 +452,139 @@ def _display_audit_summary(audit_results) -> None:
                 typer.echo(f"     Preprocessing: {prep_mode}")
 
 
+def _run_shift_analysis(
+    audit_config,
+    output: Path,
+    shift_specs: list[str],
+    threshold: float | None,
+) -> int:
+    """Run demographic shift analysis and export results.
+
+    Args:
+        audit_config: Validated audit configuration
+        output: Base output path (for JSON sidecar)
+        shift_specs: List of shift specifications (e.g., ["gender:+0.1", "age:-0.05"])
+        threshold: Degradation threshold for failure (optional)
+
+    Returns:
+        Exit code (0 = pass, 1 = violations detected)
+
+    """
+    import json
+
+    from ..data import TabularDataLoader
+    from ..metrics.shift import parse_shift_spec, run_shift_analysis
+    from ..models import load_model_from_config
+
+    try:
+        # Load dataset using same loader as audit pipeline
+        typer.echo("\nLoading test data...")
+        data_loader = TabularDataLoader()
+
+        # Load data
+        data = data_loader.load(audit_config.data.path, audit_config.data)
+
+        # Extract features, target, and sensitive features
+        X_test, y_test, sensitive_features = data_loader.extract_features_target(data, audit_config.data)
+
+        # Load model using same approach as audit pipeline
+        typer.echo("Loading model...")
+        model = load_model_from_config(audit_config.model)
+
+        # Generate predictions
+        typer.echo("Generating predictions...")
+
+        # Binary classification predictions
+        if hasattr(model, "predict_proba"):
+            y_proba = model.predict_proba(X_test)
+            # Handle binary classification (get positive class probability)
+            if y_proba.ndim == 2 and y_proba.shape[1] == 2:
+                y_proba = y_proba[:, 1]
+        else:
+            y_proba = None
+
+        y_pred = model.predict(X_test)
+
+        # Convert to binary if needed
+        if hasattr(y_pred, "squeeze"):
+            y_pred = y_pred.squeeze()
+        y_pred = (y_pred > 0.5).astype(int) if y_pred.dtype == float else y_pred.astype(int)
+
+        # Run shift analysis for each shift specification
+        results = []
+        has_violations = False
+
+        for shift_spec in shift_specs:
+            try:
+                # Parse shift specification
+                attribute, shift_value = parse_shift_spec(shift_spec)
+
+                typer.echo(f"\nAnalyzing shift: {attribute} {shift_value:+.2f} ({shift_value * 100:+.0f}pp)")
+
+                # Run shift analysis
+                result = run_shift_analysis(
+                    y_true=y_test,
+                    y_pred=y_pred,
+                    sensitive_features=sensitive_features,
+                    attribute=attribute,
+                    shift=shift_value,
+                    y_proba=y_proba,
+                    threshold=threshold,
+                )
+
+                # Display result
+                typer.echo(f"  Original proportion: {result.shift_spec.original_proportion:.3f}")
+                typer.echo(f"  Shifted proportion:  {result.shift_spec.shifted_proportion:.3f}")
+                typer.echo(f"  Gate status: {result.gate_status}")
+
+                if result.violations:
+                    has_violations = True
+                    typer.secho("  Violations:", fg=typer.colors.RED)
+                    for violation in result.violations:
+                        typer.secho(f"    • {violation}", fg=typer.colors.RED)
+                else:
+                    typer.secho("  ✓ No violations detected", fg=typer.colors.GREEN)
+
+                # Add to results
+                results.append(result.to_dict())
+
+            except ValueError as e:
+                typer.secho(f"\n✗ Failed to process shift '{shift_spec}': {e}", fg=typer.colors.RED)
+                return ExitCode.USER_ERROR
+
+        # Export results to JSON sidecar
+        shift_json_path = output.with_suffix(".shift_analysis.json")
+
+        export_data = {
+            "shift_analysis": {
+                "threshold": threshold,
+                "shifts": results,
+                "summary": {
+                    "total_shifts": len(results),
+                    "violations_detected": has_violations,
+                    "failed_shifts": sum(1 for r in results if r["gate_status"] == "FAIL"),
+                    "warning_shifts": sum(1 for r in results if r["gate_status"] == "WARNING"),
+                },
+            },
+        }
+
+        with shift_json_path.open("w") as f:
+            json.dump(export_data, f, indent=2)
+
+        typer.echo(f"\n📄 Shift analysis results: {shift_json_path}")
+
+        # Return exit code based on violations
+        if has_violations and threshold is not None:
+            return ExitCode.VALIDATION_ERROR
+        return 0
+
+    except Exception as e:
+        typer.secho(f"\n✗ Shift analysis failed: {e}", fg=typer.colors.RED)
+        if "--verbose" in sys.argv or "-v" in sys.argv:
+            logger.exception("Detailed shift analysis failure:")
+        return ExitCode.USER_ERROR
+
+
 def audit(  # pragma: no cover
     # Typer requires function calls in defaults - this is the documented pattern
     config: Path | None = typer.Option(
@@ -512,8 +645,18 @@ def audit(  # pragma: no cover
         "--check-output",
         help="Check output paths are writable and exit (pre-flight validation)",
     ),
+    check_shift: list[str] = typer.Option(
+        [],
+        "--check-shift",
+        help="Test model robustness under demographic shifts (e.g., 'gender:+0.1'). Can specify multiple.",
+    ),
+    fail_on_degradation: float | None = typer.Option(
+        None,
+        "--fail-on-degradation",
+        help="Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).",
+    ),
 ):
-    """Generate a compliance audit PDF report.
+    """Generate a compliance audit PDF report with optional shift testing.
 
     This is the main command for GlassAlpha. It loads a configuration file,
     runs the audit pipeline, and generates a deterministic PDF report.
@@ -545,6 +688,12 @@ def audit(  # pragma: no cover
 
         # Fail if components unavailable (no fallbacks)
         glassalpha audit --no-fallback
+
+        # Stress test for demographic shifts (E6.5)
+        glassalpha audit --check-shift gender:+0.1
+
+        # Multiple shifts with degradation threshold
+        glassalpha audit --check-shift gender:+0.1 --check-shift age:-0.05 --fail-on-degradation 0.05
 
     """
     try:
@@ -742,6 +891,32 @@ def audit(  # pragma: no cover
         # Run audit pipeline
         typer.echo("\nRunning audit pipeline...")
         _run_audit_pipeline(audit_config, output, selected_explainer)
+
+        # Run shift analysis if requested (E6.5)
+        if check_shift:
+            typer.echo("\n" + "=" * 60)
+            typer.echo("DEMOGRAPHIC SHIFT ANALYSIS (E6.5)")
+            typer.echo("=" * 60)
+
+            shift_exit_code = _run_shift_analysis(
+                audit_config=audit_config,
+                output=output,
+                shift_specs=check_shift,
+                threshold=fail_on_degradation,
+            )
+
+            # If shift analysis detected violations and we should fail, exit with error
+            if shift_exit_code != 0:
+                typer.secho(
+                    "\n✗ Shift analysis detected metric degradation exceeding threshold",
+                    fg=typer.colors.RED,
+                    bold=True,
+                )
+                raise typer.Exit(shift_exit_code)
+            typer.secho(
+                "\n✓ Shift analysis complete - no violations detected",
+                fg=typer.colors.GREEN,
+            )
 
     except FileNotFoundError as e:
         typer.secho(f"Error: {e}", fg=typer.colors.RED, err=True)

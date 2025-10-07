@@ -153,6 +153,7 @@ app.add_typer(monitor_app, name="monitor")
 # Import and register commands
 from .commands import audit, docs, doctor, list_components_cmd, reasons, recourse, validate
 from .init import init
+from .quickstart import quickstart
 
 # Register main commands
 app.command()(audit)
@@ -161,6 +162,7 @@ app.command("list", help="List available components")(list_components_cmd)
 app.command("doctor", help="Check environment and optional features")(doctor)
 app.command("docs", help="Open documentation in browser")(docs)
 app.command("init", help="Initialize new audit configuration")(init)
+app.command("quickstart", help="Generate template audit project")(quickstart)
 app.command("reasons", help="Generate ECOA-compliant reason codes")(reasons)
 app.command("recourse", help="Generate counterfactual recourse recommendations")(recourse)
 

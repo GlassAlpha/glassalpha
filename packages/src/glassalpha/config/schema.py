@@ -92,6 +92,10 @@ class DataConfig(BaseModel):
         default_factory=list,
         description="List of protected/sensitive attributes for fairness analysis",
     )
+    intersections: list[str] = Field(
+        default_factory=list,
+        description="Two-way intersectional analysis specifications (e.g., ['gender*race', 'age*income'])",
+    )
     target_column: str | None = Field(None, description="Name of target column")
     feature_columns: list[str] | None = Field(None, description="List of feature columns to use")
 
@@ -100,6 +104,36 @@ class DataConfig(BaseModel):
     def lowercase_attributes(cls, v: list[str]) -> list[str]:
         """Ensure attribute names are lowercase."""
         return [attr.lower() for attr in v]
+
+    @field_validator("intersections")
+    @classmethod
+    def validate_intersections(cls, v: list[str]) -> list[str]:
+        """Validate and normalize intersection specifications.
+
+        Each intersection must be in format 'attr1*attr2' for two-way analysis.
+        """
+        normalized = []
+        for intersection in v:
+            # Ensure lowercase
+            intersection = intersection.lower()
+
+            # Validate format
+            parts = intersection.split("*")
+            if len(parts) != 2:
+                raise ValueError(
+                    f"Invalid intersection format '{intersection}'. Must be 'attr1*attr2' for two-way intersections.",
+                )
+
+            # Validate non-empty parts
+            if not all(part.strip() for part in parts):
+                raise ValueError(
+                    f"Invalid intersection '{intersection}'. Both attributes must be non-empty.",
+                )
+
+            # Normalize whitespace
+            normalized.append("*".join(part.strip() for part in parts))
+
+        return normalized
 
     @field_validator("fetch")
     @classmethod
@@ -176,6 +210,39 @@ class MetricCategory(BaseModel):
     config: dict[str, Any] = Field(default_factory=dict, description="Category-specific configuration")
 
 
+class PerturbationConfig(BaseModel):
+    """Configuration for adversarial perturbation sweeps (E6+)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = Field(False, description="Whether to run perturbation sweeps")
+    epsilon_values: list[float] = Field(
+        default_factory=lambda: [0.01, 0.05, 0.1],
+        description="Epsilon values for perturbation (default: 1%, 5%, 10%)",
+    )
+    threshold: float = Field(
+        0.15,
+        description="Threshold for gate logic (PASS if max_delta < threshold)",
+    )
+    seed: int = Field(42, description="Random seed for deterministic perturbations")
+
+    @field_validator("epsilon_values")
+    @classmethod
+    def validate_epsilon_values(cls, v: list[float]) -> list[float]:
+        """Validate epsilon values are positive."""
+        if any(eps <= 0 for eps in v):
+            raise ValueError("All epsilon values must be positive")
+        return sorted(v)  # Sort for consistency
+
+    @field_validator("threshold")
+    @classmethod
+    def validate_threshold(cls, v: float) -> float:
+        """Validate threshold is positive."""
+        if v <= 0:
+            raise ValueError("Threshold must be positive")
+        return v
+
+
 class MetricsConfig(BaseModel):
     """Metrics configuration."""
 
@@ -192,6 +259,10 @@ class MetricsConfig(BaseModel):
     drift: list[str] | MetricCategory = Field(
         default_factory=lambda: MetricCategory(metrics=["psi"]),
         description="Drift metrics",
+    )
+    stability: PerturbationConfig | None = Field(
+        None,
+        description="Stability testing configuration (perturbation sweeps)",
     )
     custom: dict[str, list[str]] | None = Field(None, description="Custom metric categories")
 

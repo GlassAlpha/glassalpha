@@ -7,6 +7,11 @@ Includes E10: Statistical Confidence & Uncertainty support:
 - Bootstrap confidence intervals for all fairness metrics
 - Small sample size warnings (n<30 WARNING, n<10 ERROR)
 - Statistical power calculations
+
+Includes E5.1: Basic Intersectional Fairness support:
+- Two-way intersectional analysis (e.g., gender*race)
+- Cartesian product of protected attribute values
+- Sample size warnings and bootstrap CIs for intersectional groups
 """
 
 import logging
@@ -21,6 +26,7 @@ from .confidence import (
     compute_bootstrap_ci,
     compute_statistical_power,
 )
+from .intersectional import compute_intersectional_fairness
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +47,7 @@ def run_fairness_metrics(
     n_bootstrap: int = 1000,
     confidence_level: float = 0.95,
     seed: int | None = None,
+    intersections: list[str] | None = None,
 ) -> dict[str, Any]:
     """Run fairness metrics with proper input handling.
 
@@ -53,6 +60,7 @@ def run_fairness_metrics(
         n_bootstrap: Number of bootstrap samples (default 1000)
         confidence_level: Confidence level for CIs (default 0.95)
         seed: Random seed for deterministic bootstrap
+        intersections: List of intersection specs for E5.1 (e.g., ["gender*race"])
 
     Returns:
         Dictionary with results from all metrics, including CIs and warnings
@@ -121,6 +129,35 @@ def run_fairness_metrics(
         except Exception as e:  # noqa: BLE001
             logger.warning(f"Failed to compute {metric_class.__name__}: {e}")
             results[metric_class.__name__.lower().replace("metric", "")] = {"error": str(e)}
+
+    # Compute intersectional fairness metrics if specified (E5.1)
+    if intersections and len(intersections) > 0:
+        intersectional_results = {}
+
+        for intersection_spec in intersections:
+            try:
+                logger.debug(f"Computing intersectional metrics for: {intersection_spec}")
+
+                intersectional_metrics = compute_intersectional_fairness(
+                    y_true.values,
+                    y_pred.values,
+                    sensitive_df,
+                    intersection_spec=intersection_spec,
+                    compute_confidence_intervals=compute_confidence_intervals,
+                    n_bootstrap=n_bootstrap,
+                    confidence_level=confidence_level,
+                    seed=seed,
+                )
+
+                # Store under intersection spec key
+                intersectional_results[intersection_spec] = intersectional_metrics
+
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Failed to compute intersectional metrics for {intersection_spec}: {e}")
+                intersectional_results[intersection_spec] = {"error": str(e)}
+
+        if intersectional_results:
+            results["intersectional"] = intersectional_results
 
     return results
 

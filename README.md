@@ -1,8 +1,12 @@
 # GlassAlpha
 
-An ([open source](https://glassalpha.com/reference/trust-deployment/#licensing-dependencies)) toolkit to generate deterministic, regulator-ready PDF audit reports for tabular ML models.
+**Ever tried explaining your ML model to a regulator?**
 
-_Note: GlassAlpha is currently pre-alpha while I’m still making significant changes. I’ll cut the first official release and publish it on PyPI once things stabilize. The audits do run and the package works, so feel free to try it out, feedback welcome!_
+GlassAlpha is an ([open source](https://glassalpha.com/reference/trust-deployment/#licensing-dependencies)) ML compliance toolkit that makes tabular models **transparent, auditable, and regulator-ready**.
+
+Generate deterministic PDF audit reports with statistical confidence intervals, fairness analysis, and policy-as-code compliance gates. No dashboards. No black boxes. Just byte-stable evidence packs you can submit to regulators.
+
+_Note: GlassAlpha is currently pre-alpha while I'm actively developing. The audits work and tests pass, so feel free to try it out—feedback welcome! First stable release coming soon._
 
 ## Get started
 
@@ -40,16 +44,55 @@ That's it. You now have a complete audit report with model performance, SHAP exp
 - **`site/`** - User documentation and tutorials. The docs site is at [glassalpha.com](https://glassalpha.com/)
 - **`configs/`** - Example audit configs you can copy and modify
 
-## Capabilities
+## What Makes GlassAlpha Different
 
-Right now, GlassAlpha handles:
+**Policy-as-code, not dashboards.** Define compliance rules in YAML, get PASS/FAIL gates automatically.
 
-- **Models**: XGBoost, LightGBM, Logistic Regression (more coming)
-- **Explanations**: TreeSHAP feature importance with individual prediction breakdowns
-- **Fairness**: Demographic parity, equal opportunity, bias detection
-- **Output**: Professional PDFs and HTML reports that are byte-identical on repeat runs
+```yaml
+# policy.yaml
+immutables: [age, race, gender] # Can't change
+monotone:
+  debt_to_income: increase_only # Fairness constraint
+degradation_threshold: 0.05 # Max 5pp metric drop under demographic shifts
+```
+
+**Byte-identical reproducibility.** Same audit config → same PDF, every time. SHA256-verified evidence packs for regulatory submission.
+
+**Statistical rigor.** Not just point estimates—95% confidence intervals on everything (fairness, calibration, performance).
+
+## Core Capabilities
+
+### Compliance & Fairness
+
+- **Group Fairness** (E5): Demographic parity, TPR/FPR, with statistical confidence intervals
+- **Intersectional Fairness** (E5.1): Hidden bias detection in demographic combinations (e.g., race×gender)
+- **Individual Fairness** (E11): Consistency score—similar applicants get similar decisions
+- **Dataset Bias Audit** (E12): Proxy feature detection, distribution drift, sampling bias power
+- **Statistical Confidence** (E10): Bootstrap CIs for all fairness metrics, sample size warnings
+
+### Explainability & Outcomes
+
+- **TreeSHAP Explanations**: Feature importance with individual prediction breakdowns
+- **Reason Codes** (E2): ECOA-compliant adverse action notices
+- **Actionable Recourse** (E2.5): "Change X to improve outcome" recommendations with policy constraints
+
+### Robustness & Stability
+
+- **Calibration Analysis** (E10+): ECE with confidence intervals, bin-wise calibration curves
+- **Adversarial Perturbation** (E6+): ε-perturbation sweeps, robustness score
+- **Demographic Shift Testing** (E6.5): Simulate population changes, detect degradation before deployment
+
+### Regulatory Compliance
+
+- **SR 11-7 Mapping**: Complete Federal Reserve guidance coverage (banking)
+- **Evidence Packs**: SHA256-verified bundles (PDF + manifest + gates + policy)
+- **Reproducibility**: Deterministic execution, version pinning, byte-identical PDFs
+- **CI/CD Gates**: Exit code 1 if compliance fails, JSON output for automation
+
+### Supported Models
+
+- XGBoost, LightGBM, Logistic Regression (more coming)
 - **Everything runs locally** - your data never leaves your machine
-- **CI/CD Ready**: JSON error output and standardized exit codes for automation
 
 All Apache 2.0 licensed.
 
@@ -63,17 +106,20 @@ All Apache 2.0 licensed.
 
 ## CI/CD Integration
 
-GlassAlpha is designed for automation with standardized exit codes and JSON error output:
+GlassAlpha is designed for automation with deployment gates and standardized exit codes:
 
 ```bash
-# Get machine-readable errors for CI/CD
-glassalpha --json-errors audit --config audit.yaml
+# Block deployment if model degrades under demographic shifts
+glassalpha audit --config audit.yaml \
+  --check-shift gender:+0.1 \
+  --check-shift age:-0.05 \
+  --fail-on-degradation 0.05
 
 # Exit codes for scripting
-# 0 = Success
-# 1 = User error (bad config, missing files)
-# 2 = System error (permissions, resources)
-# 3 = Validation error (compliance failures)
+# 0 = Success (all gates pass)
+# 1 = Validation error (degradation exceeds threshold, compliance failures)
+# 2 = User error (bad config, missing files)
+# 3 = System error (permissions, resources)
 ```
 
 **Auto-detection**: JSON errors automatically enable in GitHub Actions, GitLab CI, CircleCI, Jenkins, and Travis.
@@ -87,13 +133,25 @@ Example JSON error output:
   "status": "error",
   "exit_code": 1,
   "error": {
-    "type": "CONFIG",
-    "message": "File 'config.yaml' does not exist",
-    "details": {},
-    "context": { "config_path": "config.yaml" }
+    "type": "VALIDATION",
+    "message": "Shift test failed: degradation exceeds threshold",
+    "details": { "max_degradation": 0.072, "threshold": 0.05 },
+    "context": { "shift": "gender:+0.1" }
   },
-  "timestamp": "2025-10-05T12:00:00Z"
+  "timestamp": "2025-10-07T12:00:00Z"
 }
+```
+
+**Deployment gates in action:**
+
+```yaml
+# .github/workflows/model-validation.yml
+- name: Validate model before deployment
+  run: |
+    glassalpha audit --config prod.yaml \
+      --check-shift gender:+0.1 \
+      --fail-on-degradation 0.05
+    # Blocks merge if fairness degrades >5pp under demographic shift
 ```
 
 ## Learn more

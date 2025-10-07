@@ -724,46 +724,156 @@
         <ul class="toc-list">
           <li><a href="#section-1">1. Executive Summary</a></li>
           <li><a href="#section-2">2. Data Overview</a></li>
-          {% if preprocessing_info %}
-          <li><a href="#section-3">3. Preprocessing Verification</a></li>
-          <li><a href="#section-4">4. Model Performance Analysis</a></li>
-          {% else %}
-          <li><a href="#section-3">3. Model Performance Analysis</a></li>
-          {% endif %} {% if explanations %}
+          {% if dataset_bias %}
+          <li><a href="#section-3">3. Dataset-Level Bias Analysis</a></li>
+          {% endif %} {% if preprocessing_info %}
           <li>
-            <a href="#section-shap"
-              >{{ "5" if preprocessing_info else "4" }}. Model Explainability
-              (SHAP Analysis)</a
-            >
-          </li>
-          {% endif %} {% if fairness_analysis %}
-          <li>
-            <a href="#section-fairness"
-              >{{ "6" if preprocessing_info else "5" }}. Fairness & Bias
-              Analysis</a
+            <a href="#section-{% if dataset_bias %}4{% else %}3{% endif %}">
+              {% if dataset_bias %}4{% else %}3{% endif %}. Preprocessing
+              Verification</a
             >
           </li>
           {% endif %}
           <li>
-            <a href="#section-audit-trail"
-              >{{ "7" if preprocessing_info else "6" }}. Audit Trail &
+            <a
+              href="#section-{{ '5' if preprocessing_info and dataset_bias else ('4' if preprocessing_info or dataset_bias else '3') }}"
+            >
+              {% if preprocessing_info and dataset_bias %}5{% elif
+              preprocessing_info or dataset_bias %}4{% else %}3{% endif %}.
+              Model Performance Analysis</a
+            >
+          </li>
+          {% if calibration_ci %}
+          <li>
+            <a href="#section-calibration">
+              {% if preprocessing_info and dataset_bias %}6{% elif
+              preprocessing_info or dataset_bias %}5{% else %}4{% endif %}.
+              Calibration Analysis</a
+            >
+          </li>
+          {% endif %} {% if explanations %}
+          <li>
+            <a href="#section-shap">
+              {% if preprocessing_info and dataset_bias and calibration_ci %}7{%
+              elif (preprocessing_info and dataset_bias) or (preprocessing_info
+              and calibration_ci) or (dataset_bias and calibration_ci) %}6{%
+              elif preprocessing_info or dataset_bias or calibration_ci %}5{%
+              else %}4{% endif %}. Model Explainability (SHAP)</a
+            >
+          </li>
+          {% endif %} {% if fairness_analysis %}
+          <li>
+            <a href="#section-fairness">
+              {% set base_num = 8 %} {% if not preprocessing_info %}{% set
+              base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+              set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+              %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+              explanations %}{% set base_num = base_num - 1 %}{% endif %} {{
+              base_num }}. Fairness & Bias Analysis</a
+            >
+          </li>
+          {% endif %} {% if intersectional_fairness %}
+          <li>
+            <a href="#section-intersectional">
+              {% set base_num = 9 %} {% if not preprocessing_info %}{% set
+              base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+              set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+              %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+              explanations %}{% set base_num = base_num - 1 %}{% endif %} {% if
+              not fairness_analysis %}{% set base_num = base_num - 1 %}{% endif
+              %} {{ base_num }}. Intersectional Fairness</a
+            >
+          </li>
+          {% endif %} {% if individual_fairness %}
+          <li>
+            <a href="#section-individual">
+              {% set base_num = 10 %} {% if not preprocessing_info %}{% set
+              base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+              set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+              %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+              explanations %}{% set base_num = base_num - 1 %}{% endif %} {% if
+              not fairness_analysis %}{% set base_num = base_num - 1 %}{% endif
+              %} {% if not intersectional_fairness %}{% set base_num = base_num
+              - 1 %}{% endif %} {{ base_num }}. Individual Fairness</a
+            >
+          </li>
+          {% endif %} {% if stability_analysis and
+          stability_analysis.robustness_score is defined %}
+          <li>
+            <a href="#section-robustness">
+              {% set base_num = 11 %} {% if not preprocessing_info %}{% set
+              base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+              set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+              %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+              explanations %}{% set base_num = base_num - 1 %}{% endif %} {% if
+              not fairness_analysis %}{% set base_num = base_num - 1 %}{% endif
+              %} {% if not intersectional_fairness %}{% set base_num = base_num
+              - 1 %}{% endif %} {% if not individual_fairness %}{% set base_num
+              = base_num - 1 %}{% endif %} {{ base_num }}. Model Robustness
+              Testing</a
+            >
+          </li>
+          {% endif %}
+          <li>
+            <a href="#section-audit-trail">
+              {% set base_num = 12 %} {% if not preprocessing_info %}{% set
+              base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+              set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+              %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+              explanations %}{% set base_num = base_num - 1 %}{% endif %} {% if
+              not fairness_analysis %}{% set base_num = base_num - 1 %}{% endif
+              %} {% if not intersectional_fairness %}{% set base_num = base_num
+              - 1 %}{% endif %} {% if not individual_fairness %}{% set base_num
+              = base_num - 1 %}{% endif %} {% if not (stability_analysis and
+              stability_analysis.robustness_score is defined) %}{% set base_num
+              = base_num - 1 %}{% endif %} {{ base_num }}. Audit Trail &
               Reproducibility</a
             >
           </li>
           <li>
-            <a href="#section-compliance"
-              >{{ "8" if preprocessing_info else "7" }}. Regulatory Compliance
-              Assessment</a
+            <a href="#section-compliance">
+              {% set base_num = 13 %} {% if not preprocessing_info %}{% set
+              base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+              set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+              %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+              explanations %}{% set base_num = base_num - 1 %}{% endif %} {% if
+              not fairness_analysis %}{% set base_num = base_num - 1 %}{% endif
+              %} {% if not intersectional_fairness %}{% set base_num = base_num
+              - 1 %}{% endif %} {% if not individual_fairness %}{% set base_num
+              = base_num - 1 %}{% endif %} {% if not (stability_analysis and
+              stability_analysis.robustness_score is defined) %}{% set base_num
+              = base_num - 1 %}{% endif %} {{ base_num }}. Regulatory
+              Compliance</a
             >
           </li>
           <li>
-            <a href="#section-model-card"
-              >{{ "9" if preprocessing_info else "8" }}. Model Card</a
+            <a href="#section-model-card">
+              {% set base_num = 14 %} {% if not preprocessing_info %}{% set
+              base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+              set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+              %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+              explanations %}{% set base_num = base_num - 1 %}{% endif %} {% if
+              not fairness_analysis %}{% set base_num = base_num - 1 %}{% endif
+              %} {% if not intersectional_fairness %}{% set base_num = base_num
+              - 1 %}{% endif %} {% if not individual_fairness %}{% set base_num
+              = base_num - 1 %}{% endif %} {% if not (stability_analysis and
+              stability_analysis.robustness_score is defined) %}{% set base_num
+              = base_num - 1 %}{% endif %} {{ base_num }}. Model Card</a
             >
           </li>
           <li>
-            <a href="#section-glossary"
-              >{{ "10" if preprocessing_info else "9" }}. Glossary</a
+            <a href="#section-glossary">
+              {% set base_num = 15 %} {% if not preprocessing_info %}{% set
+              base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+              set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+              %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+              explanations %}{% set base_num = base_num - 1 %}{% endif %} {% if
+              not fairness_analysis %}{% set base_num = base_num - 1 %}{% endif
+              %} {% if not intersectional_fairness %}{% set base_num = base_num
+              - 1 %}{% endif %} {% if not individual_fairness %}{% set base_num
+              = base_num - 1 %}{% endif %} {% if not (stability_analysis and
+              stability_analysis.robustness_score is defined) %}{% set base_num
+              = base_num - 1 %}{% endif %} {{ base_num }}. Glossary</a
             >
           </li>
         </ul>
@@ -1024,17 +1134,229 @@
         {% endif %}
       </section>
 
-      <!-- Preprocessing -->
-      {% if preprocessing_info %}
+      <!-- Dataset Bias Analysis (E12) -->
+      {% if dataset_bias %}
       <div class="page-break"></div>
       <section
         id="section-3"
         class="section"
         role="region"
+        aria-labelledby="dataset-bias-heading"
+      >
+        <h2 id="dataset-bias-heading">
+          <span class="section-number">3.</span>Dataset-Level Bias Analysis
+        </h2>
+
+        <div class="callout callout-info">
+          <h4>What is Dataset Bias?</h4>
+          <p>
+            Dataset bias occurs when training data systematically differs from
+            real-world distributions, contains proxy features correlated with
+            protected attributes, or has sampling imbalances. Detecting bias at
+            the data level is critical because
+            <strong>biased data produces biased models</strong>
+            regardless of algorithmic fairness interventions.
+          </p>
+        </div>
+
+        {% if dataset_bias.proxy_correlations %}
+        <h3>Proxy Feature Correlations</h3>
+        <p class="text-small text-muted">
+          Features that strongly correlate with protected attributes may act as
+          proxies, allowing the model to discriminate indirectly even when
+          protected attributes are excluded.
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Protected Attribute</th>
+                <th>Correlation</th>
+                <th>P-Value</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if dataset_bias.proxy_correlations and
+              dataset_bias.proxy_correlations.correlations %} {% for
+              protected_attr, features in
+              dataset_bias.proxy_correlations.correlations.items() %} {% for
+              feature, corr_data in features.items() %}
+              <tr>
+                <td>
+                  <strong>{{ feature | replace("_", " ") | title }}</strong>
+                </td>
+                <td>{{ protected_attr | replace("_", " ") | title }}</td>
+                <td class="metric-value">
+                  {{ "%.3f"|format(corr_data.correlation) }}
+                </td>
+                <td class="metric-value text-small">
+                  {{ "%.4f"|format(corr_data.p_value) }}
+                </td>
+                <td>
+                  {% if corr_data.correlation|abs > 0.7 %}
+                  <span class="badge badge-error">High Proxy Risk</span>
+                  {% elif corr_data.correlation|abs > 0.5 %}
+                  <span class="badge badge-warning">Moderate Proxy Risk</span>
+                  {% else %}
+                  <span class="badge badge-success">Low Risk</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %} {% endfor %} {% else %}
+              <tr>
+                <td colspan="5" class="text-center text-muted">
+                  No proxy correlations detected
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-warning">
+          <h4>Interpretation</h4>
+          <p>
+            <strong>High proxy risk</strong> (|r| > 0.7): Feature may enable
+            indirect discrimination. Consider removing or monitoring closely.<br />
+            <strong>Moderate proxy risk</strong> (|r| > 0.5): Evaluate if
+            feature is necessary for model performance.
+          </p>
+        </div>
+        {% endif %} {% if dataset_bias.distribution_drift %}
+        <h3>Distribution Drift Analysis</h3>
+        <p class="text-small text-muted">
+          Statistical tests comparing feature distributions across protected
+          groups. Significant drift may indicate sampling bias or systematic
+          differences in data collection.
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Test Statistic</th>
+                <th>P-Value</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if dataset_bias.distribution_drift and
+              dataset_bias.distribution_drift.drift_tests %} {% for feature,
+              drift_data in dataset_bias.distribution_drift.drift_tests.items()
+              %}
+              <tr>
+                <td>
+                  <strong>{{ feature | replace("_", " ") | title }}</strong>
+                </td>
+                <td class="metric-value">
+                  {{ "%.4f"|format(drift_data.statistic) }}
+                </td>
+                <td class="metric-value text-small">
+                  {{ "%.4f"|format(drift_data.p_value) }}
+                </td>
+                <td>
+                  {% if drift_data.p_value < 0.01 %}
+                  <span class="badge badge-error">Significant Drift</span>
+                  {% elif drift_data.p_value < 0.05 %}
+                  <span class="badge badge-warning">Moderate Drift</span>
+                  {% else %}
+                  <span class="badge badge-success">No Significant Drift</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %} {% else %}
+              <tr>
+                <td colspan="4" class="text-center text-muted">
+                  No distribution drift tests available
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %} {% if dataset_bias.sampling_bias_power %}
+        <h3>Sampling Bias Detection Power</h3>
+        <p class="text-small text-muted">
+          Statistical power to detect sampling bias (e.g., underrepresentation
+          of protected groups). Low power indicates insufficient sample size to
+          reliably detect bias.
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Protected Attribute</th>
+                <th>Statistical Power</th>
+                <th>Min Sample Size</th>
+                <th>Assessment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if dataset_bias.sampling_bias_power and
+              dataset_bias.sampling_bias_power.power_by_group %} {% for attr,
+              groups in dataset_bias.sampling_bias_power.power_by_group.items()
+              %} {% for group_name, power_info in groups.items() %}
+              <tr>
+                <td>
+                  <strong
+                    >{{ attr | replace("_", " ") | title }} ({{ group_name
+                    }})</strong
+                  >
+                </td>
+                <td class="metric-value">
+                  {{ "%.2f"|format(power_info.power) }}
+                </td>
+                <td class="metric-value">{{ power_info.min_sample_size }}</td>
+                <td>
+                  {% if power_info.power >= 0.80 %}
+                  <span class="badge badge-success">Adequate Power</span>
+                  {% elif power_info.power >= 0.60 %}
+                  <span class="badge badge-warning">Marginal Power</span>
+                  {% else %}
+                  <span class="badge badge-error">Insufficient Power</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %} {% endfor %} {% else %}
+              <tr>
+                <td colspan="4" class="text-center text-muted">
+                  No sampling bias power analysis available
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-info">
+          <h4>Recommended Action</h4>
+          <p>
+            <strong>Statistical power ≥ 0.80</strong>: Sample size is adequate
+            for bias detection.<br />
+            <strong>Power < 0.80</strong>: Consider collecting more data or
+            interpreting fairness metrics with caution.
+          </p>
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <!-- Preprocessing -->
+      {% if preprocessing_info %}
+      <div class="page-break"></div>
+      <section
+        id="section-4"
+        class="section"
+        role="region"
         aria-labelledby="preprocessing-heading"
       >
         <h2 id="preprocessing-heading">
-          <span class="section-number">3.</span>Preprocessing Verification
+          <span class="section-number">4.</span>Preprocessing Verification
         </h2>
 
         {% if preprocessing_info.mode == 'auto' %}
@@ -1514,14 +1836,15 @@
 
       <!-- Model Performance -->
       <section
-        id="section-{{ '4' if preprocessing_info else '3' }}"
+        id="section-{{ '5' if preprocessing_info and dataset_bias else ('4' if preprocessing_info or dataset_bias else '3') }}"
         class="section"
         role="region"
         aria-labelledby="performance-heading"
       >
         <h2 id="performance-heading">
           <span class="section-number"
-            >{{ '4.' if preprocessing_info else '3.' }}</span
+            >{% if preprocessing_info and dataset_bias %}5.{% elif
+            preprocessing_info or dataset_bias %}4.{% else %}3.{% endif %}</span
           >Model Performance Analysis
         </h2>
 
@@ -1638,6 +1961,163 @@
         {% endfor %} {% endif %}
       </section>
 
+      <!-- Calibration with Confidence Intervals (E10+) -->
+      {% if calibration_ci %}
+      <div class="page-break"></div>
+      <section
+        id="section-calibration"
+        class="section"
+        role="region"
+        aria-labelledby="calibration-heading"
+      >
+        <h2 id="calibration-heading">
+          <span class="section-number"
+            >{% if preprocessing_info and dataset_bias %}6.{% elif
+            preprocessing_info or dataset_bias %}5.{% else %}4.{% endif %}</span
+          >Calibration Analysis with Confidence Intervals
+        </h2>
+
+        <div class="callout callout-info">
+          <h4>What is Calibration?</h4>
+          <p>
+            Calibration measures whether predicted probabilities match observed
+            outcomes. A well-calibrated model predicting 70% confidence should
+            be correct 70% of the time.
+            <strong>Poor calibration can mislead decision-makers</strong> even
+            if classification accuracy is high.
+          </p>
+        </div>
+
+        <h3>Calibration Metrics</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+                <th>95% Confidence Interval</th>
+                <th>Interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Expected Calibration Error (ECE)</strong></td>
+                <td class="metric-value">
+                  {% if calibration_ci.get('ece') is not none %} {{
+                  "%.4f"|format(calibration_ci['ece']) }} {% else %} N/A {%
+                  endif %}
+                </td>
+                <td class="metric-value text-small">
+                  {% if calibration_ci.get('ece_ci') %} [{{
+                  "%.4f"|format(calibration_ci['ece_ci']['ci_lower']) }}, {{
+                  "%.4f"|format(calibration_ci['ece_ci']['ci_upper']) }}] {%
+                  else %} N/A {% endif %}
+                </td>
+                <td class="text-small">
+                  {% if calibration_ci.get('ece') is not none %} {% if
+                  calibration_ci['ece'] < 0.05 %}
+                  <span class="badge badge-success">Well Calibrated</span>
+                  {% elif calibration_ci['ece'] < 0.10 %}
+                  <span class="badge badge-warning">Acceptable</span>
+                  {% else %}
+                  <span class="badge badge-error">Poorly Calibrated</span>
+                  {% endif %} {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Brier Score</strong></td>
+                <td class="metric-value">
+                  {{ "%.4f"|format(calibration_ci['brier_score']) }}
+                </td>
+                <td class="metric-value text-small">
+                  {% if calibration_ci.get('brier_ci') %} [{{
+                  "%.4f"|format(calibration_ci['brier_ci']['ci_lower']) }}, {{
+                  "%.4f"|format(calibration_ci['brier_ci']['ci_upper']) }}] {%
+                  else %} N/A {% endif %}
+                </td>
+                <td class="text-small">
+                  Combined measure of calibration and accuracy (lower is better)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="text-small text-muted">
+          Sample size: {{ "{:,}".format(calibration_ci.get('n_samples', 0)) }} |
+          Bins: {{ calibration_ci.get('n_bins', 10) }} | Bootstrap samples: {{
+          calibration_ci.get('ece_ci', {}).get('n_bootstrap', 'N/A') if
+          calibration_ci.get('ece_ci') else 'N/A' }}
+        </p>
+
+        {% if calibration_ci.get('bin_calibration') %}
+        <h3>Bin-Wise Calibration Error</h3>
+        <p class="text-small text-muted">
+          Calibration error by predicted probability bin. Wide confidence
+          intervals indicate uncertainty due to small sample sizes.
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Bin Range</th>
+                <th>Count</th>
+                <th>Mean Predicted</th>
+                <th>Mean Observed</th>
+                <th>Error</th>
+                <th>95% CI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for bin in calibration_ci['bin_calibration'] %}
+              <tr>
+                <td class="text-small">
+                  [{{ "%.2f"|format(bin['bin_lower']) }}, {{
+                  "%.2f"|format(bin['bin_upper']) }})
+                </td>
+                <td class="metric-value">{{ bin['count'] }}</td>
+                <td class="metric-value">
+                  {{ "%.3f"|format(bin['mean_predicted']) }}
+                </td>
+                <td class="metric-value">
+                  {{ "%.3f"|format(bin['mean_observed']) }}
+                </td>
+                <td class="metric-value">
+                  {{ "%.3f"|format(bin['error']|abs) }}
+                </td>
+                <td class="metric-value text-small">
+                  {% if bin.get('error_ci') %} [{{
+                  "%.3f"|format(bin['error_ci']['ci_lower']) }}, {{
+                  "%.3f"|format(bin['error_ci']['ci_upper']) }}] {% else %} N/A
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+
+        <div class="callout callout-info">
+          <h4>Understanding Calibration</h4>
+          <p>
+            <strong>ECE < 0.05</strong>: Model probabilities are
+            well-calibrated<br />
+            <strong>ECE 0.05-0.10</strong>: Acceptable calibration for most
+            applications<br />
+            <strong>ECE > 0.10</strong>: Consider recalibration (e.g., Platt
+            scaling, isotonic regression)
+          </p>
+          <p class="text-small">
+            <strong>Confidence intervals</strong> quantify uncertainty in
+            calibration estimates. Wide intervals suggest small sample sizes or
+            high variability.
+          </p>
+        </div>
+      </section>
+      {% endif %}
+
       <div class="page-break"></div>
 
       <!-- SHAP Explanations -->
@@ -1650,7 +2130,11 @@
       >
         <h2 id="shap-heading">
           <span class="section-number"
-            >{{ '5.' if preprocessing_info else '4.' }}</span
+            >{% if preprocessing_info and dataset_bias and calibration_ci %}7.{%
+            elif (preprocessing_info and dataset_bias) or (preprocessing_info
+            and calibration_ci) or (dataset_bias and calibration_ci) %}6.{% elif
+            preprocessing_info or dataset_bias or calibration_ci %}5.{% else
+            %}4.{% endif %}</span
           >Model Explainability (SHAP Analysis)
         </h2>
 
@@ -1869,6 +2353,453 @@
       </section>
       {% endif %}
 
+      <!-- Intersectional Fairness Analysis (E5.1) -->
+      {% if intersectional_fairness %}
+      <div class="page-break"></div>
+      <section
+        id="section-intersectional"
+        class="section"
+        role="region"
+        aria-labelledby="intersectional-heading"
+      >
+        <h2 id="intersectional-heading">
+          <span class="section-number">
+            {% set base_num = 8 %} {% if not preprocessing_info %}{% set
+            base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+            set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+            %}{% set base_num = base_num - 1 %}{% endif %} {{ base_num }}. </span
+          >Intersectional Fairness Analysis
+        </h2>
+
+        <div class="callout callout-info">
+          <h4>What is Intersectional Fairness?</h4>
+          <p>
+            Intersectional fairness examines how multiple protected attributes
+            interact (e.g., race × gender).
+            <strong
+              >Bias hidden in overall metrics can emerge at
+              intersections</strong
+            >. For example, a model fair for women overall may discriminate
+            against Black women specifically.
+          </p>
+        </div>
+
+        {% for intersection_name, intersection_data in
+        intersectional_fairness.items() %}
+        <h3>
+          {{ intersection_name | replace("*", " × ") | replace("_", " ") | title
+          }}
+        </h3>
+
+        {% if intersection_data.groups %}
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Selection Rate</th>
+                <th>TPR</th>
+                <th>FPR</th>
+                <th>Sample Size</th>
+                <th>Warning</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for group_name, metrics in intersection_data.groups.items() %}
+              <tr>
+                <td>
+                  <strong>{{ group_name | replace("_", " ") | title }}</strong>
+                </td>
+                <td class="metric-value">
+                  {% if metrics.selection_rate is defined %} {{
+                  "%.3f"|format(metrics.selection_rate) }} {% if
+                  metrics.selection_rate_ci %}
+                  <span class="text-small text-muted">
+                    (95% CI: [{{
+                    "%.3f"|format(metrics.selection_rate_ci.ci_lower) }}, {{
+                    "%.3f"|format(metrics.selection_rate_ci.ci_upper) }}])
+                  </span>
+                  {% endif %} {% else %}N/A{% endif %}
+                </td>
+                <td class="metric-value">
+                  {% if metrics.tpr is defined %} {{ "%.3f"|format(metrics.tpr)
+                  }} {% else %}N/A{% endif %}
+                </td>
+                <td class="metric-value">
+                  {% if metrics.fpr is defined %} {{ "%.3f"|format(metrics.fpr)
+                  }} {% else %}N/A{% endif %}
+                </td>
+                <td class="metric-value">{{ metrics.n }}</td>
+                <td>
+                  {% if metrics.n < 10 %}
+                  <span class="badge badge-error">n < 10</span>
+                  {% elif metrics.n < 30 %}
+                  <span class="badge badge-warning">n < 30</span>
+                  {% else %}
+                  <span class="badge badge-success">Adequate</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %} {% if intersection_data.disparity_metrics %}
+        <h4>Disparity Metrics</h4>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Max-Min Difference</th>
+                <th>Max/Min Ratio</th>
+                <th>Assessment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if intersection_data.disparity_metrics.selection_rate_disparity
+              %}
+              <tr>
+                <td><strong>Selection Rate</strong></td>
+                <td class="metric-value">
+                  {{
+                  "%.3f"|format(intersection_data.disparity_metrics.selection_rate_disparity.max_min_diff)
+                  }}
+                </td>
+                <td class="metric-value">
+                  {{
+                  "%.3f"|format(intersection_data.disparity_metrics.selection_rate_disparity.max_min_ratio)
+                  }}
+                </td>
+                <td>
+                  {% if
+                  intersection_data.disparity_metrics.selection_rate_disparity.max_min_diff
+                  > 0.2 %}
+                  <span class="badge badge-error">High Disparity</span>
+                  {% elif
+                  intersection_data.disparity_metrics.selection_rate_disparity.max_min_diff
+                  > 0.1 %}
+                  <span class="badge badge-warning">Moderate Disparity</span>
+                  {% else %}
+                  <span class="badge badge-success">Low Disparity</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %} {% endfor %}
+
+        <div class="callout callout-warning">
+          <h4>Interpreting Intersectional Results</h4>
+          <p>
+            <strong>Sample size warnings</strong>: Groups with n < 30 have
+            unreliable metrics (wide confidence intervals).<br />
+            <strong>High disparity</strong> (difference > 0.2): Investigate for
+            potential discrimination at intersections.<br />
+            <strong>Action</strong>: Prioritize interventions for intersectional
+            groups with worst outcomes.
+          </p>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Individual Fairness (E11) -->
+      {% if individual_fairness %}
+      <div class="page-break"></div>
+      <section
+        id="section-individual"
+        class="section"
+        role="region"
+        aria-labelledby="individual-heading"
+      >
+        <h2 id="individual-heading">
+          <span class="section-number">
+            {% set base_num = 9 %} {% if not preprocessing_info %}{% set
+            base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+            set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+            %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+            intersectional_fairness %}{% set base_num = base_num - 1 %}{% endif
+            %} {{ base_num }}. </span
+          >Individual Fairness Analysis
+        </h2>
+
+        <div class="callout callout-info">
+          <h4>What is Individual Fairness?</h4>
+          <p>
+            Individual fairness requires that
+            <strong>similar individuals receive similar treatment</strong>.
+            While group fairness examines aggregate metrics, individual fairness
+            catches disparate treatment of specific people—a critical legal
+            concern under anti-discrimination law.
+          </p>
+        </div>
+
+        <h3>Consistency Score</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+                <th>Interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Consistency Score</strong></td>
+                <td class="metric-value">
+                  {{ "%.3f"|format(individual_fairness['consistency_score']) }}
+                </td>
+                <td>
+                  {% if individual_fairness['consistency_score'] >= 0.90 %}
+                  <span class="badge badge-success">High Consistency</span>
+                  {% elif individual_fairness['consistency_score'] >= 0.75 %}
+                  <span class="badge badge-warning">Moderate Consistency</span>
+                  {% else %}
+                  <span class="badge badge-error">Low Consistency</span>
+                  {% endif %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-small text-muted">
+          Measures whether similar individuals (based on non-protected features)
+          receive similar predictions. Score of 1.0 means perfect consistency;
+          lower scores indicate disparate treatment.
+        </p>
+
+        <h3>Matched Pairs Analysis</h3>
+        <p class="text-small text-muted">
+          Identifies pairs of individuals with similar non-protected features
+          but different protected attributes. Large prediction differences for
+          matched pairs suggest potential discrimination.
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Statistic</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Matched Pairs Found</strong></td>
+                <td class="metric-value">
+                  {{ individual_fairness['matched_pairs_count'] }}
+                </td>
+              </tr>
+              {% if individual_fairness.get('avg_prediction_diff') is not none
+              %}
+              <tr>
+                <td><strong>Avg Prediction Difference</strong></td>
+                <td class="metric-value">
+                  {{ "%.3f"|format(individual_fairness['avg_prediction_diff'])
+                  }}
+                </td>
+              </tr>
+              {% endif %} {% if individual_fairness.get('max_prediction_diff')
+              is not none %}
+              <tr>
+                <td><strong>Max Prediction Difference</strong></td>
+                <td class="metric-value">
+                  {{ "%.3f"|format(individual_fairness['max_prediction_diff'])
+                  }}
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Counterfactual Flip Test</h3>
+        <p class="text-small text-muted">
+          Tests whether changing only a protected attribute (e.g., gender)
+          significantly changes the prediction. Violations indicate the model
+          directly uses protected information.
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Result</th>
+                <th>Count</th>
+                <th>Assessment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Flip Test Violations</strong></td>
+                <td class="metric-value">
+                  {{ individual_fairness['flip_test_violations'] }}
+                </td>
+                <td>
+                  {% if individual_fairness['flip_test_violations'] == 0 %}
+                  <span class="badge badge-success">No Violations</span>
+                  {% elif individual_fairness['flip_test_violations'] < 10 %}
+                  <span class="badge badge-warning">Minor Violations</span>
+                  {% else %}
+                  <span class="badge badge-error">Significant Violations</span>
+                  {% endif %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-warning">
+          <h4>Legal Implications</h4>
+          <p>
+            <strong>Consistency score < 0.75</strong>: Model may treat similar
+            individuals inconsistently—investigate for disparate treatment.<br />
+            <strong>Flip test violations</strong>: Protected attributes directly
+            influence predictions—potential ECOA/Title VII violation.<br />
+            <strong>Action</strong>: Review matched pairs with large prediction
+            differences for justification.
+          </p>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Robustness Testing (E6+) -->
+      {% if stability_analysis and stability_analysis.robustness_score is
+      defined %}
+      <div class="page-break"></div>
+      <section
+        id="section-robustness"
+        class="section"
+        role="region"
+        aria-labelledby="robustness-heading"
+      >
+        <h2 id="robustness-heading">
+          <span class="section-number">
+            {% set base_num = 10 %} {% if not preprocessing_info %}{% set
+            base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+            set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+            %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+            intersectional_fairness %}{% set base_num = base_num - 1 %}{% endif
+            %} {% if not individual_fairness %}{% set base_num = base_num - 1
+            %}{% endif %} {{ base_num }}. </span
+          >Model Robustness Testing
+        </h2>
+
+        <div class="callout callout-info">
+          <h4>What is Robustness Testing?</h4>
+          <p>
+            Robustness testing measures model stability under small input
+            perturbations.
+            <strong
+              >Fragile models produce wildly different outputs for similar
+              inputs</strong
+            >, indicating potential manipulation vulnerabilities or unreliable
+            decisions.
+          </p>
+        </div>
+
+        <h3>Adversarial Perturbation Analysis</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+                <th>Gate Status</th>
+                <th>Interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Robustness Score</strong></td>
+                <td class="metric-value">
+                  {{ "%.4f"|format(stability_analysis.robustness_score) }}
+                </td>
+                <td>
+                  {% if stability_analysis.gate_status == "PASS" %}
+                  <span class="badge badge-success">PASS</span>
+                  {% elif stability_analysis.gate_status == "WARNING" %}
+                  <span class="badge badge-warning">WARNING</span>
+                  {% else %}
+                  <span class="badge badge-error">FAIL</span>
+                  {% endif %}
+                </td>
+                <td class="text-small">
+                  Maximum prediction change across all perturbations (L∞ norm)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {% if stability_analysis.results_by_epsilon %}
+        <h3>Perturbation Sweep Results</h3>
+        <p class="text-small text-muted">
+          Model predictions perturbed with Gaussian noise at different
+          intensities. Protected attributes are never perturbed (gender, race,
+          etc. remain fixed).
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Perturbation Level (ε)</th>
+                <th>Max Prediction Delta</th>
+                <th>Mean Delta</th>
+                <th>Assessment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for epsilon, result in
+              stability_analysis.results_by_epsilon.items() %}
+              <tr>
+                <td class="metric-value">{{ epsilon }}</td>
+                <td class="metric-value">
+                  {{ "%.4f"|format(result.max_delta) }}
+                </td>
+                <td class="metric-value">
+                  {% if result.mean_delta is defined %} {{
+                  "%.4f"|format(result.mean_delta) }} {% else %}N/A{% endif %}
+                </td>
+                <td>
+                  {% if result.max_delta < 0.05 %}
+                  <span class="badge badge-success">Robust</span>
+                  {% elif result.max_delta < 0.15 %}
+                  <span class="badge badge-warning">Moderate</span>
+                  {% else %}
+                  <span class="badge badge-error">Fragile</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+
+        <div class="callout callout-info">
+          <h4>Understanding Robustness</h4>
+          <p>
+            <strong>Robustness score < 0.05</strong>: Model is highly stable to
+            input perturbations<br />
+            <strong>Score 0.05-0.15</strong>: Acceptable stability for most
+            applications<br />
+            <strong>Score > 0.15</strong>: Model is fragile—consider
+            regularization or ensemble methods
+          </p>
+          <p class="text-small">
+            <strong>EU AI Act compliance</strong>: High-risk AI systems must
+            demonstrate robustness to adversarial perturbations. This test
+            provides evidence of model stability under input variations.
+          </p>
+        </div>
+      </section>
+      {% endif %}
+
       <div class="page-break"></div>
 
       <!-- Audit Trail & Reproducibility -->
@@ -1879,8 +2810,16 @@
         aria-labelledby="audit-trail-heading"
       >
         <h2 id="audit-trail-heading">
-          <span class="section-number"
-            >{{ '7.' if preprocessing_info else '6.' }}</span
+          <span class="section-number">
+            {% set base_num = 11 %} {% if not preprocessing_info %}{% set
+            base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+            set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+            %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+            intersectional_fairness %}{% set base_num = base_num - 1 %}{% endif
+            %} {% if not individual_fairness %}{% set base_num = base_num - 1
+            %}{% endif %} {% if not (stability_analysis and
+            stability_analysis.robustness_score is defined) %}{% set base_num =
+            base_num - 1 %}{% endif %} {{ base_num }}. </span
           >Audit Trail & Reproducibility
         </h2>
 
@@ -2056,8 +2995,16 @@
         aria-labelledby="compliance-heading"
       >
         <h2 id="compliance-heading">
-          <span class="section-number"
-            >{{ '8.' if preprocessing_info else '7.' }}</span
+          <span class="section-number">
+            {% set base_num = 12 %} {% if not preprocessing_info %}{% set
+            base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+            set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+            %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+            intersectional_fairness %}{% set base_num = base_num - 1 %}{% endif
+            %} {% if not individual_fairness %}{% set base_num = base_num - 1
+            %}{% endif %} {% if not (stability_analysis and
+            stability_analysis.robustness_score is defined) %}{% set base_num =
+            base_num - 1 %}{% endif %} {{ base_num }}. </span
           >Regulatory Compliance Assessment
         </h2>
 
@@ -2286,8 +3233,16 @@
         aria-labelledby="model-card-heading"
       >
         <h2 id="model-card-heading">
-          <span class="section-number"
-            >{{ '9.' if preprocessing_info else '8.' }}</span
+          <span class="section-number">
+            {% set base_num = 13 %} {% if not preprocessing_info %}{% set
+            base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+            set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+            %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+            intersectional_fairness %}{% set base_num = base_num - 1 %}{% endif
+            %} {% if not individual_fairness %}{% set base_num = base_num - 1
+            %}{% endif %} {% if not (stability_analysis and
+            stability_analysis.robustness_score is defined) %}{% set base_num =
+            base_num - 1 %}{% endif %} {{ base_num }}. </span
           >Model Card
         </h2>
 
@@ -2471,8 +3426,16 @@
         aria-labelledby="glossary-heading"
       >
         <h2 id="glossary-heading">
-          <span class="section-number"
-            >{{ '10.' if preprocessing_info else '9.' }}</span
+          <span class="section-number">
+            {% set base_num = 14 %} {% if not preprocessing_info %}{% set
+            base_num = base_num - 1 %}{% endif %} {% if not dataset_bias %}{%
+            set base_num = base_num - 1 %}{% endif %} {% if not calibration_ci
+            %}{% set base_num = base_num - 1 %}{% endif %} {% if not
+            intersectional_fairness %}{% set base_num = base_num - 1 %}{% endif
+            %} {% if not individual_fairness %}{% set base_num = base_num - 1
+            %}{% endif %} {% if not (stability_analysis and
+            stability_analysis.robustness_score is defined) %}{% set base_num =
+            base_num - 1 %}{% endif %} {{ base_num }}. </span
           >Glossary
         </h2>
 
@@ -2501,6 +3464,27 @@
           outcomes between protected groups.
         </div>
 
+        <div class="glossary-term">Bootstrap Confidence Interval</div>
+        <div class="glossary-definition">
+          A statistical method for estimating uncertainty by repeatedly
+          resampling data. The 95% CI indicates the range within which the true
+          value lies with 95% probability.
+        </div>
+
+        <div class="glossary-term">Calibration (Model)</div>
+        <div class="glossary-definition">
+          The degree to which predicted probabilities match observed outcomes. A
+          well-calibrated model predicting 70% confidence should be correct
+          approximately 70% of the time.
+        </div>
+
+        <div class="glossary-term">Consistency Score</div>
+        <div class="glossary-definition">
+          A measure of individual fairness indicating whether similar
+          individuals receive similar predictions. Score of 1.0 means perfect
+          consistency; lower scores suggest disparate treatment.
+        </div>
+
         <div class="glossary-term">Demographic Parity</div>
         <div class="glossary-definition">
           A fairness metric requiring that positive predictions occur at equal
@@ -2513,6 +3497,14 @@
           A fairness metric requiring that qualified individuals have equal
           chances of positive outcomes regardless of protected attributes.
           Focuses on true positive rates.
+        </div>
+
+        <div class="glossary-term">Expected Calibration Error (ECE)</div>
+        <div class="glossary-definition">
+          A metric quantifying calibration quality by measuring the average
+          difference between predicted probabilities and observed outcomes.
+          Lower ECE indicates better calibration (ECE < 0.05 is excellent,
+          0.05-0.10 is acceptable).
         </div>
 
         <div class="glossary-term">Feature</div>
@@ -2541,6 +3533,22 @@
           data.
         </div>
 
+        <div class="glossary-term">Individual Fairness</div>
+        <div class="glossary-definition">
+          A fairness principle requiring that similar individuals receive
+          similar treatment. Complements group fairness by catching disparate
+          treatment of specific people, a critical legal concern under
+          anti-discrimination law.
+        </div>
+
+        <div class="glossary-term">Intersectional Fairness</div>
+        <div class="glossary-definition">
+          Analysis of fairness at the intersection of multiple protected
+          attributes (e.g., race × gender). Bias hidden in overall metrics can
+          emerge at intersections; for example, a model fair for women overall
+          may discriminate against Black women specifically.
+        </div>
+
         <div class="glossary-term">Model Card</div>
         <div class="glossary-definition">
           Standardized documentation describing a model's intended use,
@@ -2562,11 +3570,27 @@
           treatment across these attributes.
         </div>
 
+        <div class="glossary-term">Proxy Feature</div>
+        <div class="glossary-definition">
+          A feature that strongly correlates with a protected attribute,
+          enabling indirect discrimination. For example, ZIP code may serve as a
+          proxy for race. High proxy correlations (|r| > 0.7) require
+          investigation.
+        </div>
+
         <div class="glossary-term">Reproducibility</div>
         <div class="glossary-definition">
           The ability to generate identical results when running the same
           analysis multiple times. Critical for regulatory audits to verify that
           results haven't been cherry-picked.
+        </div>
+
+        <div class="glossary-term">Robustness Score</div>
+        <div class="glossary-definition">
+          A measure of model stability under small input perturbations.
+          Quantifies the maximum prediction change when features are perturbed
+          with noise. Low scores indicate stable, reliable models; high scores
+          suggest fragility or manipulation vulnerabilities.
         </div>
 
         <div class="glossary-term">Scaling (Feature)</div>

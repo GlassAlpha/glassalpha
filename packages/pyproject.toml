@@ -40,6 +40,7 @@ dependencies = [
     "orjson>=3.9.0",         # Fast JSON serialization
     "platformdirs>=4.0.0",   # Cross-platform user data directories
     "jinja2>=3.1,<4",        # HTML templating - required for all report generation
+    "tqdm>=4.66",            # Progress bars for long-running operations (auto-detects notebook vs terminal)
 ]
 
 [project.optional-dependencies]

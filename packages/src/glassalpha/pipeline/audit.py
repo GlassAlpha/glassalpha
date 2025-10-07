@@ -36,6 +36,7 @@ class AuditResults:
     model_performance: dict[str, Any] = field(default_factory=dict)
     fairness_analysis: dict[str, Any] = field(default_factory=dict)
     drift_analysis: dict[str, Any] = field(default_factory=dict)
+    stability_analysis: dict[str, Any] = field(default_factory=dict)
     explanations: dict[str, Any] = field(default_factory=dict)
 
     # Data information
@@ -773,6 +774,7 @@ class AuditPipeline:
             # Generate explanations with progress settings
             # Note: PermutationExplainer requires y parameter, other explainers ignore it
             explanations = self.explainer.explain(
+                self.model,  # Model instance (required by explainer interface)
                 X_processed,
                 y=y_target,  # Required for PermutationExplainer
                 show_progress=True,  # Enable progress by default
@@ -1101,7 +1103,10 @@ class AuditPipeline:
 
         # Compute fairness metrics if sensitive features available
         if sensitive_features is not None:
-            self._compute_fairness_metrics(y_true, y_pred, y_proba, sensitive_features)
+            self._compute_fairness_metrics(y_true, y_pred, y_proba, sensitive_features, X)
+
+        # Compute stability metrics (E6+ perturbation sweeps)
+        self._compute_stability_metrics(X, sensitive_features)
 
         # Compute drift metrics (placeholder for now)
         self._compute_drift_metrics(X, y_true)
@@ -1313,23 +1318,105 @@ class AuditPipeline:
 
         self.results.model_performance = results
 
+        # E10+: Compute calibration with confidence intervals
+        if y_proba is not None and y_proba.shape[1] == 2:  # Binary classification with probabilities
+            try:
+                from ..metrics.calibration.quality import assess_calibration_quality  # noqa: PLC0415
+                from ..utils.seeds import get_component_seed  # noqa: PLC0415
+
+                logger.debug("Computing E10+: Calibration with confidence intervals")
+
+                # Get seed for deterministic bootstrap
+                seed = get_component_seed("calibration_ci")
+
+                # Compute calibration with CIs
+                calibration_result = assess_calibration_quality(
+                    y_true=y_true,
+                    y_prob_pos=y_proba[:, 1],  # Positive class probabilities
+                    n_bins=10,
+                    compute_confidence_intervals=True,
+                    n_bootstrap=1000,
+                    confidence_level=0.95,
+                    seed=seed,
+                )
+
+                # Add to model_performance
+                if isinstance(calibration_result, dict):
+                    self.results.model_performance["calibration_ci"] = calibration_result
+                else:
+                    self.results.model_performance["calibration_ci"] = calibration_result.to_dict()
+
+                logger.info("E10+: Calibration metrics with CIs computed successfully")
+
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"E10+: Failed to compute calibration with CIs: {e}")
+                # Don't fail entire performance analysis if calibration CIs fail
+                self.results.model_performance["calibration_ci"] = {
+                    "error": str(e),
+                    "status": "failed",
+                }
+
     def _compute_fairness_metrics(
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
-        y_proba: np.ndarray,  # noqa: ARG002
+        y_proba: np.ndarray,
         sensitive_features: pd.DataFrame,
+        X: pd.DataFrame,
     ) -> None:
-        """Compute fairness metrics.
+        """Compute fairness metrics including E11 individual fairness.
 
         Args:
             y_true: True labels
             y_pred: Predicted labels
             y_proba: Prediction probabilities
             sensitive_features: Sensitive attributes
+            X: Full feature DataFrame (for individual fairness)
 
         """
         logger.debug("Computing fairness metrics")
+
+        # E12: Compute dataset-level bias metrics first (foundational check)
+        logger.debug("Computing E12: Dataset-level bias metrics")
+        try:
+            from ..metrics.fairness.dataset import compute_dataset_bias_metrics  # noqa: PLC0415
+
+            # Prepare full dataset with protected attributes
+            data = X.copy()
+            for col in sensitive_features.columns:
+                if col not in data.columns:
+                    data[col] = sensitive_features[col]
+
+            # Get feature columns (non-protected)
+            feature_cols = [c for c in X.columns if c not in sensitive_features.columns]
+            protected_cols = list(sensitive_features.columns)
+
+            # Get seed for reproducibility
+            seed = get_component_seed("dataset_bias")
+
+            # Compute dataset bias metrics
+            dataset_bias = compute_dataset_bias_metrics(
+                data=data,
+                feature_cols=feature_cols,
+                protected_attrs=protected_cols,
+                seed=seed,
+                compute_proxy=True,
+                compute_drift=True,
+                compute_power=True,
+                compute_imbalance=False,  # Would need train/test split indicator column
+            )
+
+            # Store in results (will be added to fairness_analysis later)
+            self._dataset_bias_results = dataset_bias.to_dict()
+            logger.info("E12: Dataset bias metrics computed successfully")
+
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"E12: Failed to compute dataset bias metrics: {e}")
+            # Don't fail entire fairness analysis if dataset bias fails
+            self._dataset_bias_results = {
+                "error": str(e),
+                "status": "failed",
+            }
 
         # Get available fairness metrics
         all_metric_names = MetricRegistry.get_all()
@@ -1361,6 +1448,13 @@ class AuditPipeline:
         # Get seed for deterministic bootstrap CIs (global seed already set in _setup_reproducibility)
         seed = get_component_seed("fairness_ci")
 
+        # Get intersections from config (E5.1 - Intersectional Fairness)
+        intersections = []
+        if hasattr(self.config, "data") and hasattr(self.config.data, "intersections"):
+            intersections = self.config.data.intersections
+        elif isinstance(self.config, dict):
+            intersections = self.config.get("data", {}).get("intersections", [])
+
         try:
             fairness_results = run_fairness_metrics(
                 y_true,
@@ -1371,7 +1465,71 @@ class AuditPipeline:
                 n_bootstrap=1000,
                 confidence_level=0.95,
                 seed=seed,
+                intersections=intersections,  # E5.1: Pass intersections from config
             )
+
+            # E11: Compute individual fairness metrics
+            logger.debug("Computing E11: Individual fairness metrics")
+            try:
+                from ..metrics.fairness.individual import IndividualFairnessMetrics  # noqa: PLC0415
+
+                # Get protected attribute names
+                protected_attrs = list(sensitive_features.columns)
+
+                # Create combined feature DataFrame (X + protected attributes)
+                # Need to ensure we don't duplicate columns
+                X_with_protected = X.copy()
+                for col in protected_attrs:
+                    if col not in X_with_protected.columns:
+                        X_with_protected[col] = sensitive_features[col]
+
+                # Extract predictions for individual fairness (binary class probability)
+                if y_proba is not None and len(y_proba.shape) == 2 and y_proba.shape[1] == 2:
+                    predictions = y_proba[:, 1]  # Positive class probability
+                else:
+                    # Fallback to predicted labels (convert to 0-1 scale)
+                    predictions = y_pred.astype(float)
+
+                # Get threshold from config or use default
+                threshold = 0.5
+                if hasattr(self.config, "fairness") and hasattr(self.config.fairness, "threshold"):
+                    threshold = self.config.fairness.threshold
+                elif hasattr(self.config, "model_dump"):
+                    cfg_dict = self.config.model_dump()
+                    threshold = cfg_dict.get("fairness", {}).get("threshold", 0.5)
+
+                # Initialize individual fairness metrics
+                individual_metrics = IndividualFairnessMetrics(
+                    model=self.model,
+                    features=X_with_protected,
+                    predictions=predictions,
+                    protected_attributes=protected_attrs,
+                    distance_metric="euclidean",  # Default to Euclidean
+                    similarity_percentile=90,
+                    prediction_diff_threshold=0.1,
+                    threshold=threshold,
+                    seed=seed,
+                )
+
+                # Compute metrics
+                individual_results = individual_metrics.compute()
+
+                # Add to fairness results
+                fairness_results["individual_fairness"] = individual_results
+                logger.info("E11: Individual fairness metrics computed successfully")
+
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"E11: Failed to compute individual fairness metrics: {e}")
+                # Don't fail entire fairness analysis if individual fairness fails
+                fairness_results["individual_fairness"] = {
+                    "error": str(e),
+                    "status": "failed",
+                }
+
+            # E12: Add dataset bias results to fairness analysis
+            if hasattr(self, "_dataset_bias_results"):
+                fairness_results["dataset_bias"] = self._dataset_bias_results
+
             self.results.fairness_analysis = fairness_results
             logger.info(f"Computed fairness metrics with CIs: {list(fairness_results.keys())}")
 
@@ -1380,6 +1538,73 @@ class AuditPipeline:
             # Store error in a way that won't break template rendering
             self.results.fairness_analysis = {}
             self.results.error_message = f"Fairness analysis failed: {e}"
+
+    def _compute_stability_metrics(
+        self,
+        X: pd.DataFrame,  # noqa: N803
+        sensitive_features: pd.DataFrame | None,
+    ) -> None:
+        """Compute stability metrics (E6+ perturbation sweeps).
+
+        Args:
+            X: Full feature DataFrame
+            sensitive_features: Sensitive attributes to exclude from perturbation
+
+        """
+        # Check if stability metrics are enabled
+        if not hasattr(self.config, "metrics") or not hasattr(self.config.metrics, "stability"):
+            logger.debug("Stability metrics not configured, skipping")
+            self.results.stability_analysis = {}
+            return
+
+        stability_config = self.config.metrics.stability
+        if stability_config is None or not stability_config.enabled:
+            logger.debug("Stability metrics disabled, skipping")
+            self.results.stability_analysis = {}
+            return
+
+        logger.debug("Computing stability metrics (E6+ perturbation sweeps)")
+
+        try:
+            from ..metrics.stability import run_perturbation_sweep  # noqa: PLC0415
+
+            # Get protected feature names
+            protected_features = []
+            if sensitive_features is not None:
+                protected_features = list(sensitive_features.columns)
+
+            # Get perturbation config
+            epsilon_values = stability_config.epsilon_values
+            threshold = stability_config.threshold
+            seed = get_component_seed("stability_perturbation")
+
+            # Run perturbation sweep
+            logger.info(
+                f"Running perturbation sweep: epsilon={epsilon_values}, threshold={threshold}, seed={seed}",
+            )
+
+            result = run_perturbation_sweep(
+                model=self.model,
+                X_test=X,
+                protected_features=protected_features,
+                epsilon_values=epsilon_values,
+                threshold=threshold,
+                seed=seed,
+            )
+
+            # Store results
+            self.results.stability_analysis = result.to_dict()
+            logger.info(
+                f"Stability metrics computed: robustness_score={result.robustness_score:.6f}, "
+                f"gate={result.gate_status}",
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to compute stability metrics: {e}")
+            self.results.stability_analysis = {
+                "error": str(e),
+                "status": "failed",
+            }
 
     def _compute_drift_metrics(self, X: pd.DataFrame, y: np.ndarray) -> None:  # noqa: N803, ARG002
         """Compute drift metrics (placeholder implementation).

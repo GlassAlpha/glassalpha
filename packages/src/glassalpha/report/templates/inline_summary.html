@@ -195,11 +195,28 @@
               {{ "%.4f"|format(value) if value is number else value }}
             </td>
           </tr>
-          {% endif %} {% endfor %}
+          {% endif %} {% endfor %} {% if calibration_ci %}
           <tr>
             <td class="metric-name">Calibration (ECE)</td>
-            <td class="placeholder">Pending E4 Calibration feature</td>
+            <td class="metric-value">
+              {% if calibration_ci.get('ece') is not none %} {{
+              "%.4f"|format(calibration_ci['ece']) }} {% else %}N/A{% endif %}
+              {% if calibration_ci.get('ece_ci') %}
+              <span style="font-size: 11px; color: #586069">
+                (95% CI: [{{ "%.3f"|format(calibration_ci['ece_ci']['ci_lower'])
+                }}, {{ "%.3f"|format(calibration_ci['ece_ci']['ci_upper']) }}])
+              </span>
+              {% endif %}
+            </td>
           </tr>
+          {% else %}
+          <tr>
+            <td class="metric-name">Calibration (ECE)</td>
+            <td class="placeholder">
+              Not computed (binary classification with probabilities required)
+            </td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
       {% endif %} {# Fairness Analysis #} {% if fairness_analysis and
@@ -263,7 +280,58 @@
       <p class="placeholder">
         No fairness gaps detected or insufficient group data
       </p>
-      {% endif %} {% endif %} {# Top Features #} {% if explanations and
+      {% endif %} {% endif %} {# Additional Fairness Analysis Features #} {% if
+      dataset_bias or intersectional_fairness or individual_fairness or
+      stability_analysis %}
+      <h3>Advanced Analysis</h3>
+      <div style="font-size: 12px; color: #24292e; margin: 8px 0">
+        {% if dataset_bias %}
+        <div style="margin: 6px 0">
+          <strong>Dataset Bias:</strong>
+          {% if dataset_bias.proxy_correlations %} {{
+          dataset_bias.proxy_correlations|length }} proxy features analyzed {%
+          endif %}
+          <span class="badge badge-success" style="margin-left: 8px">✓</span>
+        </div>
+        {% endif %} {% if intersectional_fairness %}
+        <div style="margin: 6px 0">
+          <strong>Intersectional Fairness:</strong>
+          {{ intersectional_fairness.keys()|list|length }} intersection(s)
+          analyzed
+          <span class="badge badge-success" style="margin-left: 8px">✓</span>
+        </div>
+        {% endif %} {% if individual_fairness %}
+        <div style="margin: 6px 0">
+          <strong>Individual Fairness:</strong>
+          Consistency score {{
+          "%.3f"|format(individual_fairness['consistency_score']) }} {% if
+          individual_fairness['consistency_score'] >= 0.90 %}
+          <span class="badge badge-success" style="margin-left: 8px">✓</span>
+          {% elif individual_fairness['consistency_score'] >= 0.75 %}
+          <span class="badge badge-warning" style="margin-left: 8px">⚠</span>
+          {% else %}
+          <span class="badge badge-fail" style="margin-left: 8px">✗</span>
+          {% endif %}
+        </div>
+        {% endif %} {% if stability_analysis and
+        stability_analysis.get('robustness_score') is not none %}
+        <div style="margin: 6px 0">
+          <strong>Robustness Score:</strong>
+          {{ "%.4f"|format(stability_analysis['robustness_score']) }} {% if
+          stability_analysis.get('gate_status') == "PASS" %}
+          <span class="badge badge-success" style="margin-left: 8px">✓</span>
+          {% elif stability_analysis.get('gate_status') == "WARNING" %}
+          <span class="badge badge-warning" style="margin-left: 8px">⚠</span>
+          {% else %}
+          <span class="badge badge-fail" style="margin-left: 8px">✗</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      <p style="font-size: 11px; color: #6a737d; margin-top: 8px">
+        ℹ️ See full PDF report for detailed analysis and confidence intervals
+      </p>
+      {% endif %} {# Top Features #} {% if explanations and
       explanations.get('feature_importances') %}
       <h3>Top 5 Important Features</h3>
       <table>

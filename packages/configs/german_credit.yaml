@@ -81,6 +81,15 @@ data:
     - "age_years" # Age in years
     - "foreign_worker" # Nationality/residency status
 
+  # Intersectional fairness analysis (E5.1)
+  # Analyze bias at intersections of protected attributes
+  # Format: "attr1*attr2" for two-way intersections
+  intersections:
+    # Example: Does the model treat young foreign workers differently than old citizens?
+    - "age_years*foreign_worker"
+    # Example: Does personal status interact with age to create bias?
+    - "personal_status_sex*age_years"
+
 # =============================================================================
 # PREPROCESSING CONFIGURATION
 # =============================================================================

@@ -101,13 +101,15 @@ class CoefficientsExplainer(ExplainerBase):
         self.is_fitted = True
         return self
 
-    def explain(self, X: np.ndarray, y: np.ndarray | None = None, **kwargs: Any) -> dict[str, Any]:
+    def explain(self, model: Any, X: np.ndarray, y: np.ndarray | None = None, **kwargs: Any) -> dict[str, Any]:
         """Generate explanations using model coefficients.
 
-        Note: y parameter is accepted for API compatibility but not used by CoefficientsExplainer.
+        Note: model and y parameters are accepted for API compatibility but not used by CoefficientsExplainer.
 
         Args:
+            model: Model instance (unused, but required by interface)
             X: Input data to explain
+            y: Target labels (unused, but accepted for compatibility)
             **kwargs: Additional parameters
 
         Returns:
@@ -133,7 +135,7 @@ class CoefficientsExplainer(ExplainerBase):
             # Average across classes for global importance
             coef_ = np.mean(np.abs(coef_), axis=0)
             logger.debug(
-                f"Multiclass model detected, using mean absolute coefficients across {underlying_model.coef_.shape[0]} classes"
+                f"Multiclass model detected, using mean absolute coefficients across {underlying_model.coef_.shape[0]} classes",
             )
         elif coef_.ndim > 1:
             # Single-row 2D array (binary classification in some frameworks)
@@ -160,7 +162,7 @@ class CoefficientsExplainer(ExplainerBase):
             raise ValueError(
                 f"Feature count mismatch: X has {n_features} features but model has {n_coefficients} coefficients. "
                 f"This typically means the model was trained on a subset of features. "
-                f"Ensure X contains only the features used during model training."
+                f"Ensure X contains only the features used during model training.",
             )
 
         # Compute feature attributions: coef * (X - mean_X)
@@ -233,7 +235,7 @@ class CoefficientsExplainer(ExplainerBase):
             Feature attributions for each sample
 
         """
-        explanation = self.explain(X, **kwargs)
+        explanation = self.explain(self.model, X, **kwargs)
         return explanation["shap_values"]
 
     def supports_model(self, model: Any) -> bool:
