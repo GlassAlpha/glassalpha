@@ -5,10 +5,6 @@ Complete command-line interface reference for GlassAlpha.
 ## Installation
 
 ```bash
-# Recommended: Install with pipx
-pipx install glassalpha
-
-# Or with pip
 pip install glassalpha
 ```
 
@@ -37,13 +33,14 @@ This is the main command for GlassAlpha. It loads a configuration file,
 runs the audit pipeline, and generates a deterministic PDF report.
 
 Smart Defaults:
-If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
-If no --output is provided, uses {config_name}.html
-Strict mode auto-enables for prod*/production* configs
-Repro mode auto-enables in CI environments and for test\* configs
+    If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
+    If no --output is provided, uses {config_name}.html
+    Strict mode auto-enables for prod*/production* configs
+    Repro mode auto-enables in CI environments and for test* configs
 
-Examples: # Minimal usage (uses smart defaults)
-glassalpha audit
+Examples:
+    # Minimal usage (uses smart defaults)
+    glassalpha audit
 
     # Explicit paths
     glassalpha audit --config audit.yaml --output report.html
@@ -74,7 +71,7 @@ glassalpha audit
 - `--config, -c`: Path to audit configuration YAML file (auto-detects glassalpha.yaml, audit.yaml, config.yaml)
 - `--output, -o`: Path for output report (defaults to {config_name}.html)
 - `--strict, -s`: Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs)
-- `--repro`: Enable deterministic reproduction mode (auto-enabled in CI and for test\* configs)
+- `--repro`: Enable deterministic reproduction mode (auto-enabled in CI and for test* configs)
 - `--profile, -p`: Override audit profile
 - `--override`: Additional config file to override settings
 - `--dry-run`: Validate configuration without generating report (default: `False`)
@@ -83,6 +80,10 @@ glassalpha audit
 - `--check-output`: Check output paths are writable and exit (pre-flight validation) (default: `False`)
 - `--check-shift`: Test model robustness under demographic shifts (e.g., 'gender:+0.1'). Can specify multiple. (default: `[]`)
 - `--fail-on-degradation`: Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).
+- `--save-model`: Save the trained model to the specified path (e.g., model.pkl). Required for reasons/recourse commands.
+- `--fast`: Fast demo mode: reduce bootstrap samples to 100 for lightning-quick audits (~2-3s vs ~5-7s) (default: `False`)
+- `--sample`: Sample N rows from dataset for faster iteration (useful for large datasets during development)
+- `--compact-report`: Generate compact report (<1MB, default) by excluding individual fairness matched pairs from HTML. Use --full-report for complete data (may be 50-100MB). Full data always saved in manifest.json. (default: `True`)
 
 ### `glassalpha datasets`
 
@@ -160,8 +161,6 @@ List available components
 
 Show available models.
 
-## Preprocessing Commands
-
 ### `glassalpha prep`
 
 Preprocessing artifact management
@@ -174,8 +173,9 @@ This command computes the file hash (SHA256) of a preprocessing artifact.
 Optionally, it can also compute the params hash (canonical hash of learned
 parameters) by loading and introspecting the artifact.
 
-Examples: # Just file hash (fast, no loading)
-glassalpha prep hash artifacts/preprocessor.joblib
+Examples:
+    # Just file hash (fast, no loading)
+    glassalpha prep hash artifacts/preprocessor.joblib
 
     # File and params hash (slower, loads artifact)
     glassalpha prep hash artifacts/preprocessor.joblib --params
@@ -196,8 +196,9 @@ This command loads the artifact, extracts all learned parameters,
 and displays a human-readable summary. Optionally saves the full
 manifest to a JSON file.
 
-Examples: # Quick inspection
-glassalpha prep inspect artifacts/preprocessor.joblib
+Examples:
+    # Quick inspection
+    glassalpha prep inspect artifacts/preprocessor.joblib
 
     # Detailed inspection
     glassalpha prep inspect artifacts/preprocessor.joblib --verbose
@@ -221,8 +222,9 @@ Validate a preprocessing artifact.
 This command performs comprehensive validation of a preprocessing artifact,
 including hash verification, class allowlisting, and version compatibility.
 
-Examples: # Basic validation (classes + versions)
-glassalpha prep validate artifacts/preprocessor.joblib
+Examples:
+    # Basic validation (classes + versions)
+    glassalpha prep validate artifacts/preprocessor.joblib
 
     # Validate with expected hashes
     glassalpha prep validate artifacts/preprocessor.joblib \
@@ -259,7 +261,7 @@ Generate ECOA-compliant reason codes
 
 **Options:**
 
-- `--model, -m`: Path to trained model file (.pkl, .joblib)
+- `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
 - `--data, -d`: Path to test data file (CSV)
 - `--instance, -i`: Row index of instance to explain (0-based)
 - `--config, -c`: Path to reason codes configuration YAML
@@ -274,7 +276,7 @@ Generate counterfactual recourse recommendations
 
 **Options:**
 
-- `--model, -m`: Path to trained model file (.pkl, .joblib)
+- `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
 - `--data, -d`: Path to test data file (CSV)
 - `--instance, -i`: Row index of instance to explain (0-based)
 - `--config, -c`: Path to recourse configuration YAML
@@ -289,8 +291,9 @@ Validate a configuration file.
 This command checks if a configuration file is valid without
 running the audit pipeline.
 
-Examples: # Basic validation
-glassalpha validate --config audit.yaml
+Examples:
+    # Basic validation
+    glassalpha validate --config audit.yaml
 
     # Validate for specific profile
     glassalpha validate -c audit.yaml --profile tabular_compliance
@@ -303,7 +306,7 @@ glassalpha validate --config audit.yaml
 
 **Options:**
 
-- `--config, -c`: Path to configuration file to validate
+- `--config, -c`: Path to configuration file to validate (auto-detects glassalpha.yaml, audit.yaml, config.yaml)
 - `--profile, -p`: Validate against specific profile
 - `--strict`: Validate for strict mode compliance (default: `False`)
 - `--strict-validation`: Enforce runtime availability checks (recommended for production) (default: `False`)
@@ -332,5 +335,5 @@ GlassAlpha uses standard exit codes:
 
 ---
 
-_This documentation is automatically generated from the CLI code._
-_Last updated: See git history for this file._
+*This documentation is automatically generated from the CLI code.*
+*Last updated: See git history for this file.*
