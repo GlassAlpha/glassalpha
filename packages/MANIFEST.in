@@ -8,6 +8,7 @@ include constraints.txt
 # Example artifacts and configs (for quickstart and examples)
 recursive-include artifacts *.joblib *.json
 recursive-include configs *.yaml
+recursive-include configs *.md
 
 # Template configs (used by CLI --template flag)
 recursive-include src/glassalpha/templates *.yaml *.md
