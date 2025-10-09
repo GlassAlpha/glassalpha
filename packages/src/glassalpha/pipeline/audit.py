@@ -1450,7 +1450,7 @@ class AuditPipeline:
                     y_true=y_true,
                     y_prob_pos=y_proba[:, 1],  # Positive class probabilities
                     n_bins=10,
-                    compute_confidence_intervals=True,
+                    compute_confidence_intervals=self.config.metrics.compute_confidence_intervals,
                     n_bootstrap=n_bootstrap,
                     confidence_level=0.95,
                     seed=seed,
@@ -1579,22 +1579,52 @@ class AuditPipeline:
 
         # Get bootstrap count from config
         n_bootstrap = 1000  # Default
+        compute_confidence_intervals = True  # Default
+        performance_mode = False  # Default
+
         if hasattr(self.config, "metrics") and hasattr(self.config.metrics, "n_bootstrap"):
             n_bootstrap = self.config.metrics.n_bootstrap
-        elif isinstance(self.config, dict):
+            compute_confidence_intervals = self.config.metrics.compute_confidence_intervals
+            performance_mode = self.config.metrics.performance_mode
+
+        if isinstance(self.config, dict):
             n_bootstrap = self.config.get("metrics", {}).get("n_bootstrap", 1000)
 
         try:
+            # Apply performance mode: reduce fairness metrics for faster computation
+            metrics_to_compute = fairness_metrics
+            intersections_to_compute = intersections
+
+            # Apply performance mode optimizations
+            if performance_mode:
+                # In performance mode, reduce fairness metrics and intersections for faster computation
+                if len(fairness_metrics) > 1:
+                    # Only compute the first fairness metric
+                    metrics_to_compute = fairness_metrics[:1]
+                    logger.info(
+                        f"Performance mode: computing only {len(metrics_to_compute)} fairness metrics instead of {len(fairness_metrics)}",
+                    )
+
+                if intersections and len(intersections) > 1:
+                    # Only compute the first intersection
+                    intersections_to_compute = intersections[:1]
+                    logger.info(
+                        f"Performance mode: computing only {len(intersections_to_compute)} intersections instead of {len(intersections)}",
+                    )
+            else:
+                metrics_to_compute = fairness_metrics
+                intersections_to_compute = intersections
+
             fairness_results = run_fairness_metrics(
                 y_true,
                 y_pred,
                 sensitive_features,
-                fairness_metrics,
-                compute_confidence_intervals=True,
+                metrics_to_compute,
+                compute_confidence_intervals=compute_confidence_intervals,
                 n_bootstrap=n_bootstrap,
                 confidence_level=0.95,
                 seed=seed,
-                intersections=intersections,  # E5.1: Pass intersections from config
+                intersections=intersections_to_compute,  # E5.1: Pass intersections from config
             )
 
             # E11: Compute individual fairness metrics

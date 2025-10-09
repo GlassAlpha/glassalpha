@@ -109,7 +109,7 @@ result  # Jupyter automatically displays HTML summary
 
 ```python
 # Notebook cell 3: Dig into specific metrics
-print(f"Overall accuracy: {result.performance.accuracy:.3f}")
+print(f"Overall accuracy: {result.performance['accuracy']:.3f}")
 print(f"AUC-ROC: {result.performance.auc_roc:.3f}")
 
 print("\nFairness by gender:")
@@ -187,7 +187,7 @@ comparison = []
 for name, result in results.items():
     comparison.append({
         "Model": name,
-        "Accuracy": result.performance.accuracy,
+        "Accuracy": result.performance['accuracy'],
         "AUC": result.performance.auc_roc,
         "Demographic Parity": result.fairness.demographic_parity_difference,
         "Equal Opportunity": result.fairness.equal_opportunity_difference,
@@ -283,7 +283,7 @@ for threshold in thresholds:
     )
     sweep_results.append({
         "threshold": threshold,
-        "accuracy": result.performance.accuracy,
+        "accuracy": result.performance['accuracy'],
         "precision": result.performance.precision,
         "recall": result.performance.recall,
         "dem_parity": result.fairness.demographic_parity_difference,
@@ -377,7 +377,7 @@ metrics_df = pd.DataFrame({
         "Equal Opportunity (Race)"
     ],
     "Value": [
-        result.performance.accuracy,
+        result.performance['accuracy'],
         result.performance.precision,
         result.performance.recall,
         result.performance.f1,
@@ -475,7 +475,7 @@ if result.fairness.has_bias():
 
 ```python
 metrics = {
-    "accuracy": result.performance.accuracy,
+    "accuracy": result.performance['accuracy'],
     "fairness": result.fairness.demographic_parity_difference,
     "calibration": result.calibration.expected_calibration_error
 }

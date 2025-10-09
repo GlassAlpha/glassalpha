@@ -7,6 +7,7 @@ generation with preprocessing verification.
 import json
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 
@@ -178,8 +179,66 @@ class TestPreprocessingIntegration:
         config_path = Path(__file__).parent.parent.parent / "configs" / "german_credit.yaml"
         config = load_config_from_file(config_path)
 
-        # Modify config to have wrong hash
+        # Enable preprocessing and set up artifact path for hash validation
+        config.preprocessing.mode = "artifact"
+        config.preprocessing.artifact_path = str(tmp_path / "test_artifact.pkl")
         config.preprocessing.expected_file_hash = "sha256:wrong_hash_intentionally_invalid"
+        config.preprocessing.fail_on_mismatch = True
+
+        # Create a proper sklearn preprocessing artifact file that can handle mixed data types
+        import joblib
+        import numpy as np
+        from sklearn.compose import ColumnTransformer
+        from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+        # Create preprocessing pipeline that handles both numeric and categorical features
+        # This mimics what the actual preprocessing system does
+        numeric_features = [
+            "duration_months",
+            "credit_amount",
+            "installment_rate",
+            "present_residence_since",
+            "age_years",
+            "existing_credits_count",
+            "dependents_count",
+        ]
+        categorical_features = [
+            "checking_account_status",
+            "credit_history",
+            "purpose",
+            "savings_account",
+            "employment_duration",
+            "personal_status_sex",
+            "other_debtors",
+            "property",
+            "other_installment_plans",
+            "housing",
+            "job",
+            "telephone",
+            "foreign_worker",
+            "gender",
+            "age_group",
+        ]
+
+        # Create preprocessing pipeline
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", StandardScaler(), numeric_features),
+                ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_features),
+            ]
+        )
+
+        # Fit on dummy data that matches the expected structure
+        dummy_data = {}
+        for col in numeric_features:
+            dummy_data[col] = np.random.randn(10)
+        for col in categorical_features:
+            dummy_data[col] = np.random.choice(["A", "B", "C"], 10)
+
+        dummy_df = pd.DataFrame(dummy_data)
+        preprocessor.fit(dummy_df)
+
+        joblib.dump(preprocessor, config.preprocessing.artifact_path)
 
         from glassalpha.pipeline.audit import AuditPipeline
 
@@ -204,6 +263,66 @@ class TestPreprocessingIntegration:
 
         config_path = Path(__file__).parent.parent.parent / "configs" / "german_credit.yaml"
         config = load_config_from_file(config_path)
+
+        # Enable preprocessing for this test
+        config.preprocessing.mode = "artifact"
+        config.preprocessing.artifact_path = str(tmp_path / "test_artifact.pkl")
+
+        # Create a proper sklearn preprocessing artifact file that can handle mixed data types
+        import joblib
+        import numpy as np
+        from sklearn.compose import ColumnTransformer
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+        # Create preprocessing pipeline that handles both numeric and categorical features
+        # This mimics what the actual preprocessing system does
+        numeric_features = [
+            "duration_months",
+            "credit_amount",
+            "installment_rate",
+            "present_residence_since",
+            "age_years",
+            "existing_credits_count",
+            "dependents_count",
+        ]
+        categorical_features = [
+            "checking_account_status",
+            "credit_history",
+            "purpose",
+            "savings_account",
+            "employment_duration",
+            "personal_status_sex",
+            "other_debtors",
+            "property",
+            "other_installment_plans",
+            "housing",
+            "job",
+            "telephone",
+            "foreign_worker",
+            "gender",
+            "age_group",
+        ]
+
+        # Create preprocessing pipeline
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", StandardScaler(), numeric_features),
+                ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_features),
+            ]
+        )
+
+        # Fit on dummy data that matches the expected structure
+        dummy_data = {}
+        for col in numeric_features:
+            dummy_data[col] = np.random.randn(10)
+        for col in categorical_features:
+            dummy_data[col] = np.random.choice(["A", "B", "C"], 10)
+
+        dummy_df = pd.DataFrame(dummy_data)
+        preprocessor.fit(dummy_df)
+
+        joblib.dump(preprocessor, config.preprocessing.artifact_path)
 
         pipeline = AuditPipeline(config)
         results = pipeline.run()
@@ -245,6 +364,7 @@ class TestPreprocessingCLIIntegration:
             capture_output=True,
             text=True,
             check=False,
+            encoding="utf-8",
         )
         assert result.returncode == 0, f"hash command failed: {result.stderr}"
         assert "File hash:" in result.stdout, "Missing file hash in output"
@@ -255,6 +375,7 @@ class TestPreprocessingCLIIntegration:
             capture_output=True,
             text=True,
             check=False,
+            encoding="utf-8",
         )
         assert result.returncode == 0, f"hash --params command failed: {result.stderr}"
         assert "File hash:" in result.stdout, "Missing file hash in output"
@@ -266,6 +387,7 @@ class TestPreprocessingCLIIntegration:
             capture_output=True,
             text=True,
             check=False,
+            encoding="utf-8",
         )
         assert result.returncode == 0, f"inspect command failed: {result.stderr}"
         assert "PREPROCESSING ARTIFACT MANIFEST" in result.stdout, "Missing manifest header"
@@ -277,6 +399,7 @@ class TestPreprocessingCLIIntegration:
             capture_output=True,
             text=True,
             check=False,
+            encoding="utf-8",
         )
         assert result.returncode == 0, f"validate command failed: {result.stderr}"
         assert "VALIDATION PASSED" in result.stdout, "Validation did not pass"

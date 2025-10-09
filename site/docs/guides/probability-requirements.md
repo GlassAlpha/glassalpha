@@ -53,7 +53,7 @@ result = ga.audit.from_predictions(
 )
 
 # Available metrics
-result.performance.accuracy      # ✅
+result.performance['accuracy']      # ✅
 result.performance.precision     # ✅
 result.performance.recall        # ✅
 result.performance.f1            # ✅
@@ -179,7 +179,7 @@ result = ga.audit.from_model(
 )
 
 # Still get core metrics
-print(f"Accuracy: {result.performance.accuracy:.3f}")
+print(f"Accuracy: {result.performance['accuracy']:.3f}")
 print(f"F1: {result.performance.f1:.3f}")
 print(f"Fairness: {result.fairness.demographic_parity_diff:.3f}")
 ```
@@ -429,7 +429,7 @@ result = ga.audit.from_model(
 )
 
 # All metrics available
-print(f"Accuracy: {result.performance.accuracy:.3f}")
+print(f"Accuracy: {result.performance['accuracy']:.3f}")
 print(f"AUC: {result.performance.roc_auc:.3f}")
 print(f"Brier: {result.performance.brier_score:.3f}")
 print(f"ECE: {result.calibration.ece:.3f}")
@@ -454,7 +454,7 @@ result = ga.audit.from_model(
 )
 
 # Core metrics available
-print(f"Accuracy: {result.performance.accuracy:.3f}")
+print(f"Accuracy: {result.performance['accuracy']:.3f}")
 print(f"F1: {result.performance.f1:.3f}")
 
 # Probability-based metrics not available

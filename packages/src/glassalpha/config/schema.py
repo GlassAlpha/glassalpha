@@ -173,13 +173,18 @@ class DataConfig(BaseModel):
         # For any actual data use, dataset is required
         if not self.dataset:
             raise ValueError(
-                "data.dataset is required. Use data.dataset='custom' with data.path for external files.",
+                "Missing required field 'data.dataset' in configuration. "
+                "Add 'data.dataset: \"german_credit\"' for built-in datasets or "
+                "'data.dataset: \"custom\"' with 'data.path' for external files.",
             )
 
         # Custom dataset requires path
         if self.dataset == "custom":
             if not self.path:
-                raise ValueError("data.path is required when data.dataset='custom'.")
+                raise ValueError(
+                    "Missing required field 'data.path' when data.dataset='custom'. "
+                    "Add 'data.path: \"path/to/your/data.csv\"' to specify the data file location.",
+                )
         # Registry datasets forbid path
         elif self.path:
             raise ValueError(
@@ -272,6 +277,14 @@ class MetricsConfig(BaseModel):
         ge=50,
         le=10000,
     )
+    compute_confidence_intervals: bool = Field(
+        True,
+        description="Compute bootstrap confidence intervals for metrics (default: True, disable for performance)",
+    )
+    performance_mode: bool = Field(
+        False,
+        description="Performance mode: reduce fairness metrics for faster audits (default: False)",
+    )
 
     @field_validator("performance", "fairness", "drift")
     @classmethod
@@ -353,7 +366,8 @@ class ReportConfig(BaseModel):
 
     template: str = Field("standard_audit", description="Report template name")
     output_format: str | None = Field(
-        None, description="Output format (pdf, html, json). If not specified, determined by file extension"
+        None,
+        description="Output format (pdf, html, json). If not specified, determined by file extension",
     )
     threshold: ThresholdConfig | None = Field(None, description="Threshold selection configuration")
     include_sections: list[str] = Field(

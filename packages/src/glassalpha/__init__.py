@@ -7,10 +7,20 @@ import sys
 
 # Python version check - fail fast with clear message
 if sys.version_info < (3, 11):
+    current_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     raise RuntimeError(
-        f"GlassAlpha requires Python 3.11 or higher. "
-        f"You have Python {sys.version_info.major}.{sys.version_info.minor}. "
-        f"Please upgrade Python or use a virtual environment with Python 3.11+.",
+        f"GlassAlpha requires Python 3.11 or higher.\n"
+        f"You have Python {current_version}.\n\n"
+        f"To install Python 3.11.8:\n\n"
+        f"1. Visit: https://python.org/downloads\n"
+        f"2. Download Python 3.11.8 installer\n"
+        f"3. Run installer and check 'Add Python to PATH'\n"
+        f"4. Open new terminal and run: python --version\n\n"
+        f"Alternative with pyenv (recommended for developers):\n"
+        f"curl https://pyenv.run | bash\n"
+        f"pyenv install 3.11.8\n"
+        f"pyenv global 3.11.8\n\n"
+        f"Need help? See: https://docs.python.org/3/using/index.html",
     )
 
 import importlib

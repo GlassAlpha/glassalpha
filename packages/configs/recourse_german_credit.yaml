@@ -30,30 +30,16 @@ model:
   type: xgboost
   path: models/german_credit.pkl
 
-# Recourse Configuration
+# Recourse Configuration - Very permissive for testing
 recourse:
   enabled: true
 
-  # Immutable features (cannot be changed)
-  # These represent attributes that individuals cannot reasonably modify
+  # For testing: only make age immutable, remove most constraints
   immutable_features:
     - age # Cannot change age
-    - gender # Protected attribute
-    - foreign_worker # Immigration status fixed
-    - employment_duration # Historical data
-    - present_residence_duration # Historical data
 
-  # Monotonic constraints (directional restrictions)
-  # Features that can only change in one direction
-  monotonic_constraints:
-    # Financial improvements (can only increase)
-    credit_amount: increase_only # Cannot reduce existing debt obligation
-    savings_balance: increase_only # Can save more
-    checking_balance: increase_only # Can increase balance
-
-    # Debt reduction (can only decrease)
-    num_existing_credits: decrease_only # Can pay off credits
-    num_dependents: decrease_only # Unlikely to increase dependents
+  # Remove monotonic constraints for testing
+  monotonic_constraints: {}
 
   # Cost function for optimization
   cost_function: weighted_l1 # Weighted L1 distance

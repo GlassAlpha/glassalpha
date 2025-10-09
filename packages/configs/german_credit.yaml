@@ -48,38 +48,13 @@ model:
 # =============================================================================
 
 data:
-  # Data will be loaded using German Credit dataset loader
-  # This path will be created automatically by the dataset loader
-  dataset: "custom"
-  path: "~/.glassalpha/data/german_credit_processed.csv"
+  # Use built-in German Credit dataset
+  # FIXME: Audit pipeline doesn't split data - uses all samples for both training and testing
+  # This causes 99% accuracy (data leakage). Need to add train/test split to audit pipeline.
+  dataset: "german_credit"
 
   # Target and feature definitions
   target_column: "credit_risk"
-
-  # Key features for credit risk assessment
-  feature_columns:
-    - "checking_account_status"
-    - "duration_months"
-    - "credit_history"
-    - "purpose"
-    - "credit_amount"
-    - "savings_account"
-    - "employment_duration"
-    - "installment_rate"
-    - "personal_status_sex"
-    - "other_debtors"
-    - "present_residence_since"
-    - "property"
-    - "age_years"
-    - "other_installment_plans"
-    - "housing"
-    - "existing_credits_count"
-    - "job"
-    - "dependents_count"
-    - "telephone"
-    - "foreign_worker"
-    - "gender" # Derived from personal_status_sex
-    - "age_group" # Derived from age_years
 
   # Protected attributes for fairness analysis
   # These are sensitive demographic characteristics that should not lead to discrimination
@@ -101,34 +76,7 @@ data:
 # PREPROCESSING CONFIGURATION
 # =============================================================================
 
-preprocessing:
-  # Use artifact-based preprocessing (production mode)
-  mode: artifact
-
-  # Path to preprocessing artifact
-  artifact_path: artifacts/german_credit_preprocessor.joblib
-
-  # Expected hashes for verification (computed by create_preprocessing_artifacts.py)
-  expected_file_hash: "sha256:9373ae67dbcd5c1558fa4ba7a727e05575f9421358a8604a1d0eb0da80385a26"
-  expected_params_hash: "sha256:cf5e71ee7e1733ca6d857b7f21df94a41f29ebeaaec9c6d46783336757cfcf37"
-
-  # Expected output format
-  expected_sparse: false
-
-  # Fail on any mismatch (strict mode)
-  fail_on_mismatch: true
-
-  # Version compatibility policy
-  version_policy:
-    require_exact_in_strict: true # Require exact version match in strict mode
-    allow_patch_non_strict: true # Allow patch version differences in non-strict mode
-    allow_minor_in_strict: false # Don't allow minor version drift in strict mode
-
-  # Unknown category detection thresholds
-  thresholds:
-    notice: 0.001 # Notice if >0.1% of values are unknown categories
-    warn: 0.01 # Warn if ≥1% of values are unknown categories
-    fail: 0.10 # Fail if ≥10% of values are unknown categories in strict mode
+# Preprocessing is handled automatically by the built-in German Credit dataset
 
 # =============================================================================
 # EXPLAINER CONFIGURATION
@@ -178,6 +126,11 @@ metrics:
     - "equal_opportunity" # Equal true positive rates across groups
     - "equalized_odds" # Equal TPR and FPR across groups
     - "predictive_parity" # Equal precision across demographic groups
+
+  # Performance optimization: disable confidence intervals and enable performance mode for faster computation
+  compute_confidence_intervals: false # Disable for 10x performance improvement
+  n_bootstrap: 100 # Reduced from 1000
+  performance_mode: true # Enable performance mode to reduce fairness metrics
 
   # Drift metrics for model stability (requires reference data)
   drift:

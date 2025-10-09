@@ -39,7 +39,7 @@ result = ga.audit.from_model(
 result
 
 # Explore metrics
-result.performance.accuracy
+result.performance['accuracy']
 result.fairness.demographic_parity_difference
 result.calibration.expected_calibration_error
 
@@ -201,7 +201,7 @@ for name, model in models.items():
 
 # Compare
 for name, result in results.items():
-    print(f"{name}: Acc={result.performance.accuracy:.3f}, "
+    print(f"{name}: Acc={result.performance['accuracy']:.3f}, "
           f"Bias={result.fairness.demographic_parity_difference:.3f}")
 ```
 

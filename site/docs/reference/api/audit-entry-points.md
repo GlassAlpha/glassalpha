@@ -103,7 +103,7 @@ model.fit(X_train, y_train)
 result = ga.audit.from_model(model, X_test, y_test, random_seed=42)
 
 # Explore metrics
-print(f"Accuracy: {result.performance.accuracy:.3f}")
+print(f"Accuracy: {result.performance['accuracy']:.3f}")
 print(f"AUC: {result.performance.roc_auc:.3f}")
 
 # Export PDF
@@ -251,7 +251,7 @@ result = ga.audit.from_predictions(
     random_seed=42
 )
 
-print(f"Accuracy: {result.performance.accuracy:.3f}")
+print(f"Accuracy: {result.performance['accuracy']:.3f}")
 print(f"AUC: {result.performance.roc_auc:.3f}")
 ```
 
@@ -447,7 +447,7 @@ Result object returned by all audit entry points.
 result.performance["accuracy"]  # Raises KeyError if missing
 
 # Attribute-style access
-result.performance.accuracy     # Raises GlassAlphaError if missing
+result.performance['accuracy']     # Raises GlassAlphaError if missing
 
 # Safe access with default
 result.performance.get("roc_auc", None)
@@ -536,7 +536,7 @@ result.save("output_dir/", overwrite=False)
 result = ga.audit.from_model(model, X_test, y_test, random_seed=42)
 
 # Performance
-print(f"Accuracy: {result.performance.accuracy:.3f}")
+print(f"Accuracy: {result.performance['accuracy']:.3f}")
 print(f"F1: {result.performance.f1:.3f}")
 
 # Fairness

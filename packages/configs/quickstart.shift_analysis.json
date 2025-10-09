@@ -1,0 +1,69 @@
+{
+  "shift_analysis": {
+    "threshold": 0.05,
+    "shifts": [
+      {
+        "shift_specification": {
+          "attribute": "gender",
+          "shift_value": 0.1,
+          "original_proportion": 0.31,
+          "shifted_proportion": 0.41000000000000003
+        },
+        "baseline_metrics": {
+          "fairness": {
+            "demographic_parity": 0.11402524544179526,
+            "equal_opportunity": 0.05209423822769921,
+            "equalized_odds": 0.14871031269513424
+          },
+          "calibration": {
+            "ece": 0.016830689859492726,
+            "brier_score": 0.14651106840318845
+          },
+          "performance": {
+            "accuracy": 0.781,
+            "precision": 0.812743823146944,
+            "recall": 0.8928571428571429,
+            "f1": 0.8509189925119128
+          }
+        },
+        "shifted_metrics": {
+          "fairness": {
+            "demographic_parity": 0.11402524544179515,
+            "equal_opportunity": 0.05209423822769932,
+            "equalized_odds": 0.14871031269513435
+          },
+          "calibration": {
+            "ece": 0.019869970393056942,
+            "brier_score": 0.1476134728995838
+          },
+          "performance": {
+            "accuracy": 0.7795460495558674,
+            "precision": 0.8115545747889079,
+            "recall": 0.8878181327212583,
+            "f1": 0.8479750957588833
+          }
+        },
+        "degradation": {
+          "demographic_parity": -1.1102230246251565e-16,
+          "equal_opportunity": 1.1102230246251565e-16,
+          "equalized_odds": 1.1102230246251565e-16,
+          "ece": 0.0030392805335642155,
+          "brier_score": 0.0011024044963953428,
+          "accuracy": 0.0014539504441326567,
+          "precision": 0.0011892483580361324,
+          "recall": 0.005039010135884592,
+          "f1": 0.002943896753029529
+        },
+        "gate_status": "PASS",
+        "threshold": 0.05,
+        "violations": []
+      }
+    ],
+    "summary": {
+      "total_shifts": 1,
+      "violations_detected": false,
+      "failed_shifts": 0,
+      "warning_shifts": 0
+    }
+  }
+}

@@ -20,7 +20,7 @@ result = ga.audit.from_model(
 result
 
 # Access metrics
-print(f"Accuracy: {result.performance.accuracy:.3f}")
+print(f"Accuracy: {result.performance['accuracy']:.3f}")
 print(f"Bias: {result.fairness.demographic_parity_difference:.3f}")
 
 # Export PDF
@@ -387,7 +387,7 @@ result = ga.audit.from_model(model, X_test, y_test,
 result
 
 # Access specific metrics
-print(f"Model accuracy: {result.performance.accuracy:.3f}")
+print(f"Model accuracy: {result.performance['accuracy']:.3f}")
 print(f"Fairness gap: {result.fairness.demographic_parity_difference:.3f}")
 print(f"Calibration: ECE = {result.calibration.expected_calibration_error:.3f}")
 
@@ -588,7 +588,7 @@ for name, model in models.items():
 
 # Compare models
 for name, result in results.items():
-    print(f"{name}: Accuracy={result.performance.accuracy:.3f}, "
+    print(f"{name}: Accuracy={result.performance['accuracy']:.3f}, "
           f"Fairness={result.fairness.demographic_parity_difference:.3f}")
 ```
 
@@ -605,7 +605,7 @@ with mlflow.start_run():
     result = ga.audit.from_model(model, X_test, y_test, random_seed=42)
 
     # Log metrics
-    mlflow.log_metric("accuracy", result.performance.accuracy)
+    mlflow.log_metric("accuracy", result.performance['accuracy'])
     mlflow.log_metric("auc_roc", result.performance.auc_roc)
     mlflow.log_metric("fairness_gap", result.fairness.demographic_parity_difference)
     mlflow.log_metric("calibration_ece", result.calibration.expected_calibration_error)

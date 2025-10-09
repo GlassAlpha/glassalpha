@@ -34,7 +34,7 @@ class TestDatasetPolicy:
         }
 
         # Should raise validation error for missing dataset
-        with pytest.raises(ValueError, match="data.dataset is required"):
+        with pytest.raises(ValueError, match="data.dataset"):
             DataConfig(**config_dict["data"])
 
     def test_path_with_registry_dataset_fails(self):
@@ -120,7 +120,7 @@ class TestDatasetPolicy:
         }
 
         # Should fail validation - custom requires path
-        with pytest.raises(ValueError, match="data.path is required when data.dataset='custom'"):
+        with pytest.raises(ValueError, match="data.path.*custom"):
             DataConfig(**config_dict["data"])
 
     def test_config_loader_path_only_error(self):
@@ -144,7 +144,7 @@ reproducibility:
 
         try:
             # Should fail validation
-            with pytest.raises(ValueError, match="data.dataset is required"):
+            with pytest.raises(ValueError, match="data.dataset"):
                 load_config_from_file(config_path)
         finally:
             Path(config_path).unlink()

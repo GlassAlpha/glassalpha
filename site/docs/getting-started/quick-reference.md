@@ -73,15 +73,15 @@ result = ga.audit.from_model(
 
 ```python
 # Performance metrics
-print(f"Accuracy: {result.performance.accuracy:.3f}")
-print(f"AUC: {result.performance.auc_roc:.3f}")
+print(f"Accuracy: {result.performance['accuracy']:.3f}")
+print(f"AUC: {result.performance['auc_roc']:.3f}")
 
 # Fairness metrics
-print(f"Demographic parity: {result.fairness.demographic_parity_difference:.3f}")
-print(f"Equal opportunity: {result.fairness.equal_opportunity_difference:.3f}")
+print(f"Demographic parity: {result.fairness['demographic_parity_difference']:.3f}")
+print(f"Equal opportunity: {result.fairness['equal_opportunity_difference']:.3f}")
 
 # Calibration
-print(f"ECE: {result.calibration.expected_calibration_error:.3f}")
+print(f"ECE: {result.calibration['expected_calibration_error']:.3f}")
 
 # Plot results
 result.fairness.plot_group_metrics()

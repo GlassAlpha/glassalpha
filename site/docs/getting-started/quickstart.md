@@ -2,6 +2,37 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/GlassAlpha/glassalpha/blob/main/examples/notebooks/quickstart_colab.ipynb)
 
+## ⚠️ Requirements
+
+**Python 3.11 or higher required.** Check your version:
+
+```bash
+python --version  # Must show 3.11.x, 3.12.x, or 3.13.x
+```
+
+If you need to upgrade, see [Installing Python 3.11+](#installing-python-311) below.
+
+## Step 0: Verify Python version (1 minute)
+
+Before proceeding, confirm you have Python 3.11+ installed:
+
+```bash
+python --version
+```
+
+**Must show**: `3.11.x`, `3.12.x`, or `3.13.x`
+
+**If you see an older version**:
+
+1. See [Installing Python 3.11+](#installing-python-311) below
+2. After installation, close and reopen your terminal
+3. Re-run `python --version` to verify
+
+**Troubleshooting**:
+
+- If `python: command not found` → Python not in PATH, see installation section below
+- If permission errors → Use virtual environment: `python3.11 -m venv ~/glassalpha-env`
+
 **Prefer notebooks?** Try our [interactive Colab notebook](https://colab.research.google.com/github/GlassAlpha/glassalpha/blob/main/examples/notebooks/quickstart_colab.ipynb) - generate your first audit in 8 minutes with zero setup.
 
 ## ⚡ Lightning-fast development mode
@@ -597,6 +628,26 @@ For detailed customization options, see the [Configuration Guide](configuration.
 
 ## Troubleshooting first-run errors
 
+### Issue: Python version error
+
+**Symptom**: `RuntimeError: GlassAlpha requires Python 3.11 or higher. You have Python 3.9...`
+
+**Cause**: Using Python 3.10 or older
+
+**Solution**: Install Python 3.11.8 (see [Installing Python 3.11+](#installing-python-311) above)
+
+**Quick fix**:
+
+```bash
+# Using pyenv (recommended)
+curl https://pyenv.run | bash
+pyenv install 3.11.8
+pyenv global 3.11.8
+python --version  # Verify: should show 3.11.8
+```
+
+**If pyenv doesn't work**: Download from [python.org/downloads](https://python.org/downloads) and install manually.
+
 ### Issue: `glassalpha: command not found`
 
 **Symptom**: After installation, running `glassalpha` results in "command not found"
@@ -763,6 +814,78 @@ When reporting issues, include:
 - Output of `python --version`
 - Full error message
 - Operating system
+
+## Installing Python 3.11+
+
+If you need to install or upgrade Python, here are the recommended methods:
+
+### Using pyenv (recommended for developers)
+
+```bash
+# Install pyenv (one-time setup)
+curl https://pyenv.run | bash
+
+# Add to your shell (add to ~/.bashrc or ~/.zshrc)
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+# Install Python 3.11.8 (latest patch version)
+pyenv install 3.11.8
+pyenv global 3.11.8  # Set as default
+
+# Verify
+python --version  # Should show 3.11.8
+```
+
+### Using python.org (official installer)
+
+1. Go to [python.org/downloads](https://python.org/downloads)
+2. Download Python 3.11.8 (or latest 3.11.x)
+3. Run the installer
+4. **Important**: Check "Add Python to PATH" during installation
+5. Open new terminal and verify:
+   ```bash
+   python --version  # Should show 3.11.8
+   ```
+
+### Using conda/mamba (data science environments)
+
+```bash
+# Create new environment with Python 3.11
+conda create -n glassalpha python=3.11
+conda activate glassalpha
+
+# Or with mamba (faster)
+mamba create -n glassalpha python=3.11
+mamba activate glassalpha
+```
+
+### Troubleshooting Python installation
+
+**Issue**: `python: command not found` after installation
+
+**Solution**: Ensure Python is in your PATH:
+
+```bash
+# Check where Python was installed
+which python3.11
+# If not in PATH, add it:
+export PATH="/path/to/python3.11:$PATH"
+```
+
+**Issue**: Permission denied (macOS/Linux)
+
+**Solution**: Use virtual environment or user install:
+
+```bash
+# Create virtual environment
+python3.11 -m venv ~/glassalpha-env
+source ~/glassalpha-env/bin/activate
+
+# Or use user install
+pip install --user glassalpha
+```
 
 ## Getting help
 

@@ -1067,7 +1067,24 @@ def audit(  # pragma: no cover
             if not hasattr(audit_config, "metrics") or audit_config.metrics is None:
                 from ..config.schema import MetricsConfig
 
-                audit_config.metrics = MetricsConfig()
+                # Create MetricsConfig but preserve any existing settings from YAML
+                metrics_config = MetricsConfig()
+                if hasattr(audit_config, "metrics") and audit_config.metrics is not None:
+                    # Copy existing settings
+                    for attr in [
+                        "performance",
+                        "fairness",
+                        "drift",
+                        "stability",
+                        "custom",
+                        "compute_confidence_intervals",
+                    ]:
+                        if hasattr(audit_config.metrics, attr):
+                            setattr(metrics_config, attr, getattr(audit_config.metrics, attr))
+
+                audit_config.metrics = metrics_config
+
+            # Reduce bootstrap samples for fast mode
             audit_config.metrics.n_bootstrap = 100
             typer.secho("⚡ Fast mode enabled - using 100 bootstrap samples for quick demo", fg=typer.colors.CYAN)
 
@@ -1987,8 +2004,34 @@ def reasons(  # pragma: no cover
                     return X
                 mode = preprocessing_info.get("mode", "auto")
                 if mode == "artifact":
-                    logger.warning("Artifact preprocessing not supported in reasons/recourse commands yet")
-                    return _apply_auto_preprocessing(X, preprocessing_info)
+                    # Load preprocessing artifact and apply it
+                    artifact_path = preprocessing_info.get("artifact_path")
+                    if artifact_path:
+                        try:
+                            import joblib
+
+                            preprocessor = joblib.load(artifact_path)
+                            logger.info(f"Applying preprocessing artifact from: {artifact_path}")
+
+                            # Apply preprocessing (assumes target column is not in X)
+                            X_transformed = preprocessor.transform(X)
+                            feature_names = preprocessor.get_feature_names_out()
+
+                            # Sanitize feature names for XGBoost compatibility
+                            sanitized_feature_names = [
+                                str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                                for name in feature_names
+                            ]
+
+                            # Return as DataFrame with proper column names
+                            return pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
+                        except Exception as e:
+                            logger.exception(f"Failed to apply preprocessing artifact: {e}")
+                            logger.warning("Falling back to auto preprocessing")
+                            return _apply_auto_preprocessing(X, preprocessing_info)
+                    else:
+                        logger.warning("No artifact path provided, falling back to auto preprocessing")
+                        return _apply_auto_preprocessing(X, preprocessing_info)
                 return _apply_auto_preprocessing(X, preprocessing_info)
 
             def _apply_auto_preprocessing(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
@@ -2073,11 +2116,14 @@ def reasons(  # pragma: no cover
             if set(expected_features) - set(available_features):
                 missing = set(expected_features) - set(available_features)
                 typer.secho(
-                    f"Error: Model expects features not in data: {missing}\n\n"
-                    f"Model was trained on {len(expected_features)} features: {expected_features[:5]}...\n"
-                    f"Data has {len(available_features)} columns: {available_features[:5]}...\n\n"
-                    f"Fix: Ensure data has same features as training data.\n"
-                    f"Use the same dataset that was used for training, or preprocess to match.",
+                    f"Error: Model expects {len(expected_features)} features but data only has {len(available_features)} columns.\n"
+                    f"Missing features: {sorted(list(missing))[:10]}{'...' if len(missing) > 10 else ''}\n\n"
+                    f"Model was trained on features: {expected_features[:5]}...\n"
+                    f"Data has columns: {available_features[:5]}...\n\n"
+                    f"Fix: Ensure data file has the same columns as the training data.\n"
+                    f"• Check column names match exactly (case-sensitive)\n"
+                    f"• Verify no columns were renamed or removed\n"
+                    f"• Use the same data preprocessing pipeline",
                     fg=typer.colors.RED,
                     err=True,
                 )
@@ -2088,7 +2134,9 @@ def reasons(  # pragma: no cover
 
         if instance < 0 or instance >= len(df):
             typer.secho(
-                f"Error: Instance {instance} out of range (0-{len(df) - 1})",
+                f"Error: Instance index {instance} is out of range in data file.\n"
+                f"Data has {len(df)} rows (valid indices: 0-{len(df) - 1}).\n\n"
+                f"Fix: Choose an instance index between 0 and {len(df) - 1}, or check that your data file contains the expected number of rows.",
                 fg=typer.colors.RED,
                 err=True,
             )
@@ -2314,6 +2362,11 @@ def recourse(  # pragma: no cover
         "-n",
         help="Number of counterfactual recommendations to generate",
     ),
+    force_recourse: bool = typer.Option(
+        False,
+        "--force-recourse",
+        help="Generate recourse recommendations even for approved instances (for testing)",
+    ),
 ):
     """Generate ECOA-compliant counterfactual recourse recommendations.
 
@@ -2417,8 +2470,34 @@ def recourse(  # pragma: no cover
                     return X
                 mode = preprocessing_info.get("mode", "auto")
                 if mode == "artifact":
-                    logger.warning("Artifact preprocessing not supported in reasons/recourse commands yet")
-                    return _apply_auto_preprocessing(X, preprocessing_info)
+                    # Load preprocessing artifact and apply it
+                    artifact_path = preprocessing_info.get("artifact_path")
+                    if artifact_path:
+                        try:
+                            import joblib
+
+                            preprocessor = joblib.load(artifact_path)
+                            logger.info(f"Applying preprocessing artifact from: {artifact_path}")
+
+                            # Apply preprocessing (assumes target column is not in X)
+                            X_transformed = preprocessor.transform(X)
+                            feature_names = preprocessor.get_feature_names_out()
+
+                            # Sanitize feature names for XGBoost compatibility
+                            sanitized_feature_names = [
+                                str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                                for name in feature_names
+                            ]
+
+                            # Return as DataFrame with proper column names
+                            return pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
+                        except Exception as e:
+                            logger.exception(f"Failed to apply preprocessing artifact: {e}")
+                            logger.warning("Falling back to auto preprocessing")
+                            return _apply_auto_preprocessing(X, preprocessing_info)
+                    else:
+                        logger.warning("No artifact path provided, falling back to auto preprocessing")
+                        return _apply_auto_preprocessing(X, preprocessing_info)
                 return _apply_auto_preprocessing(X, preprocessing_info)
 
             def _apply_auto_preprocessing(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
@@ -2503,11 +2582,14 @@ def recourse(  # pragma: no cover
             if set(expected_features) - set(available_features):
                 missing = set(expected_features) - set(available_features)
                 typer.secho(
-                    f"Error: Model expects features not in data: {missing}\n\n"
-                    f"Model was trained on {len(expected_features)} features: {expected_features[:5]}...\n"
-                    f"Data has {len(available_features)} columns: {available_features[:5]}...\n\n"
-                    f"Fix: Ensure data has same features as training data.\n"
-                    f"Use the same dataset that was used for training, or preprocess to match.",
+                    f"Error: Model expects {len(expected_features)} features but data only has {len(available_features)} columns.\n"
+                    f"Missing features: {sorted(list(missing))[:10]}{'...' if len(missing) > 10 else ''}\n\n"
+                    f"Model was trained on features: {expected_features[:5]}...\n"
+                    f"Data has columns: {available_features[:5]}...\n\n"
+                    f"Fix: Ensure data file has the same columns as the training data.\n"
+                    f"• Check column names match exactly (case-sensitive)\n"
+                    f"• Verify no columns were renamed or removed\n"
+                    f"• Use the same data preprocessing pipeline",
                     fg=typer.colors.RED,
                     err=True,
                 )
@@ -2518,7 +2600,9 @@ def recourse(  # pragma: no cover
 
         if instance < 0 or instance >= len(df):
             typer.secho(
-                f"Error: Instance {instance} out of range (0-{len(df) - 1})",
+                f"Error: Instance index {instance} is out of range in data file.\n"
+                f"Data has {len(df)} rows (valid indices: 0-{len(df) - 1}).\n\n"
+                f"Fix: Choose an instance index between 0 and {len(df) - 1}, or check that your data file contains the expected number of rows.",
                 fg=typer.colors.RED,
                 err=True,
             )
@@ -2571,12 +2655,13 @@ def recourse(  # pragma: no cover
             raise
 
         # Check if instance is already approved
-        if prediction >= threshold:
+        if prediction >= threshold and not force_recourse:
             typer.secho(
                 f"\nInstance {instance} is already approved (prediction={prediction:.1%} >= threshold={threshold:.1%})",
                 fg=typer.colors.YELLOW,
             )
             typer.echo("No recourse needed.")
+            typer.echo("\nTo generate recourse anyway (for testing), use --force-recourse flag.")
             raise typer.Exit(ExitCode.SUCCESS)
 
         # Extract native model from wrapper if needed

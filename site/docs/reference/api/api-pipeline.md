@@ -249,7 +249,7 @@ def add_executive_summary(pipeline_state):
         "content": {
             "model_version": pipeline_state["config"].model.version,
             "test_samples": len(pipeline_state["y_test"]),
-            "accuracy": result.performance.accuracy,
+            "accuracy": result.performance['accuracy'],
             "bias_detected": result.fairness.has_bias(threshold=0.10),
             "recommendation": "APPROVE" if not result.fairness.has_bias() else "REVIEW"
         }
@@ -296,7 +296,7 @@ for name, model_path in models.items():
 # Compare models
 for name, result in results.items():
     print(f"{name}:")
-    print(f"  Accuracy: {result.performance.accuracy:.3f}")
+    print(f"  Accuracy: {result.performance['accuracy']:.3f}")
     print(f"  Bias: {result.fairness.demographic_parity_difference:.3f}")
     print(f"  ECE: {result.calibration.expected_calibration_error:.3f}")
 ```
@@ -314,7 +314,7 @@ def run_single_audit(config_path: str) -> dict:
     result = ga.audit.run(config_path)
     return {
         "config": config_path,
-        "accuracy": result.performance.accuracy,
+        "accuracy": result.performance['accuracy'],
         "bias": result.fairness.demographic_parity_difference,
         "ece": result.calibration.expected_calibration_error
     }
@@ -467,7 +467,7 @@ with mlflow.start_run():
 
     # Log metrics
     mlflow.log_metrics({
-        "accuracy": result.performance.accuracy,
+        "accuracy": result.performance['accuracy'],
         "auc_roc": result.performance.auc_roc,
         "bias": result.fairness.demographic_parity_difference,
         "ece": result.calibration.expected_calibration_error
@@ -496,7 +496,7 @@ def run_audit(**context):
     result = ga.audit.run(config_path)
 
     # Push metrics to XCom
-    context["task_instance"].xcom_push(key="accuracy", value=result.performance.accuracy)
+    context["task_instance"].xcom_push(key="accuracy", value=result.performance['accuracy'])
     context["task_instance"].xcom_push(key="bias", value=result.fairness.demographic_parity_difference)
 
     return "audit_complete"
@@ -542,7 +542,7 @@ def create_audit_pipeline():
         ),
         node(
             func=lambda result: {
-                "accuracy": result.performance.accuracy,
+                "accuracy": result.performance['accuracy'],
                 "bias": result.fairness.demographic_parity_difference,
                 "compliant": not result.fairness.has_bias(threshold=0.10)
             },

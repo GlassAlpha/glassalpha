@@ -370,6 +370,7 @@ def test_recourse_cli_help():
         capture_output=True,
         text=True,
         check=False,
+        encoding="utf-8",
     )
 
     assert result.returncode == 0
