@@ -83,7 +83,6 @@ Examples:
 - `--fail-on-degradation`: Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).
 - `--save-model`: Save the trained model to the specified path (e.g., model.pkl). Required for reasons/recourse commands.
 - `--fast`: Fast demo mode: reduce bootstrap samples to 100 for lightning-quick audits (~2-3s vs ~5-7s) (default: `False`)
-- `--sample`: Sample N rows from dataset for faster iteration (useful for large datasets during development; minimum 100 rows)
 - `--compact-report`: Generate compact report (<1MB, default) by excluding individual fairness matched pairs from HTML. Use --full-report for complete data (may be 50-100MB). Full data always saved in manifest.json. (default: `True`)
 
 ### `glassalpha datasets`
@@ -284,6 +283,7 @@ Generate counterfactual recourse recommendations
 - `--output, -o`: Path for output recommendations file (JSON, defaults to stdout)
 - `--threshold, -t`: Decision threshold for approved/denied (default: `0.5`)
 - `--top-n, -n`: Number of counterfactual recommendations to generate (default: `5`)
+- `--force-recourse`: Generate recourse recommendations even for approved instances (for testing) (default: `False`)
 
 ### `glassalpha validate`
 
