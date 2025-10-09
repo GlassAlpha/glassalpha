@@ -527,7 +527,7 @@ class TestAuditResultMethods:
         with pytest.raises(NotImplementedError):
             sample_result.to_pdf("output.pdf")
 
-    def test_save_not_implemented_yet(self, sample_result):
-        """save() raises NotImplementedError (Phase 3)."""
-        with pytest.raises(NotImplementedError):
-            sample_result.save("output_dir")
+    def test_save_pdf_not_implemented_yet(self, sample_result):
+        """save() with .pdf extension raises NotImplementedError (Phase 3)."""
+        with pytest.raises(NotImplementedError, match="PDF export will be implemented in Phase 3"):
+            sample_result.save("output.pdf")

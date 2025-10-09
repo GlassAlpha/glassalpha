@@ -173,11 +173,12 @@ def _run_audit_pipeline(
         # Default to HTML for speed and fewer dependencies
         output_format = "html"
 
-    # Warning if mismatch between extension and actual format
-    if output_format == "pdf" and output_path.suffix.lower() in [".html", ".htm"]:
-        typer.echo("⚠️  Note: Generating PDF output despite .html extension (no output_format specified in config)")
-    elif output_format == "html" and output_path.suffix.lower() == ".pdf":
-        typer.echo("⚠️  Note: Generating HTML output despite .pdf extension (no output_format specified in config)")
+    # Inform user about format inference if not explicitly configured
+    if hasattr(config, "report") and hasattr(config.report, "output_format") and config.report.output_format is None:
+        if output_path.suffix.lower() == ".pdf":
+            typer.echo("ℹ️  Output format inferred from extension: PDF")
+        elif output_path.suffix.lower() in [".html", ".htm"]:
+            typer.echo("ℹ️  Output format inferred from extension: HTML")
 
     # Check if PDF backend is available
     try:
@@ -906,10 +907,10 @@ def audit(  # pragma: no cover
         help="Generate compact report (<1MB, default) by excluding individual fairness matched pairs from HTML. Use --full-report for complete data (may be 50-100MB). Full data always saved in manifest.json.",
     ),
 ):
-    """Generate a compliance audit PDF report with optional shift testing.
+    """Generate a compliance audit report (HTML/PDF) with optional shift testing.
 
     This is the main command for GlassAlpha. It loads a configuration file,
-    runs the audit pipeline, and generates a deterministic PDF report.
+    runs the audit pipeline, and generates a deterministic audit report.
 
     Smart Defaults:
         If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
@@ -1175,11 +1176,16 @@ def audit(  # pragma: no cover
             # Default to HTML for speed and fewer dependencies
             output_format = "html"
 
-        # Warning if mismatch between extension and actual format
-        if output_format == "pdf" and output.suffix.lower() in [".html", ".htm"]:
-            typer.echo("⚠️  Note: Generating PDF output despite .html extension (no output_format specified in config)")
-        elif output_format == "html" and output.suffix.lower() == ".pdf":
-            typer.echo("⚠️  Note: Generating HTML output despite .pdf extension (no output_format specified in config)")
+        # Inform user about format inference if not explicitly configured
+        if (
+            hasattr(audit_config, "report")
+            and hasattr(audit_config.report, "output_format")
+            and audit_config.report.output_format is None
+        ):
+            if output.suffix.lower() == ".pdf":
+                typer.echo("ℹ️  Output format inferred from extension: PDF")
+            elif output.suffix.lower() in [".html", ".htm"]:
+                typer.echo("ℹ️  Output format inferred from extension: HTML")
         if output_format == "pdf":
             _ensure_docs_if_pdf(str(output))
 
@@ -1514,7 +1520,10 @@ def validate(  # pragma: no cover
 
         # Load and validate
         audit_config = load_config_from_file(
-            config_to_validate, profile_name=profile, strict=strict, strict_full=strict_full
+            config_to_validate,
+            profile_name=profile,
+            strict=strict,
+            strict_full=strict_full,
         )
 
         typer.echo(f"Profile: {audit_config.audit_profile}")
