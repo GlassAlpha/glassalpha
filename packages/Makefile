@@ -100,4 +100,12 @@ check: smoke
 	@echo "🏥 Checking environment..."
 	@glassalpha doctor
 	@echo ""
+	@echo "📚 Checking documentation..."
+	@$(MAKE) check-docs
+	@echo ""
 	@echo "✅ All checks passed - ready to commit!"
+
+# Check CLI documentation is current
+check-docs:
+	@echo "🔍 Checking CLI documentation..."
+	@python scripts/generate_cli_docs.py --check
