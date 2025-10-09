@@ -27,10 +27,10 @@ GlassAlpha provides the following commands:
 
 ### `glassalpha audit`
 
-Generate a compliance audit PDF report with optional shift testing.
+Generate a compliance audit report (HTML/PDF) with optional shift testing.
 
 This is the main command for GlassAlpha. It loads a configuration file,
-runs the audit pipeline, and generates a deterministic PDF report.
+runs the audit pipeline, and generates a deterministic audit report.
 
 Smart Defaults:
     If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
@@ -70,7 +70,8 @@ Examples:
 
 - `--config, -c`: Path to audit configuration YAML file (auto-detects glassalpha.yaml, audit.yaml, config.yaml)
 - `--output, -o`: Path for output report (defaults to {config_name}.html)
-- `--strict, -s`: Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs)
+- `--strict, -s`: Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs). Allows built-in datasets.
+- `--strict-full`: Enable full strict mode for maximum regulatory compliance. Requires explicit data schemas and model paths. Disallows built-in datasets. (default: `False`)
 - `--repro`: Enable deterministic reproduction mode (auto-enabled in CI and for test* configs)
 - `--profile, -p`: Override audit profile
 - `--override`: Additional config file to override settings
@@ -82,7 +83,7 @@ Examples:
 - `--fail-on-degradation`: Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).
 - `--save-model`: Save the trained model to the specified path (e.g., model.pkl). Required for reasons/recourse commands.
 - `--fast`: Fast demo mode: reduce bootstrap samples to 100 for lightning-quick audits (~2-3s vs ~5-7s) (default: `False`)
-- `--sample`: Sample N rows from dataset for faster iteration (useful for large datasets during development)
+- `--sample`: Sample N rows from dataset for faster iteration (useful for large datasets during development; minimum 100 rows)
 - `--compact-report`: Generate compact report (<1MB, default) by excluding individual fairness matched pairs from HTML. Use --full-report for complete data (may be 50-100MB). Full data always saved in manifest.json. (default: `True`)
 
 ### `glassalpha datasets`
@@ -292,7 +293,10 @@ This command checks if a configuration file is valid without
 running the audit pipeline.
 
 Examples:
-    # Basic validation
+    # Basic validation (positional argument)
+    glassalpha validate config.yaml
+
+    # Basic validation (option syntax)
     glassalpha validate --config audit.yaml
 
     # Validate for specific profile
@@ -304,11 +308,16 @@ Examples:
     # Enforce runtime checks (production-ready)
     glassalpha validate -c audit.yaml --strict-validation
 
+**Arguments:**
+
+- `config_path` (file, optional): Path to configuration file to validate
+
 **Options:**
 
-- `--config, -c`: Path to configuration file to validate (auto-detects glassalpha.yaml, audit.yaml, config.yaml)
+- `--config, -c`: Path to configuration file to validate (alternative to positional arg)
 - `--profile, -p`: Validate against specific profile
-- `--strict`: Validate for strict mode compliance (default: `False`)
+- `--strict`: Validate for strict mode compliance (allows built-in datasets) (default: `False`)
+- `--strict-full`: Validate for full strict mode compliance (requires explicit schemas, disallows built-in datasets) (default: `False`)
 - `--strict-validation`: Enforce runtime availability checks (recommended for production) (default: `False`)
 
 ## Global Options
