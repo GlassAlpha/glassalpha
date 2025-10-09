@@ -3,6 +3,16 @@
 Fast imports with lazy module loading (PEP 562).
 """
 
+import sys
+
+# Python version check - fail fast with clear message
+if sys.version_info < (3, 11):
+    raise RuntimeError(
+        f"GlassAlpha requires Python 3.11 or higher. "
+        f"You have Python {sys.version_info.major}.{sys.version_info.minor}. "
+        f"Please upgrade Python or use a virtual environment with Python 3.11+.",
+    )
+
 import importlib
 from typing import Any
 

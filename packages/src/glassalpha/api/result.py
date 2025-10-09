@@ -280,6 +280,42 @@ class AuditResult:
         msg = "to_json() will be implemented in Phase 3"
         raise NotImplementedError(msg)
 
+    def to_html(self, path: str | Path, *, overwrite: bool = False) -> Path:
+        """Export to HTML file with atomic write.
+
+        Args:
+            path: Output path for HTML file
+            overwrite: If True, overwrite existing file
+
+        Returns:
+            Path to generated HTML file
+
+        Raises:
+            GlassAlphaError: If file exists and overwrite=False
+
+        Example:
+            >>> result = ga.audit.from_model(model, X, y)
+            >>> result.to_html("audit_report.html")
+
+        """
+        from pathlib import Path
+
+        output_path = Path(path)
+
+        # Check for existing file
+        if output_path.exists() and not overwrite:
+            from ..exceptions import GlassAlphaError
+
+            raise GlassAlphaError(f"File already exists: {output_path}. Use overwrite=True to replace.")
+
+        # Generate HTML content using existing _repr_html_ method
+        html_content = self._repr_html_()
+
+        # Write to file atomically
+        output_path.write_text(html_content, encoding="utf-8")
+
+        return output_path
+
     def to_pdf(self, path: str | Path, *, overwrite: bool = False) -> None:
         """Export to PDF with atomic write.
 
@@ -326,17 +362,32 @@ class AuditResult:
             "schema_version": self.schema_version,
         }
 
-    def save(self, directory: str | Path, *, overwrite: bool = False) -> None:
-        """Save result + config + manifest to directory.
+    def save(self, path: str | Path, *, overwrite: bool = False) -> Path:
+        """Save audit result (auto-detects format from extension).
 
         Args:
-            directory: Output directory path
-            overwrite: If True, overwrite existing directory
+            path: Output file path (.html or .pdf)
+            overwrite: If True, overwrite existing file
+
+        Returns:
+            Path to generated file
 
         Raises:
-            GlassAlphaError: If directory exists and overwrite=False
+            GlassAlphaError: If file exists and overwrite=False
+
+        Example:
+            >>> result = ga.audit.from_model(model, X, y)
+            >>> result.save("audit.html")  # HTML format
+            >>> result.save("audit.pdf")   # PDF format (when implemented)
 
         """
-        # Phase 3: Will implement with full export logic
-        msg = "save() will be implemented in Phase 3"
-        raise NotImplementedError(msg)
+        from pathlib import Path
+
+        path = Path(path)
+
+        if path.suffix.lower() == ".pdf":
+            # PDF not implemented yet
+            raise NotImplementedError("PDF export will be implemented in Phase 3")
+        if path.suffix.lower() in [".html", ".htm"]:
+            return self.to_html(path, overwrite=overwrite)
+        raise ValueError(f"Unknown format: {path.suffix}. Use .pdf or .html extension")

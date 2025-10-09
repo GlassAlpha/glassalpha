@@ -18,6 +18,27 @@ from ..renderer import AuditReportRenderer
 # Suppress WeasyPrint warnings for cleaner output
 warnings.filterwarnings("ignore", category=UserWarning, module="weasyprint")
 
+# Suppress specific known unsupported CSS properties via logging filter
+
+
+class WeasyPrintCSSFilter(logging.Filter):
+    """Filter out known unsupported CSS property warnings from WeasyPrint."""
+
+    def filter(self, record):
+        if (
+            record.levelno == logging.WARNING
+            and "weasyprint" in record.name
+            and "Ignored" in record.getMessage()
+            and "unknown property" in record.getMessage()
+        ):
+            return False
+        return True
+
+
+# Apply filter to weasyprint logger
+weasyprint_logger = logging.getLogger("weasyprint")
+weasyprint_logger.addFilter(WeasyPrintCSSFilter())
+
 logger = logging.getLogger(__name__)
 
 

@@ -28,8 +28,8 @@ data:
 model:
   type: logistic_regression
   params:
-    max_iter: 1000
     random_state: 42
+    max_iter: 1000
 
 # Explainers
 explainers:

@@ -352,7 +352,9 @@ class ReportConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")  # Allow unknown fields like styling
 
     template: str = Field("standard_audit", description="Report template name")
-    output_format: str = Field("pdf", description="Output format (pdf, html, json)")
+    output_format: str | None = Field(
+        None, description="Output format (pdf, html, json). If not specified, determined by file extension"
+    )
     threshold: ThresholdConfig | None = Field(None, description="Threshold selection configuration")
     include_sections: list[str] = Field(
         default_factory=lambda: [

@@ -8,11 +8,11 @@ Generate deterministic PDF audit reports with statistical confidence intervals, 
 
 _Note: GlassAlpha is currently pre-alpha while I'm actively developing. The audits work and tests pass, so feel free to try it out—feedback welcome! First stable release coming soon._
 
-## Get started
+## 🚨 Installation Notice
 
-### Run your first audit in 30 seconds
+**⚠️ The Python package is located in the `packages/` subdirectory.**
 
-**Option 1: Install from PyPI (easiest)**
+### Option 1: Install from PyPI (easiest)
 
 ```bash
 # Install with pipx (recommended for CLI tools)
@@ -22,12 +22,19 @@ pipx install glassalpha
 pip install glassalpha
 ```
 
-**Option 2: Install from source (for development)**
+### Option 2: Install from source (for development)
 
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha/packages  # ⚠️ MUST cd to packages/ directory
 pip install -e ".[all]"  # Install with all optional features
+```
+
+**❌ Common mistake - DON'T do this:**
+
+```bash
+git clone https://github.com/GlassAlpha/glassalpha
+pip install -e .  # ❌ FAILS - no package in root directory
 ```
 
 Create a configuration (interactive wizard)

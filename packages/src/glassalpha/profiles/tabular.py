@@ -167,14 +167,14 @@ class TabularComplianceProfile:
         if "report" not in out:
             out["report"] = {
                 "template": "standard_audit.html",
-                "output_format": "pdf",
+                # Don't set output_format - let CLI detect from file extension
             }
         else:
             # Update existing report config with defaults
             existing = out["report"]
             existing.setdefault("template", "standard_audit.html")
             # Don't override output_format if user explicitly set it
-            existing.setdefault("output_format", "pdf")
+            # existing.setdefault("output_format", "pdf")  # Removed - let CLI detect from extension
 
         # Reproducibility settings
         if "reproducibility" not in out:

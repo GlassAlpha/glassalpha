@@ -47,9 +47,11 @@ def preflight_check_model(config: Any, allow_fallback: bool = True) -> tuple[Any
         if allow_fallback:
             fallback_model = _find_fallback_model(model_type, available_models)
             if fallback_model:
-                # Enhanced fallback warning with clear explanation
+                # Enhanced fallback warning with prominent banner
                 typer.echo()
-                typer.secho("⚠ Model Fallback Activated", fg=typer.colors.YELLOW, bold=True)
+                typer.secho("=" * 60, fg=typer.colors.YELLOW)
+                typer.secho("⚠ MODEL FALLBACK ACTIVATED", fg=typer.colors.YELLOW, bold=True)
+                typer.secho("=" * 60, fg=typer.colors.YELLOW)
                 typer.echo(f"  Requested: {model_type}")
                 typer.echo(f"  Using:     {fallback_model}")
                 typer.echo()
@@ -66,7 +68,12 @@ def preflight_check_model(config: Any, allow_fallback: bool = True) -> tuple[Any
                     typer.echo("    pip install 'glassalpha[explain]'")
 
                 typer.echo()
+                typer.echo("  To see what's available:")
+                typer.echo("    glassalpha doctor")
+                typer.echo("    glassalpha models")
+                typer.echo()
                 typer.secho("  Use --no-fallback to fail instead of falling back", fg=typer.colors.CYAN)
+                typer.secho("=" * 60, fg=typer.colors.YELLOW)
                 typer.echo()
 
                 config.model.type = fallback_model

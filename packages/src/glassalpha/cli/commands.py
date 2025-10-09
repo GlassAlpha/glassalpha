@@ -156,8 +156,28 @@ def _run_audit_pipeline(
     start_time = time.time()
 
     # Determine output format from config and check PDF availability
-    # Default to HTML for better performance (PDF generation can take 10+ minutes for large reports)
-    output_format = getattr(config.report, "output_format", "html") if hasattr(config, "report") else "html"
+    # Priority: config > file extension > default (HTML)
+    if (
+        hasattr(config, "report")
+        and hasattr(config.report, "output_format")
+        and config.report.output_format is not None
+    ):
+        # Explicit config setting takes precedence
+        output_format = config.report.output_format
+    # Auto-detect from file extension
+    elif output_path.suffix.lower() == ".pdf":
+        output_format = "pdf"
+    elif output_path.suffix.lower() in [".html", ".htm"]:
+        output_format = "html"
+    else:
+        # Default to HTML for speed and fewer dependencies
+        output_format = "html"
+
+    # Warning if mismatch between extension and actual format
+    if output_format == "pdf" and output_path.suffix.lower() in [".html", ".htm"]:
+        typer.echo("⚠️  Note: Generating PDF output despite .html extension (no output_format specified in config)")
+    elif output_format == "html" and output_path.suffix.lower() == ".pdf":
+        typer.echo("⚠️  Note: Generating HTML output despite .pdf extension (no output_format specified in config)")
 
     # Check if PDF backend is available
     try:
@@ -1138,10 +1158,28 @@ def audit(  # pragma: no cover
             typer.secho("Configuration valid (dry run - no report generated)", fg=typer.colors.GREEN)
             return
 
-        # Check PDF dependencies if PDF output requested
-        output_format = (
-            getattr(audit_config.report, "output_format", "pdf") if hasattr(audit_config, "report") else "pdf"
-        )
+        # Determine output format with priority: config > file extension > default (HTML)
+        if (
+            hasattr(audit_config, "report")
+            and hasattr(audit_config.report, "output_format")
+            and audit_config.report.output_format is not None
+        ):
+            # Explicit config setting takes precedence
+            output_format = audit_config.report.output_format
+        # Auto-detect from file extension
+        elif output.suffix.lower() == ".pdf":
+            output_format = "pdf"
+        elif output.suffix.lower() in [".html", ".htm"]:
+            output_format = "html"
+        else:
+            # Default to HTML for speed and fewer dependencies
+            output_format = "html"
+
+        # Warning if mismatch between extension and actual format
+        if output_format == "pdf" and output.suffix.lower() in [".html", ".htm"]:
+            typer.echo("⚠️  Note: Generating PDF output despite .html extension (no output_format specified in config)")
+        elif output_format == "html" and output.suffix.lower() == ".pdf":
+            typer.echo("⚠️  Note: Generating HTML output despite .pdf extension (no output_format specified in config)")
         if output_format == "pdf":
             _ensure_docs_if_pdf(str(output))
 
@@ -1391,11 +1429,18 @@ def doctor():  # pragma: no cover
 
 
 def validate(  # pragma: no cover
+    config_path: Path | None = typer.Argument(
+        None,
+        help="Path to configuration file to validate",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+    ),
     config: Path | None = typer.Option(
         None,
         "--config",
         "-c",
-        help="Path to configuration file to validate (auto-detects glassalpha.yaml, audit.yaml, config.yaml)",
+        help="Path to configuration file to validate (alternative to positional arg)",
         exists=True,
         file_okay=True,
     ),
@@ -1427,7 +1472,10 @@ def validate(  # pragma: no cover
     running the audit pipeline.
 
     Examples:
-        # Basic validation
+        # Basic validation (positional argument)
+        glassalpha validate config.yaml
+
+        # Basic validation (option syntax)
         glassalpha validate --config audit.yaml
 
         # Validate for specific profile
@@ -1445,23 +1493,29 @@ def validate(  # pragma: no cover
         from ..core.registry import ModelRegistry  # Already correct location
         from ..explain.registry import ExplainerRegistry
 
+        # Use positional arg if provided, otherwise fall back to --config
+        config_to_validate = config_path or config
+
         # Auto-detect config if not provided
-        if config is None:
+        if config_to_validate is None:
             from .defaults import get_smart_defaults
 
             defaults = get_smart_defaults()
-            config = defaults["config"]
-            if config is None:
-                typer.echo(
-                    "Configuration error: No configuration file found. Create one with 'glassalpha init' or specify with --config",
-                )
+            config_to_validate = defaults["config"]
+            if config_to_validate is None:
+                typer.echo("Error: No configuration file specified", fg=typer.colors.RED, err=True)
+                typer.echo("\nUsage:")
+                typer.echo("  glassalpha validate config.yaml")
+                typer.echo("  glassalpha validate --config config.yaml")
                 raise typer.Exit(ExitCode.USER_ERROR.value)
-            typer.echo(f"Auto-detected config: {config}")
+            typer.echo(f"Auto-detected config: {config_to_validate}")
 
-        typer.echo(f"Validating configuration: {config}")
+        typer.echo(f"Validating configuration: {config_to_validate}")
 
         # Load and validate
-        audit_config = load_config_from_file(config, profile_name=profile, strict=strict, strict_full=strict_full)
+        audit_config = load_config_from_file(
+            config_to_validate, profile_name=profile, strict=strict, strict_full=strict_full
+        )
 
         typer.echo(f"Profile: {audit_config.audit_profile}")
         typer.echo(f"Model type: {audit_config.model.type}")
@@ -1916,7 +1970,8 @@ def reasons(  # pragma: no cover
             typer.echo("Applying preprocessing to match model training...")
 
             def _apply_preprocessing_from_model_artifact(
-                X: "pd.DataFrame", preprocessing_info: dict | None
+                X: "pd.DataFrame",
+                preprocessing_info: dict | None,
             ) -> "pd.DataFrame":
                 """Apply the same preprocessing that was used during model training."""
                 if preprocessing_info is None:
@@ -1936,7 +1991,7 @@ def reasons(  # pragma: no cover
                 numeric_cols = preprocessing_info.get("numeric_cols", [])
 
                 logger.debug(
-                    f"Applying auto preprocessing: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns"
+                    f"Applying auto preprocessing: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns",
                 )
 
                 if not categorical_cols:
@@ -1949,7 +2004,7 @@ def reasons(  # pragma: no cover
                             "categorical",
                             OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop=None),
                             categorical_cols,
-                        )
+                        ),
                     )
                 if numeric_cols:
                     transformers.append(("numeric", "passthrough", numeric_cols))
@@ -2037,11 +2092,44 @@ def reasons(  # pragma: no cover
 
         typer.echo(f"Generating SHAP explanations for instance {instance}...")
 
-        # Get prediction
-        if hasattr(model_obj, "predict_proba"):
-            prediction = float(model_obj.predict_proba(X_instance)[0, 1])
-        else:
-            prediction = float(model_obj.predict(X_instance)[0])
+        # Auto-encode categorical columns for SHAP compatibility
+        X_instance_encoded = X_instance.copy()
+        categorical_cols = X_instance.select_dtypes(include=["object", "category", "string"]).columns
+
+        if len(categorical_cols) > 0:
+            typer.echo(f"Auto-encoding {len(categorical_cols)} categorical columns for SHAP compatibility...")
+            from sklearn.preprocessing import LabelEncoder
+
+            for col in categorical_cols:
+                if X_instance_encoded[col].dtype in ["object", "category", "string"]:
+                    # Convert to string first to handle any data types
+                    X_instance_encoded[col] = X_instance_encoded[col].astype(str)
+                    le = LabelEncoder()
+                    X_instance_encoded[col] = le.fit_transform(X_instance_encoded[col])
+
+        # Get prediction (with better error handling for feature mismatch)
+        try:
+            if hasattr(model_obj, "predict_proba"):
+                prediction = float(model_obj.predict_proba(X_instance_encoded)[0, 1])
+            else:
+                prediction = float(model_obj.predict(X_instance_encoded)[0])
+        except ValueError as e:
+            if "Too many missing features" in str(e):
+                typer.secho(
+                    f"Error: Model expects {len(expected_features) if expected_features else 'unknown'} features but data has {len(X_instance_encoded.columns)} columns",
+                    fg=typer.colors.RED,
+                    err=True,
+                )
+                typer.echo("\nThis usually means:")
+                typer.echo("  • The model was trained on encoded/preprocessed data")
+                typer.echo("  • But you're providing raw data with categorical columns")
+                typer.echo("\nSolutions:")
+                typer.echo("  1. Use the same dataset that was used for training")
+                typer.echo("  2. Apply the same preprocessing (encoding) that was used during training")
+                typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
+                typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
+                raise typer.Exit(ExitCode.USER_ERROR) from None
+            raise
 
         # Extract native model from wrapper if needed
         native_model = model_obj
@@ -2055,7 +2143,7 @@ def reasons(  # pragma: no cover
             import shap
 
             explainer = shap.TreeExplainer(native_model)
-            shap_values = explainer.shap_values(X_instance)
+            shap_values = explainer.shap_values(X_instance_encoded)
 
             # Handle multi-output case (binary classification)
             if isinstance(shap_values, list):
@@ -2066,13 +2154,28 @@ def reasons(  # pragma: no cover
                 shap_values = shap_values[0]
 
         except Exception as e:
-            typer.secho(
-                f"Error generating SHAP values: {e}",
-                fg=typer.colors.RED,
-                err=True,
-            )
-            typer.echo("\nTip: Ensure model is TreeSHAP-compatible (XGBoost, LightGBM, RandomForest)")
-            typer.echo("If using a wrapped model, save the native model directly instead.")
+            if "Too many missing features" in str(e):
+                typer.secho(
+                    f"Error: Model expects {len(expected_features) if expected_features else 'unknown'} features but data has {len(X_instance_encoded.columns)} columns",
+                    fg=typer.colors.RED,
+                    err=True,
+                )
+                typer.echo("\nThis usually means:")
+                typer.echo("  • The model was trained on encoded/preprocessed data")
+                typer.echo("  • But you're providing raw data with categorical columns")
+                typer.echo("\nSolutions:")
+                typer.echo("  1. Use the same dataset that was used for training")
+                typer.echo("  2. Apply the same preprocessing (encoding) that was used during training")
+                typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
+                typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
+            else:
+                typer.secho(
+                    f"Error generating SHAP values: {e}",
+                    fg=typer.colors.RED,
+                    err=True,
+                )
+                typer.echo("\nTip: Ensure model is TreeSHAP-compatible (XGBoost, LightGBM, RandomForest)")
+                typer.echo("If using a wrapped model, save the native model directly instead.")
             raise typer.Exit(ExitCode.USER_ERROR) from None
 
         # Extract reason codes
@@ -2297,7 +2400,8 @@ def recourse(  # pragma: no cover
             typer.echo("Applying preprocessing to match model training...")
 
             def _apply_preprocessing_from_model_artifact(
-                X: "pd.DataFrame", preprocessing_info: dict | None
+                X: "pd.DataFrame",
+                preprocessing_info: dict | None,
             ) -> "pd.DataFrame":
                 """Apply the same preprocessing that was used during model training."""
                 if preprocessing_info is None:
@@ -2317,7 +2421,7 @@ def recourse(  # pragma: no cover
                 numeric_cols = preprocessing_info.get("numeric_cols", [])
 
                 logger.debug(
-                    f"Applying auto preprocessing: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns"
+                    f"Applying auto preprocessing: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns",
                 )
 
                 if not categorical_cols:
@@ -2330,7 +2434,7 @@ def recourse(  # pragma: no cover
                             "categorical",
                             OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop=None),
                             categorical_cols,
-                        )
+                        ),
                     )
                 if numeric_cols:
                     transformers.append(("numeric", "passthrough", numeric_cols))
@@ -2418,11 +2522,44 @@ def recourse(  # pragma: no cover
 
         typer.echo(f"Generating SHAP explanations for instance {instance}...")
 
-        # Get prediction
-        if hasattr(model_obj, "predict_proba"):
-            prediction = float(model_obj.predict_proba(X_instance)[0, 1])
-        else:
-            prediction = float(model_obj.predict(X_instance)[0])
+        # Auto-encode categorical columns for SHAP compatibility
+        X_instance_encoded = X_instance.copy()
+        categorical_cols = X_instance.select_dtypes(include=["object", "category", "string"]).columns
+
+        if len(categorical_cols) > 0:
+            typer.echo(f"Auto-encoding {len(categorical_cols)} categorical columns for SHAP compatibility...")
+            from sklearn.preprocessing import LabelEncoder
+
+            for col in categorical_cols:
+                if X_instance_encoded[col].dtype in ["object", "category", "string"]:
+                    # Convert to string first to handle any data types
+                    X_instance_encoded[col] = X_instance_encoded[col].astype(str)
+                    le = LabelEncoder()
+                    X_instance_encoded[col] = le.fit_transform(X_instance_encoded[col])
+
+        # Get prediction (with better error handling for feature mismatch)
+        try:
+            if hasattr(model_obj, "predict_proba"):
+                prediction = float(model_obj.predict_proba(X_instance_encoded)[0, 1])
+            else:
+                prediction = float(model_obj.predict(X_instance_encoded)[0])
+        except ValueError as e:
+            if "Too many missing features" in str(e):
+                typer.secho(
+                    f"Error: Model expects {len(expected_features) if expected_features else 'unknown'} features but data has {len(X_instance_encoded.columns)} columns",
+                    fg=typer.colors.RED,
+                    err=True,
+                )
+                typer.echo("\nThis usually means:")
+                typer.echo("  • The model was trained on encoded/preprocessed data")
+                typer.echo("  • But you're providing raw data with categorical columns")
+                typer.echo("\nSolutions:")
+                typer.echo("  1. Use the same dataset that was used for training")
+                typer.echo("  2. Apply the same preprocessing (encoding) that was used during training")
+                typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
+                typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
+                raise typer.Exit(ExitCode.USER_ERROR) from None
+            raise
 
         # Check if instance is already approved
         if prediction >= threshold:
@@ -2445,7 +2582,7 @@ def recourse(  # pragma: no cover
             import shap
 
             explainer = shap.TreeExplainer(native_model)
-            shap_values = explainer.shap_values(X_instance)
+            shap_values = explainer.shap_values(X_instance_encoded)
 
             # Handle multi-output case (binary classification)
             if isinstance(shap_values, list):
@@ -2456,6 +2593,21 @@ def recourse(  # pragma: no cover
                 shap_values = shap_values[0]
 
         except Exception as e:
+            if "Too many missing features" in str(e):
+                typer.secho(
+                    f"Error: Model expects {len(expected_features) if expected_features else 'unknown'} features but data has {len(X_instance_encoded.columns)} columns",
+                    fg=typer.colors.RED,
+                    err=True,
+                )
+                typer.echo("\nThis usually means:")
+                typer.echo("  • The model was trained on encoded/preprocessed data")
+                typer.echo("  • But you're providing raw data with categorical columns")
+                typer.echo("\nSolutions:")
+                typer.echo("  1. Use the same dataset that was used for training")
+                typer.echo("  2. Apply the same preprocessing (encoding) that was used during training")
+                typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
+                typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
+                raise typer.Exit(ExitCode.USER_ERROR) from None
             typer.secho(
                 f"Warning: SHAP TreeExplainer failed ({e}). Trying KernelSHAP...",
                 fg=typer.colors.YELLOW,
@@ -2463,8 +2615,8 @@ def recourse(  # pragma: no cover
             # Fallback to KernelSHAP (use original model_obj for predict interface)
             import shap
 
-            explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_instance, 100))
-            shap_values = explainer.shap_values(X_instance)[0, :, 1]
+            explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_instance_encoded, 100))
+            shap_values = explainer.shap_values(X_instance_encoded)[0, :, 1]
 
         typer.echo("Generating counterfactual recommendations...")
 

@@ -728,32 +728,17 @@
           <li><a href="#section-1">1. Executive Summary</a></li>
           <li><a href="#section-2">2. Data Overview</a></li>
           {% if dataset_bias %}
-          <li><a href="#section-3">3. Dataset-Level Bias Analysis</a></li>
+          <li>
+            <a href="#section-dataset-bias">3. Dataset-Level Bias Analysis</a>
+          </li>
           {% endif %} {% if preprocessing_info %}
           <li>
-            <a href="#section-{% if dataset_bias %}4{% else %}3{% endif %}">
-              {% if dataset_bias %}4{% else %}3{% endif %}. Preprocessing
-              Verification</a
-            >
+            <a href="#section-preprocessing">4. Preprocessing Verification</a>
           </li>
           {% endif %}
-          <li>
-            <a
-              href="#section-{{ '5' if preprocessing_info and dataset_bias else ('4' if preprocessing_info or dataset_bias else '3') }}"
-            >
-              {% if preprocessing_info and dataset_bias %}5{% elif
-              preprocessing_info or dataset_bias %}4{% else %}3{% endif %}.
-              Model Performance Analysis</a
-            >
-          </li>
+          <li><a href="#section-performance">Model Performance Analysis</a></li>
           {% if calibration_ci %}
-          <li>
-            <a href="#section-calibration">
-              {% if preprocessing_info and dataset_bias %}6{% elif
-              preprocessing_info or dataset_bias %}5{% else %}4{% endif %}.
-              Calibration Analysis</a
-            >
-          </li>
+          <li><a href="#section-calibration">Calibration Analysis</a></li>
           {% endif %} {% if explanations %}
           <li>
             <a href="#section-shap">
@@ -1141,7 +1126,7 @@
       {% if dataset_bias %}
       <div class="page-break"></div>
       <section
-        id="section-3"
+        id="section-dataset-bias"
         class="section"
         role="region"
         aria-labelledby="dataset-bias-heading"
@@ -1353,7 +1338,7 @@
       {% if preprocessing_info %}
       <div class="page-break"></div>
       <section
-        id="section-4"
+        id="section-preprocessing"
         class="section"
         role="region"
         aria-labelledby="preprocessing-heading"
@@ -1839,7 +1824,7 @@
 
       <!-- Model Performance -->
       <section
-        id="section-{{ '5' if preprocessing_info and dataset_bias else ('4' if preprocessing_info or dataset_bias else '3') }}"
+        id="section-performance"
         class="section"
         role="region"
         aria-labelledby="performance-heading"
