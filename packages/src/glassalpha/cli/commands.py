@@ -254,6 +254,7 @@ def _run_audit_pipeline(
 
         if output_format == "pdf":
             typer.echo(f"\nGenerating PDF report: {output_path}")
+            typer.echo("⏳ PDF generation in progress... (this may take 1-3 minutes)")
 
             # Create PDF configuration
             pdf_config = PDFConfig(
@@ -264,7 +265,7 @@ def _run_audit_pipeline(
                 optimize_size=True,
             )
 
-            # Generate PDF
+            # Generate PDF with timeout protection
             pdf_start = time.time()
             # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
             import os
@@ -279,13 +280,46 @@ def _run_audit_pipeline(
                 report_date = datetime.now().strftime("%Y-%m-%d")
                 generation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-            pdf_path = render_audit_pdf(
-                audit_results=audit_results,
-                output_path=output_path,
-                config=pdf_config,
-                report_title=f"ML Model Audit Report - {report_date}",
-                generation_date=generation_date,
-            )
+            # Add timeout protection for PDF generation using concurrent.futures
+            import concurrent.futures
+
+            pdf_path = None
+
+            def pdf_generation_worker():
+                """Worker function for PDF generation that can run in a thread."""
+                try:
+                    pdf_path = render_audit_pdf(
+                        audit_results=audit_results,
+                        output_path=output_path,
+                        config=pdf_config,
+                        report_title=f"ML Model Audit Report - {report_date}",
+                        generation_date=generation_date,
+                    )
+                    return pdf_path
+                except Exception as e:
+                    raise e
+
+            try:
+                # Run PDF generation with timeout using ThreadPoolExecutor
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(pdf_generation_worker)
+                    pdf_path = future.result(timeout=300)  # 5 minutes timeout
+
+                if pdf_path is None:
+                    raise RuntimeError("PDF generation failed - no output path returned")
+
+            except concurrent.futures.TimeoutError:
+                typer.secho("\n❌ PDF generation timed out after 5 minutes", fg=typer.colors.RED)
+                typer.echo("💡 Try using HTML format for faster results:")
+                typer.echo("   glassalpha audit --config your_config.yaml --output report.html")
+                typer.echo("   # or set 'output_format: html' in your config")
+                raise typer.Exit(code=1)
+            except Exception as e:
+                typer.secho(f"\n❌ PDF generation failed: {e}", fg=typer.colors.RED)
+                typer.echo("💡 Try using HTML format as a fallback:")
+                typer.echo("   glassalpha audit --config your_config.yaml --output report.html")
+                typer.echo("   # or set 'output_format: html' in your config")
+                raise typer.Exit(code=1)
 
             pdf_time = time.time() - pdf_start
             file_size = pdf_path.stat().st_size
@@ -896,11 +930,12 @@ def audit(  # pragma: no cover
         "--fast",
         help="Fast demo mode: reduce bootstrap samples to 100 for lightning-quick audits (~2-3s vs ~5-7s)",
     ),
-    sample: int | None = typer.Option(
-        None,
-        "--sample",
-        help="Sample N rows from dataset for faster iteration (useful for large datasets during development; minimum 100 rows)",
-    ),
+    # TODO: Implement proper sampling at data loading level
+    # sample: int | None = typer.Option(
+    #     None,
+    #     "--sample",
+    #     help="Sample N rows from dataset for faster iteration (useful for large datasets during development; minimum 100 rows)",
+    # ),
     compact_report: bool = typer.Option(
         True,
         "--compact-report/--full-report",
@@ -1088,33 +1123,34 @@ def audit(  # pragma: no cover
             audit_config.metrics.n_bootstrap = 100
             typer.secho("⚡ Fast mode enabled - using 100 bootstrap samples for quick demo", fg=typer.colors.CYAN)
 
-        # Apply sampling if requested
-        if sample:
-            if sample < 100:
-                typer.secho("❌ Sample size must be at least 100 rows", fg=typer.colors.RED, err=True)
-                raise typer.Exit(ExitCode.VALIDATION_ERROR)
-
-            # For small samples, reduce bootstrap iterations to prevent hanging
-            if sample < 200:
-                if not hasattr(audit_config, "metrics") or audit_config.metrics is None:
-                    from ..config.schema import MetricsConfig
-
-                    audit_config.metrics = MetricsConfig()
-                audit_config.metrics.n_bootstrap = min(100, audit_config.metrics.n_bootstrap)
-                typer.secho(
-                    f"⚠️  Small sample size ({sample} rows) detected - reducing bootstrap samples to {audit_config.metrics.n_bootstrap} for faster computation",
-                    fg=typer.colors.YELLOW,
-                )
-
-            if not hasattr(audit_config, "data") or audit_config.data is None:
-                from ..config.schema import DataConfig
-
-                audit_config.data = DataConfig()
-            audit_config.data.sample_size = sample
-            typer.secho(
-                f"📊 Sampling {sample} rows for faster iteration (stratified by target if available)",
-                fg=typer.colors.CYAN,
-            )
+        # TODO: Implement proper sampling at data loading level
+        # # Apply sampling if requested
+        # if sample:
+        #     if sample < 100:
+        #         typer.secho("❌ Sample size must be at least 100 rows", fg=typer.colors.RED, err=True)
+        #         raise typer.Exit(ExitCode.VALIDATION_ERROR)
+        #
+        #     # For small samples, reduce bootstrap iterations to prevent hanging
+        #     if sample < 200:
+        #         if not hasattr(audit_config, "metrics") or audit_config.metrics is None:
+        #             from ..config.schema import MetricsConfig
+        #
+        #             audit_config.metrics = MetricsConfig()
+        #         audit_config.metrics.n_bootstrap = min(100, audit_config.metrics.n_bootstrap)
+        #         typer.secho(
+        #             f"⚠️  Small sample size ({sample} rows) detected - reducing bootstrap samples to {audit_config.metrics.n_bootstrap} for faster computation",
+        #             fg=typer.colors.YELLOW,
+        #         )
+        #
+        #     if not hasattr(audit_config, "data") or audit_config.data is None:
+        #         from ..config.schema import DataConfig
+        #
+        #         audit_config.data = DataConfig()
+        #     audit_config.data.sample_size = sample
+        #     typer.secho(
+        #         f"📊 Sampling {sample} rows for faster iteration (stratified by target if available)",
+        #         fg=typer.colors.CYAN,
+        #     )
 
         # Validate model availability and apply fallbacks (or fail if no_fallback is set)
         audit_config, requested_model = preflight_check_model(audit_config, allow_fallback=not no_fallback)
@@ -1225,13 +1261,19 @@ def audit(  # pragma: no cover
                 if model_to_save is not None:
                     save_model.parent.mkdir(parents=True, exist_ok=True)
 
+                    # Extract the underlying sklearn model from the wrapper for compatibility
+                    underlying_model = model_to_save
+                    if hasattr(model_to_save, "model"):
+                        # It's a wrapper - extract the underlying model
+                        underlying_model = model_to_save.model
+
                     # Save model with feature metadata and preprocessing info for validation
                     preprocessing_info = None
                     if hasattr(audit_results, "execution_info") and "preprocessing" in audit_results.execution_info:
                         preprocessing_info = audit_results.execution_info["preprocessing"]
 
                     model_artifact = {
-                        "model": model_to_save,
+                        "model": underlying_model,
                         "feature_names": (
                             list(audit_results.data_info.get("feature_columns", []))
                             if hasattr(audit_results, "data_info") and audit_results.data_info
@@ -2226,14 +2268,36 @@ def reasons(  # pragma: no cover
                 typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
                 typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
             else:
-                typer.secho(
-                    f"Error generating SHAP values: {e}",
-                    fg=typer.colors.RED,
-                    err=True,
-                )
-                typer.echo("\nTip: Ensure model is TreeSHAP-compatible (XGBoost, LightGBM, RandomForest)")
-                typer.echo("If using a wrapped model, save the native model directly instead.")
-            raise typer.Exit(ExitCode.USER_ERROR) from None
+                # Check if this is a TreeSHAP compatibility error for non-tree models
+                error_msg = str(e).lower()
+                if any(
+                    phrase in error_msg
+                    for phrase in [
+                        "model type not yet supported",
+                        "treeexplainer",
+                        "does not support treeexplainer",
+                        "linear model",
+                        "logisticregression",
+                    ]
+                ):
+                    typer.secho(
+                        f"Warning: TreeSHAP not compatible with {type(native_model).__name__}. Using KernelSHAP instead...",
+                        fg=typer.colors.YELLOW,
+                    )
+                    # Fallback to KernelSHAP (use original model_obj for predict interface)
+                    import shap
+
+                    explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_instance_encoded, 100))
+                    shap_values = explainer.shap_values(X_instance_encoded)[0, :, 1]
+                else:
+                    typer.secho(
+                        f"Error generating SHAP values: {e}",
+                        fg=typer.colors.RED,
+                        err=True,
+                    )
+                    typer.echo("\nTip: Ensure model is TreeSHAP-compatible (XGBoost, LightGBM, RandomForest)")
+                    typer.echo("If using a wrapped model, save the native model directly instead.")
+                    raise typer.Exit(ExitCode.USER_ERROR) from None
 
         # Extract reason codes
         from ..explain.reason_codes import extract_reason_codes, format_adverse_action_notice
@@ -2702,15 +2766,36 @@ def recourse(  # pragma: no cover
                 typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
                 typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
                 raise typer.Exit(ExitCode.USER_ERROR) from None
-            typer.secho(
-                f"Warning: SHAP TreeExplainer failed ({e}). Trying KernelSHAP...",
-                fg=typer.colors.YELLOW,
-            )
-            # Fallback to KernelSHAP (use original model_obj for predict interface)
-            import shap
+            # Check if this is a TreeSHAP compatibility error for non-tree models
+            error_msg = str(e).lower()
+            if any(
+                phrase in error_msg
+                for phrase in [
+                    "model type not yet supported",
+                    "treeexplainer",
+                    "does not support treeexplainer",
+                    "linear model",
+                    "logisticregression",
+                ]
+            ):
+                typer.secho(
+                    f"Warning: TreeSHAP not compatible with {type(native_model).__name__}. Using KernelSHAP instead...",
+                    fg=typer.colors.YELLOW,
+                )
+                # Fallback to KernelSHAP (use original model_obj for predict interface)
+                import shap
 
-            explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_instance_encoded, 100))
-            shap_values = explainer.shap_values(X_instance_encoded)[0, :, 1]
+                explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_instance_encoded, 100))
+                shap_values = explainer.shap_values(X_instance_encoded)[0, :, 1]
+            else:
+                typer.secho(
+                    f"Error generating SHAP values: {e}",
+                    fg=typer.colors.RED,
+                    err=True,
+                )
+                typer.echo("\nTip: Ensure model is TreeSHAP-compatible (XGBoost, LightGBM, RandomForest)")
+                typer.echo("If using a wrapped model, save the native model directly instead.")
+                raise typer.Exit(ExitCode.USER_ERROR) from None
 
         typer.echo("Generating counterfactual recommendations...")
 

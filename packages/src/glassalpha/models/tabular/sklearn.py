@@ -37,12 +37,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def register_logistic_regression():
-    """Register LogisticRegression model plugin."""
-    # LogisticRegression is always available since scikit-learn is a core dependency
-    return LogisticRegressionWrapper
-
-
+# Define wrapper classes at module level for pickle compatibility
 class SklearnGenericWrapper:
     """Generic wrapper for scikit-learn models."""
 
@@ -61,6 +56,108 @@ class SklearnGenericWrapper:
             "predict_proba": hasattr(model, "predict_proba"),
             "feature_importance": hasattr(model, "feature_importances_") or hasattr(model, "coef_"),
         }
+
+
+class LogisticRegressionWrapper(SklearnGenericWrapper):
+    """Stub wrapper for LogisticRegression (real implementation below)."""
+
+    def predict(self, x: Any) -> Any:  # noqa: ANN401
+        """Make predictions using the underlying model."""
+        if self.model is None:
+            msg = "No model loaded"
+            raise AttributeError(msg)
+        if not hasattr(self.model, "predict"):
+            msg = "Underlying model has no predict"
+            raise AttributeError(msg)
+        return self.model.predict(x)
+
+    def predict_proba(self, x: Any) -> Any:  # noqa: ANN401
+        """Get prediction probabilities using the underlying model."""
+        if self.model is None:
+            msg = "No model loaded"
+            raise AttributeError(msg)
+        if not hasattr(self.model, "predict_proba"):
+            msg = "Underlying model has no predict_proba"
+            raise AttributeError(msg)
+        return self.model.predict_proba(x)
+
+    def get_model_type(self) -> str:
+        """Get the model type name."""
+        return "logistic_regression"
+
+    def get_capabilities(self) -> dict[str, Any]:
+        """Get model capabilities."""
+        return {
+            "supports_shap": True,
+            "supports_feature_importance": True,
+            "supports_proba": True,
+            "data_modality": "tabular",
+            "feature_names": True,
+        }
+
+    def get_model_info(self) -> dict[str, Any]:
+        """Get model information."""
+        return {
+            "model_type": "logistic_regression",
+            "version": "1.0.0",
+            "has_model": self.model is not None,
+        }
+
+
+# Only register if sklearn is available
+if SKLEARN_AVAILABLE:
+
+    class LogisticRegressionWrapper(BaseTabularWrapper):
+        """Wrapper for scikit-learn LogisticRegression with GlassAlpha compatibility."""
+
+        # Model capabilities
+        capabilities: ClassVar[dict[str, Any]] = {
+            "supports_shap": True,
+            "supports_feature_importance": True,
+            "supports_proba": True,
+            "data_modality": "tabular",
+            "feature_names": True,
+            # Note: Parameter validation handled by sklearn library itself
+            # No need for declarative parameter_rules (avoids redundant validation)
+        }
+        version = "1.0.0"
+        model_type = "logistic_regression"
+
+        def __init__(self, model: Any = None, feature_names: list[str] | None = None, **kwargs: Any) -> None:  # noqa: ANN401
+            """Initialize LogisticRegression wrapper.
+
+            Args:
+                model: Pre-fitted LogisticRegression model or None to create new one
+                feature_names: List of feature names
+                **kwargs: Parameters passed to LogisticRegression constructor
+
+            """
+            super().__init__()
+
+            if model is not None:
+                # Use provided model
+                self.model = model
+                self._is_fitted = hasattr(model, "coef_") and model.coef_ is not None
+
+                # Extract feature names from provided parameter or pre-fitted model
+                if feature_names:
+                    self.feature_names_ = list(feature_names)
+                elif hasattr(model, "feature_names_in_") and model.feature_names_in_ is not None:
+                    # Auto-extract from pre-fitted sklearn model for feature alignment
+                    self.feature_names_ = list(model.feature_names_in_)
+                else:
+                    self.feature_names_ = None
+
+                # Set n_classes if model is fitted (tests expect this)
+                if hasattr(model, "classes_") and model.classes_ is not None:
+                    self.classes_ = model.classes_
+                    self.n_classes = len(model.classes_)
+                else:
+                    self.n_classes = None
+            elif kwargs:
+                # Create new model with parameters
+                self.model = LogisticRegression(**kwargs)
+                self.n_classes = None
 
     def predict(self, x: Any) -> Any:  # noqa: ANN401
         """Make predictions using the underlying model.
@@ -674,21 +771,19 @@ else:
             msg = "scikit-learn not available - install sklearn or fix CI environment"
             raise ImportError(msg)
 
-    class SklearnGenericWrapper:
-        """Stub class when scikit-learn is unavailable."""
-
-        def __init__(self, *args, **kwargs) -> None:  # noqa: ARG002, ANN002, ANN003
-            """Initialize stub - raises ImportError."""
-            msg = "scikit-learn not available - install sklearn or fix CI environment"
-            raise ImportError(msg)
-
 
 # Register sklearn models with ModelRegistry at module import
 try:
     from glassalpha.core.registry import ModelRegistry
 
-    ModelRegistry.register("logistic_regression", LogisticRegressionWrapper)
-    ModelRegistry.register("sklearn_generic", SklearnGenericWrapper)
+    # Use the real implementations when sklearn is available
+    if SKLEARN_AVAILABLE:
+        ModelRegistry.register("logistic_regression", LogisticRegressionWrapper)
+        ModelRegistry.register("sklearn_generic", SklearnGenericWrapper)
+    else:
+        # Use stub implementations when sklearn is not available
+        ModelRegistry.register("logistic_regression", LogisticRegressionWrapper)
+        ModelRegistry.register("sklearn_generic", SklearnGenericWrapper)
 except ImportError:
     # Registry import failed - models will be unavailable
     pass

@@ -293,11 +293,11 @@ You should see the CLI help message with available commands.
 
 Run these checks to confirm everything is working:
 
-- [ ] **CLI is accessible**: `glassalpha --version` shows version number
+- [ ] **CLI is accessible**: `glassalpha --help` shows help message
 - [ ] **Python version correct**: `python --version` shows 3.11+ (3.11.x, 3.12.x, or 3.13.x)
 - [ ] **Base dependencies installed**: `glassalpha list` shows available components
-- [ ] **Models available**: `glassalpha models` shows at least `logistic_regression`
-- [ ] **Config validation works**: `glassalpha validate --config configs/german_credit_simple.yaml` passes
+- [ ] **Models available**: `glassalpha list models` shows at least `logistic_regression`
+- [ ] **Config validation works**: `glassalpha validate --config packages/configs/german_credit_simple.yaml` passes
 
 **All checks passed?** → Proceed to Step 2
 
@@ -313,13 +313,27 @@ Generate audit report (takes ~2-3 seconds with --fast):
 
 ```bash
 glassalpha audit \
-  --config configs/german_credit_simple.yaml \
+  --config packages/configs/german_credit_simple.yaml \
   --output my_first_audit.html \
   --fast
 ```
 
 !!! tip "Fast Mode for Demos"
-The `--fast` flag reduces bootstrap samples from 1000 to 100 for lightning-quick demos (~2-3 seconds vs ~5-7 seconds). Results are still statistically valid! For production audits, omit `--fast` to use full 1000 bootstrap samples for maximum precision.
+The `--fast` flag reduces bootstrap samples from 1000 to 100 for lightning-quick demos (~2-3 seconds vs ~5-7 seconds).
+
+**Statistical Impact:**
+
+- **Still Valid**: Results are statistically sound for most practical purposes
+- **Precision**: ~0.5-1% wider confidence intervals compared to full mode
+- **Use For**: Development, demos, iterative model tuning, CI/CD validation
+- **Avoid For**: Final regulatory submissions, high-stakes decisions
+
+**When to Use Full Mode:**
+
+- Production audits requiring maximum precision
+- Regulatory compliance where statistical rigor is critical
+- Research publications or academic validation
+- When fairness metrics need sub-1% precision
 
 !!! info "Timing Expectations"
 **With --fast flag (recommended for demos):**
@@ -365,15 +379,16 @@ Loading data and initializing components...
 ✓ Audit pipeline completed in 2.34s
 
 📊 Audit Summary:
-  ✅ Performance metrics: 6 computed
-     ✅ accuracy: 73.5%
-  ⚖️ Fairness metrics: 8/8 computed
+  ✅ Performance metrics: 8 computed
+     ✅ accuracy: 75.4%
+  ⚖️ Fairness metrics: 62/62 computed
      ✅ No bias detected
   🔍 Explanations: ✅ Global feature importance
-     Most important: duration_months (+0.127)
-  📋 Dataset: 1,000 samples, 21 features
-  🔧 Components: 3 selected
-     Model: xgboost
+     Most important: purpose_used_car (+1.022)
+  📋 Dataset: 1,000 samples, 23 features
+  🔧 Components: 2 selected
+     Model: logistic_regression
+     Explainer: coefficients
 
 Generating PDF report: my_first_audit.pdf
 ✓ Saved plot to /tmp/plots/shap_importance.png
@@ -580,7 +595,7 @@ glassalpha list
 Validate configuration without running audit:
 
 ```bash
-glassalpha validate --config configs/german_credit_simple.yaml
+glassalpha validate --config packages/configs/german_credit_simple.yaml
 ```
 
 Manage datasets:
@@ -665,7 +680,7 @@ pip install -e .
 
 # Option 3: Use module invocation (development)
 cd glassalpha/packages
-PYTHONPATH=src python3 -m glassalpha --version
+PYTHONPATH=src python3 -m glassalpha --help
 ```
 
 **Still not working?** Check if you're in the correct virtual environment:
@@ -719,7 +734,7 @@ glassalpha models
 
 ```bash
 # Validate config before running audit
-glassalpha validate --config configs/german_credit_simple.yaml
+glassalpha validate --config packages/configs/german_credit_simple.yaml
 
 # Check if config file exists
 ls -la configs/german_credit_simple.yaml
@@ -810,7 +825,7 @@ pip install -e ".[pdf]"
 
 When reporting issues, include:
 
-- Output of `glassalpha --version`
+- Output of `glassalpha --help` (first few lines)
 - Output of `python --version`
 - Full error message
 - Operating system
