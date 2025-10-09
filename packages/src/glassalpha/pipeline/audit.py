@@ -8,6 +8,7 @@ comprehensive audit results with full reproducibility tracking.
 import logging
 import os
 import traceback
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC
@@ -27,6 +28,9 @@ from glassalpha.utils import ManifestGenerator, get_component_seed, set_global_s
 from glassalpha.utils.preprocessing import preprocess_auto
 
 logger = logging.getLogger(__name__)
+
+# Suppress sklearn feature name warnings during audit (they're noisy but not errors)
+warnings.filterwarnings("ignore", message=".*does not have valid feature names.*", category=UserWarning)
 
 
 @dataclass
@@ -105,16 +109,23 @@ class AuditResults:
 class AuditPipeline:
     """Main pipeline for conducting comprehensive ML model audits."""
 
-    def __init__(self, config: AuditConfig, selected_explainer: str | None = None) -> None:
+    def __init__(
+        self,
+        config: AuditConfig,
+        selected_explainer: str | None = None,
+        requested_model: str | None = None,
+    ) -> None:
         """Initialize audit pipeline with configuration.
 
         Args:
             config: Validated audit configuration
             selected_explainer: Pre-selected explainer name to use (avoids re-selection)
+            requested_model: Originally requested model type (for fallback tracking)
 
         """
         self.config = config
         self.selected_explainer = selected_explainer
+        self.requested_model = requested_model
         self.results = AuditResults()
 
         # Ensure all components are imported and registered
@@ -605,7 +616,10 @@ class AuditPipeline:
             }
 
             # Track in manifest
-            self.results.selected_components["model"] = {"name": model_type, "type": "model"}
+            model_info = {"name": model_type, "type": "model"}
+            if self.requested_model and self.requested_model != model_type:
+                model_info["requested"] = self.requested_model
+            self.results.selected_components["model"] = model_info
             self.manifest_generator.add_component(
                 "model",
                 model_type,
@@ -647,7 +661,10 @@ class AuditPipeline:
                 "capabilities": model.get_capabilities() if hasattr(model, "get_capabilities") else {},
                 "feature_importance": {},
             }
-            self.results.selected_components["model"] = {"name": "logistic_regression", "type": "model"}
+            model_info = {"name": "logistic_regression", "type": "model"}
+            if self.requested_model and self.requested_model != "logistic_regression":
+                model_info["requested"] = self.requested_model
+            self.results.selected_components["model"] = model_info
 
             # Add to manifest
             self.manifest_generator.add_component(
@@ -722,7 +739,10 @@ class AuditPipeline:
 
         # Friend's spec: Track the model in both results and manifest
         # Track in results.selected_components with exact structure
-        self.results.selected_components["model"] = {"name": model_type, "type": "model"}
+        model_info = {"name": model_type, "type": "model"}
+        if self.requested_model and self.requested_model != model_type:
+            model_info["requested"] = self.requested_model
+        self.results.selected_components["model"] = model_info
 
         # Add model to manifest using new signature with details
         model_config = self.config.model.model_dump() if self.config.model else {}
@@ -1539,6 +1559,9 @@ class AuditPipeline:
         if not fairness_metrics:
             logger.warning("No fairness metrics found")
             self.results.fairness_analysis = {}
+            # Track that fairness analysis was skipped (could be due to missing protected_attributes)
+            if hasattr(self.config.data, "protected_attributes") and not self.config.data.protected_attributes:
+                self.results.fairness_analysis = {"skipped": "No protected attributes configured"}
             return
 
         # Use the new fairness runner with E10 confidence intervals
@@ -2342,6 +2365,7 @@ def run_audit_pipeline(
     config: AuditConfig,
     progress_callback: Callable | None = None,
     selected_explainer: str | None = None,
+    requested_model: str | None = None,
 ) -> AuditResults:
     """Convenience function to run audit pipeline.
 
@@ -2349,6 +2373,7 @@ def run_audit_pipeline(
         config: Validated audit configuration
         progress_callback: Optional progress callback function
         selected_explainer: Pre-selected explainer name to use (avoids re-selection)
+        requested_model: Originally requested model type (for fallback tracking)
 
     Returns:
         Audit results
@@ -2357,6 +2382,8 @@ def run_audit_pipeline(
     kwargs = {}
     if selected_explainer is not None:
         kwargs["selected_explainer"] = selected_explainer
+    if requested_model is not None:
+        kwargs["requested_model"] = requested_model
 
     pipeline = AuditPipeline(config, **kwargs)
     return pipeline.run(progress_callback)

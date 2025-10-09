@@ -1,3 +1,15 @@
+# GlassAlpha Template: Credit Card Fraud Detection
+#
+# This is a CUSTOMIZABLE TEMPLATE - not runnable without your data.
+#
+# Before using:
+#   1. Replace data.path with your CSV file path (currently: /path/to/creditcard.csv)
+#   2. Update protected_attributes for your domain
+#   3. Adjust model parameters as needed
+#
+# Documentation: https://glassalpha.com/getting-started/custom-data/
+# Example Usage: glassalpha audit --config credit_card_fraud_template.yaml
+
 # Credit Card Fraud Detection Configuration
 # Dataset: Credit Card Fraud Detection (Kaggle)
 # Task: Detect fraudulent transactions in anonymized credit card data

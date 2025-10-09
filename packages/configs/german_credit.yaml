@@ -1,3 +1,10 @@
+# GlassAlpha Example: German Credit Risk Assessment
+# Usage: glassalpha audit --config german_credit.yaml --output german_credit_audit.html
+# Built-in dataset: german_credit (automatically fetched)
+#
+# This is a RUNNABLE EXAMPLE that works out-of-the-box.
+# For customization guidance: https://glassalpha.com/getting-started/custom-data/
+
 # German Credit Dataset Audit Configuration
 # This configuration demonstrates a complete ML audit pipeline for credit risk assessment
 # using the German Credit dataset with fairness and bias analysis.

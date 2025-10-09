@@ -39,7 +39,11 @@ glassalpha init
 Generate an audit report
 
 ```bash
-glassalpha audit --fast  # Lightning-fast demo mode (~2-3 seconds!)
+# Lightning-fast development mode (2-3 seconds)
+glassalpha audit --fast
+
+# Or full audit with all features (5-7 seconds)
+glassalpha audit
 ```
 
 That's it. You now have a complete audit report with model performance, SHAP explanations, and fairness metrics.

@@ -1,5 +1,8 @@
-# GlassAlpha Minimal Configuration
-# The simplest working config - 5 lines to your first audit
+# GlassAlpha Example: Minimal Configuration (8 lines)
+# Usage: glassalpha audit --config minimal.yaml --output minimal_audit.html
+# Built-in dataset: german_credit (automatically fetched)
+#
+# This is a RUNNABLE EXAMPLE - the simplest working audit configuration.
 # Documentation: https://glassalpha.com/getting-started/quickstart/
 
 audit_profile: tabular_compliance

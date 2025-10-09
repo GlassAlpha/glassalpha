@@ -125,7 +125,13 @@ def _bootstrap_components() -> None:
     logger.debug("Component bootstrap completed")
 
 
-def _run_audit_pipeline(config, output_path: Path, selected_explainer: str | None = None, compact: bool = False):
+def _run_audit_pipeline(
+    config,
+    output_path: Path,
+    selected_explainer: str | None = None,
+    compact: bool = False,
+    requested_model: str | None = None,
+):
     """Execute the complete audit pipeline and generate report in specified format.
 
     Args:
@@ -133,6 +139,7 @@ def _run_audit_pipeline(config, output_path: Path, selected_explainer: str | Non
         output_path: Path where report should be saved
         selected_explainer: Optional explainer override
         compact: If True, generate compact report (excludes matched pairs from HTML)
+        requested_model: Originally requested model type (for fallback tracking)
 
     Returns:
         tuple: (audit_results, trained_model) where trained_model is the model used in the audit
@@ -193,6 +200,7 @@ def _run_audit_pipeline(config, output_path: Path, selected_explainer: str | Non
                 config,
                 progress_callback=update_progress,
                 selected_explainer=selected_explainer,
+                requested_model=requested_model,
             )
 
         if not audit_results.success:
@@ -427,26 +435,30 @@ def _display_audit_summary(audit_results) -> None:
 
     # Fairness analysis
     if audit_results.fairness_analysis:
-        bias_detected = []
-        total_metrics = 0
-        failed_metrics = 0
+        # Check if fairness analysis was skipped
+        if audit_results.fairness_analysis.get("skipped"):
+            typer.echo("  Fairness: SKIPPED (no protected attributes configured)")
+        else:
+            bias_detected = []
+            total_metrics = 0
+            failed_metrics = 0
 
-        for attr, metrics in audit_results.fairness_analysis.items():
-            for metric, result in metrics.items():
-                total_metrics += 1
-                if isinstance(result, dict):
-                    if "error" in result:
-                        failed_metrics += 1
-                    elif result.get("is_fair") is False:
-                        bias_detected.append(f"{attr}.{metric}")
+            for attr, metrics in audit_results.fairness_analysis.items():
+                for metric, result in metrics.items():
+                    total_metrics += 1
+                    if isinstance(result, dict):
+                        if "error" in result:
+                            failed_metrics += 1
+                        elif result.get("is_fair") is False:
+                            bias_detected.append(f"{attr}.{metric}")
 
-        computed_metrics = total_metrics - failed_metrics
-        typer.echo(f"  Fairness metrics: {computed_metrics}/{total_metrics} computed")
+            computed_metrics = total_metrics - failed_metrics
+            typer.echo(f"  Fairness metrics: {computed_metrics}/{total_metrics} computed")
 
-        if bias_detected:
-            typer.secho(f"     WARNING: Bias detected in: {', '.join(bias_detected[:2])}", fg=typer.colors.YELLOW)
-        elif computed_metrics > 0:
-            typer.secho("     No bias detected", fg=typer.colors.GREEN)
+            if bias_detected:
+                typer.secho(f"     WARNING: Bias detected in: {', '.join(bias_detected[:2])}", fg=typer.colors.YELLOW)
+            elif computed_metrics > 0:
+                typer.secho("     No bias detected", fg=typer.colors.GREEN)
 
     # SHAP explanations
     if audit_results.explanations:
@@ -799,7 +811,12 @@ def audit(  # pragma: no cover
         None,
         "--strict",
         "-s",
-        help="Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs)",
+        help="Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs). Allows built-in datasets.",
+    ),
+    strict_full: bool = typer.Option(
+        False,
+        "--strict-full",
+        help="Enable full strict mode for maximum regulatory compliance. Requires explicit data schemas and model paths. Disallows built-in datasets.",
     ),
     repro: bool | None = typer.Option(
         None,
@@ -861,7 +878,7 @@ def audit(  # pragma: no cover
     sample: int | None = typer.Option(
         None,
         "--sample",
-        help="Sample N rows from dataset for faster iteration (useful for large datasets during development)",
+        help="Sample N rows from dataset for faster iteration (useful for large datasets during development; minimum 100 rows)",
     ),
     compact_report: bool = typer.Option(
         True,
@@ -927,6 +944,10 @@ def audit(  # pragma: no cover
         output = defaults["output"]
         strict = defaults["strict"]
         repro = defaults["repro"]
+
+        # Handle strict_full override - this takes precedence over regular strict mode
+        if strict_full:
+            strict = True  # Enable strict mode
 
         # Show defaults if requested
         if show_defaults:
@@ -1012,7 +1033,13 @@ def audit(  # pragma: no cover
         if override_config:
             typer.echo(f"Applying overrides from: {override_config}")
 
-        audit_config = load_config_from_file(config, override_path=override_config, profile_name=profile, strict=strict)
+        audit_config = load_config_from_file(
+            config,
+            override_path=override_config,
+            profile_name=profile,
+            strict=strict,
+            strict_full=strict_full,
+        )
 
         # Apply fast mode if requested (reduces bootstrap samples for quick demos)
         if fast:
@@ -1028,6 +1055,19 @@ def audit(  # pragma: no cover
             if sample < 100:
                 typer.secho("❌ Sample size must be at least 100 rows", fg=typer.colors.RED, err=True)
                 raise typer.Exit(ExitCode.VALIDATION_ERROR)
+
+            # For small samples, reduce bootstrap iterations to prevent hanging
+            if sample < 200:
+                if not hasattr(audit_config, "metrics") or audit_config.metrics is None:
+                    from ..config.schema import MetricsConfig
+
+                    audit_config.metrics = MetricsConfig()
+                audit_config.metrics.n_bootstrap = min(100, audit_config.metrics.n_bootstrap)
+                typer.secho(
+                    f"⚠️  Small sample size ({sample} rows) detected - reducing bootstrap samples to {audit_config.metrics.n_bootstrap} for faster computation",
+                    fg=typer.colors.YELLOW,
+                )
+
             if not hasattr(audit_config, "data") or audit_config.data is None:
                 from ..config.schema import DataConfig
 
@@ -1039,7 +1079,7 @@ def audit(  # pragma: no cover
             )
 
         # Validate model availability and apply fallbacks (or fail if no_fallback is set)
-        audit_config = preflight_check_model(audit_config, allow_fallback=not no_fallback)
+        audit_config, requested_model = preflight_check_model(audit_config, allow_fallback=not no_fallback)
 
         # Determine explainer selection early for consistent display
         from ..explain.registry import ExplainerRegistry
@@ -1107,7 +1147,13 @@ def audit(  # pragma: no cover
 
         # Run audit pipeline
         typer.echo("\nRunning audit pipeline...")
-        audit_results = _run_audit_pipeline(audit_config, output, selected_explainer, compact=compact_report)
+        audit_results = _run_audit_pipeline(
+            audit_config,
+            output,
+            selected_explainer,
+            compact=compact_report,
+            requested_model=requested_model,
+        )
 
         # Save model if requested
         if save_model and audit_results:
@@ -1118,7 +1164,11 @@ def audit(  # pragma: no cover
                 if model_to_save is not None:
                     save_model.parent.mkdir(parents=True, exist_ok=True)
 
-                    # Save model with feature metadata for validation
+                    # Save model with feature metadata and preprocessing info for validation
+                    preprocessing_info = None
+                    if hasattr(audit_results, "execution_info") and "preprocessing" in audit_results.execution_info:
+                        preprocessing_info = audit_results.execution_info["preprocessing"]
+
                     model_artifact = {
                         "model": model_to_save,
                         "feature_names": (
@@ -1126,6 +1176,7 @@ def audit(  # pragma: no cover
                             if hasattr(audit_results, "data_info") and audit_results.data_info
                             else None
                         ),
+                        "preprocessing": preprocessing_info,
                         "glassalpha_version": "0.2.0",
                     }
 
@@ -1357,7 +1408,12 @@ def validate(  # pragma: no cover
     strict: bool = typer.Option(
         False,
         "--strict",
-        help="Validate for strict mode compliance",
+        help="Validate for strict mode compliance (allows built-in datasets)",
+    ),
+    strict_full: bool = typer.Option(
+        False,
+        "--strict-full",
+        help="Validate for full strict mode compliance (requires explicit schemas, disallows built-in datasets)",
     ),
     strict_validation: bool = typer.Option(
         False,
@@ -1405,11 +1461,16 @@ def validate(  # pragma: no cover
         typer.echo(f"Validating configuration: {config}")
 
         # Load and validate
-        audit_config = load_config_from_file(config, profile_name=profile, strict=strict)
+        audit_config = load_config_from_file(config, profile_name=profile, strict=strict, strict_full=strict_full)
 
         typer.echo(f"Profile: {audit_config.audit_profile}")
         typer.echo(f"Model type: {audit_config.model.type}")
-        typer.echo(f"Strict mode: {'valid' if strict else 'not checked'}")
+        strict_mode_desc = "not checked"
+        if strict_full:
+            strict_mode_desc = "full strict mode valid"
+        elif strict:
+            strict_mode_desc = "strict mode valid (quick mode allowed)"
+        typer.echo(f"Strict mode: {strict_mode_desc}")
 
         # Semantic validation
         validation_errors = []
@@ -1812,9 +1873,10 @@ def reasons(  # pragma: no cover
     import json
 
     import joblib
-    import pandas as pd
 
     try:
+        import pandas as pd
+
         # Load configuration if provided
         protected_attributes = None
         organization = "[Organization Name]"
@@ -1840,12 +1902,106 @@ def reasons(  # pragma: no cover
         if isinstance(loaded, dict) and "model" in loaded:
             model_obj = loaded["model"]
             expected_features = loaded.get("feature_names")
+            preprocessing_info = loaded.get("preprocessing")
         else:
             model_obj = loaded
             expected_features = None
+            preprocessing_info = None
 
         typer.echo(f"Loading data from: {data}")
         df = pd.read_csv(data)
+
+        # Apply preprocessing if available
+        if preprocessing_info:
+            typer.echo("Applying preprocessing to match model training...")
+
+            def _apply_preprocessing_from_model_artifact(
+                X: "pd.DataFrame", preprocessing_info: dict | None
+            ) -> "pd.DataFrame":
+                """Apply the same preprocessing that was used during model training."""
+                if preprocessing_info is None:
+                    return X
+                mode = preprocessing_info.get("mode", "auto")
+                if mode == "artifact":
+                    logger.warning("Artifact preprocessing not supported in reasons/recourse commands yet")
+                    return _apply_auto_preprocessing(X, preprocessing_info)
+                return _apply_auto_preprocessing(X, preprocessing_info)
+
+            def _apply_auto_preprocessing(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
+                """Apply auto preprocessing based on stored preprocessing info."""
+                from sklearn.compose import ColumnTransformer
+                from sklearn.preprocessing import OneHotEncoder
+
+                categorical_cols = preprocessing_info.get("categorical_cols", [])
+                numeric_cols = preprocessing_info.get("numeric_cols", [])
+
+                logger.debug(
+                    f"Applying auto preprocessing: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns"
+                )
+
+                if not categorical_cols:
+                    return X
+
+                transformers = []
+                if categorical_cols:
+                    transformers.append(
+                        (
+                            "categorical",
+                            OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop=None),
+                            categorical_cols,
+                        )
+                    )
+                if numeric_cols:
+                    transformers.append(("numeric", "passthrough", numeric_cols))
+
+                preprocessor = ColumnTransformer(transformers=transformers, remainder="drop")
+
+                try:
+                    X_transformed = preprocessor.fit_transform(X)
+                    feature_names = []
+                    if categorical_cols:
+                        cat_transformer = preprocessor.named_transformers_["categorical"]
+                        if hasattr(cat_transformer, "get_feature_names_out"):
+                            cat_features = cat_transformer.get_feature_names_out(categorical_cols)
+                        else:
+                            cat_features = []
+                            for i, col in enumerate(categorical_cols):
+                                unique_vals = cat_transformer.categories_[i]
+                                cat_features.extend([f"{col}_{val}" for val in unique_vals])
+                        feature_names.extend(cat_features)
+                    if numeric_cols:
+                        feature_names.extend(numeric_cols)
+
+                    sanitized_feature_names = []
+                    for name in feature_names:
+                        sanitized = (
+                            name.replace("<", "lt")
+                            .replace(">", "gt")
+                            .replace("[", "_")
+                            .replace("]", "_")
+                            .replace(" ", "_")
+                        )
+                        sanitized = "_".join(filter(None, sanitized.split("_")))
+                        sanitized_feature_names.append(sanitized)
+
+                    X_processed = pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
+                    logger.info(f"Preprocessed {len(categorical_cols)} categorical columns with OneHotEncoder")
+                    logger.info(f"Final feature count: {len(sanitized_feature_names)} (from {len(X.columns)} original)")
+                    return X_processed
+
+                except Exception as e:
+                    logger.exception(f"Preprocessing failed: {e}")
+                    logger.warning("Falling back to simple preprocessing")
+                    X_processed = X.copy()
+                    for col in categorical_cols:
+                        if X_processed[col].dtype == "object":
+                            unique_values = X_processed[col].unique()
+                            value_map = {val: idx for idx, val in enumerate(unique_values)}
+                            X_processed[col] = X_processed[col].map(value_map)
+                            logger.debug(f"Label encoded column '{col}': {value_map}")
+                    return X_processed
+
+            df = _apply_preprocessing_from_model_artifact(df, preprocessing_info)
 
         # Validate feature alignment if metadata available
         if expected_features is not None:
@@ -2086,9 +2242,10 @@ def recourse(  # pragma: no cover
     import json
 
     import joblib
-    import pandas as pd
 
     try:
+        import pandas as pd
+
         # Load configuration
         immutable_features: list[str] = []
         monotonic_constraints: dict[str, str] = {}
@@ -2126,12 +2283,106 @@ def recourse(  # pragma: no cover
         if isinstance(loaded, dict) and "model" in loaded:
             model_obj = loaded["model"]
             expected_features = loaded.get("feature_names")
+            preprocessing_info = loaded.get("preprocessing")
         else:
             model_obj = loaded
             expected_features = None
+            preprocessing_info = None
 
         typer.echo(f"Loading data from: {data}")
         df = pd.read_csv(data)
+
+        # Apply preprocessing if available
+        if preprocessing_info:
+            typer.echo("Applying preprocessing to match model training...")
+
+            def _apply_preprocessing_from_model_artifact(
+                X: "pd.DataFrame", preprocessing_info: dict | None
+            ) -> "pd.DataFrame":
+                """Apply the same preprocessing that was used during model training."""
+                if preprocessing_info is None:
+                    return X
+                mode = preprocessing_info.get("mode", "auto")
+                if mode == "artifact":
+                    logger.warning("Artifact preprocessing not supported in reasons/recourse commands yet")
+                    return _apply_auto_preprocessing(X, preprocessing_info)
+                return _apply_auto_preprocessing(X, preprocessing_info)
+
+            def _apply_auto_preprocessing(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
+                """Apply auto preprocessing based on stored preprocessing info."""
+                from sklearn.compose import ColumnTransformer
+                from sklearn.preprocessing import OneHotEncoder
+
+                categorical_cols = preprocessing_info.get("categorical_cols", [])
+                numeric_cols = preprocessing_info.get("numeric_cols", [])
+
+                logger.debug(
+                    f"Applying auto preprocessing: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns"
+                )
+
+                if not categorical_cols:
+                    return X
+
+                transformers = []
+                if categorical_cols:
+                    transformers.append(
+                        (
+                            "categorical",
+                            OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop=None),
+                            categorical_cols,
+                        )
+                    )
+                if numeric_cols:
+                    transformers.append(("numeric", "passthrough", numeric_cols))
+
+                preprocessor = ColumnTransformer(transformers=transformers, remainder="drop")
+
+                try:
+                    X_transformed = preprocessor.fit_transform(X)
+                    feature_names = []
+                    if categorical_cols:
+                        cat_transformer = preprocessor.named_transformers_["categorical"]
+                        if hasattr(cat_transformer, "get_feature_names_out"):
+                            cat_features = cat_transformer.get_feature_names_out(categorical_cols)
+                        else:
+                            cat_features = []
+                            for i, col in enumerate(categorical_cols):
+                                unique_vals = cat_transformer.categories_[i]
+                                cat_features.extend([f"{col}_{val}" for val in unique_vals])
+                        feature_names.extend(cat_features)
+                    if numeric_cols:
+                        feature_names.extend(numeric_cols)
+
+                    sanitized_feature_names = []
+                    for name in feature_names:
+                        sanitized = (
+                            name.replace("<", "lt")
+                            .replace(">", "gt")
+                            .replace("[", "_")
+                            .replace("]", "_")
+                            .replace(" ", "_")
+                        )
+                        sanitized = "_".join(filter(None, sanitized.split("_")))
+                        sanitized_feature_names.append(sanitized)
+
+                    X_processed = pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
+                    logger.info(f"Preprocessed {len(categorical_cols)} categorical columns with OneHotEncoder")
+                    logger.info(f"Final feature count: {len(sanitized_feature_names)} (from {len(X.columns)} original)")
+                    return X_processed
+
+                except Exception as e:
+                    logger.exception(f"Preprocessing failed: {e}")
+                    logger.warning("Falling back to simple preprocessing")
+                    X_processed = X.copy()
+                    for col in categorical_cols:
+                        if X_processed[col].dtype == "object":
+                            unique_values = X_processed[col].unique()
+                            value_map = {val: idx for idx, val in enumerate(unique_values)}
+                            X_processed[col] = X_processed[col].map(value_map)
+                            logger.debug(f"Label encoded column '{col}': {value_map}")
+                    return X_processed
+
+            df = _apply_preprocessing_from_model_artifact(df, preprocessing_info)
 
         # Validate feature alignment if metadata available
         if expected_features is not None:

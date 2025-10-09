@@ -13,9 +13,6 @@ class TestPluginDependencies:
 
     def test_logistic_regression_always_available(self):
         """Test that logistic regression is always available."""
-        # Import sklearn models to trigger registration
-        from glassalpha.models.tabular import sklearn
-
         available = ModelRegistry.available_plugins()
         assert "logistic_regression" in available
         assert available["logistic_regression"] is True
@@ -41,8 +38,9 @@ class TestPluginDependencies:
             config.model.allow_fallback = True
 
             # Should fallback to logistic regression
-            result = preflight_check_model(config)
-            assert result.model.type == "logistic_regression"
+            modified_config, originally_requested = preflight_check_model(config)
+            assert modified_config.model.type == "logistic_regression"
+            assert originally_requested == "xgboost"  # Should return the originally requested model
 
     def test_missing_xgboost_no_fallback(self):
         """Test handling when XGBoost is not available and fallbacks disabled."""

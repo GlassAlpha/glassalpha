@@ -1,3 +1,15 @@
+# GlassAlpha Template: Folktables ACS Income Prediction
+#
+# This is a CUSTOMIZABLE TEMPLATE - not runnable without your data.
+#
+# Before using:
+#   1. Replace data.path with your CSV file path (currently: /path/to/folktables_income.csv)
+#   2. Update protected_attributes for your domain
+#   3. Install folktables: pip install folktables
+#
+# Documentation: https://glassalpha.com/getting-started/custom-data/
+# Example Usage: glassalpha audit --config folktables_income_template.yaml
+
 # Folktables ACS Income Prediction Configuration
 # Dataset: American Community Survey (ACS) Public Use Microdata Sample
 # Task: Predict whether an individual's income exceeds $50,000

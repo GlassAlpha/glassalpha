@@ -63,7 +63,7 @@ graph TB
 pipx install glassalpha
 
 # 2. Generate audit (lightning fast!)
-glassalpha audit --config packages/configs/german_credit_simple.yaml --output audit.html --fast
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.html --fast
 
 # 3. Done! Open your professional report (~2-3 seconds total)
 open audit.html  # macOS

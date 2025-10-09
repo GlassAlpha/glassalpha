@@ -17,7 +17,7 @@ from .exit_codes import ExitCode
 logger = logging.getLogger(__name__)
 
 
-def preflight_check_model(config: Any, allow_fallback: bool = True) -> Any:
+def preflight_check_model(config: Any, allow_fallback: bool = True) -> tuple[Any, str | None]:
     """Validate model availability and provide fallbacks.
 
     Args:
@@ -25,7 +25,8 @@ def preflight_check_model(config: Any, allow_fallback: bool = True) -> Any:
         allow_fallback: If False, fail instead of falling back to alternative models
 
     Returns:
-        Modified config with fallback model if needed
+        Tuple of (modified_config, requested_model_or_none)
+        requested_model_or_none is the originally requested model if fallback occurred, None otherwise
 
     Raises:
         typer.Exit: If no suitable model is available and fallbacks disabled
@@ -34,7 +35,7 @@ def preflight_check_model(config: Any, allow_fallback: bool = True) -> Any:
     if not hasattr(config, "model") or not config.model:
         # Use default model if no model specified
         config.model = _create_default_model_config()
-        return config
+        return config, None
 
     model_type = config.model.type
 
@@ -69,7 +70,7 @@ def preflight_check_model(config: Any, allow_fallback: bool = True) -> Any:
                 typer.echo()
 
                 config.model.type = fallback_model
-                return config
+                return config, model_type
             # No fallback available
             _show_installation_error(model_type)
             raise typer.Exit(ExitCode.VALIDATION_ERROR)
@@ -77,7 +78,7 @@ def preflight_check_model(config: Any, allow_fallback: bool = True) -> Any:
         _show_installation_error(model_type)
         raise typer.Exit(ExitCode.VALIDATION_ERROR)
 
-    return config
+    return config, None
 
 
 def _create_default_model_config():

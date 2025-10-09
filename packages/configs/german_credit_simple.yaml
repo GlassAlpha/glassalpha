@@ -1,3 +1,10 @@
+# GlassAlpha Example: German Credit (Simplified)
+# Usage: glassalpha audit --config german_credit_simple.yaml --output german_credit_simple_audit.html
+# Built-in dataset: german_credit (automatically fetched)
+#
+# This is a RUNNABLE EXAMPLE with basic metrics only.
+# For full audit: use german_credit.yaml
+
 audit_profile: tabular_compliance
 
 reproducibility:

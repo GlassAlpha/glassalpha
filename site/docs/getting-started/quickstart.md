@@ -4,6 +4,18 @@
 
 **Prefer notebooks?** Try our [interactive Colab notebook](https://colab.research.google.com/github/GlassAlpha/glassalpha/blob/main/examples/notebooks/quickstart_colab.ipynb) - generate your first audit in 8 minutes with zero setup.
 
+## ⚡ Lightning-fast development mode
+
+**For development and testing:** Use the `--fast` flag to get instant feedback (2-3 seconds instead of 5-7 seconds):
+
+```bash
+# Lightning-fast audit for development
+glassalpha audit --config your_config.yaml --fast
+
+# Even faster with sample data
+glassalpha audit --config your_config.yaml --fast --sample 1000
+```
+
 ## The 5-minute version
 
 Get your first professional audit PDF in 5 minutes:

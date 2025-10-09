@@ -187,6 +187,20 @@ Or sample the dataset:
 glassalpha audit --config config.yaml --sample 1000
 ```
 
+### "Sample size must be at least 100 rows"
+
+**Problem**: The `--sample` flag requires at least 100 rows for statistical validity.
+
+**Solution**: Use a larger sample size:
+
+```bash
+# For development testing
+glassalpha audit --config config.yaml --sample 1000
+
+# For production (full dataset)
+glassalpha audit --config config.yaml
+```
+
 ## QuickStart Issues
 
 ### "Directory already exists"
@@ -224,6 +238,22 @@ pip install --upgrade glassalpha
 
 ```bash
 glassalpha audit --config config.yaml --output report.html
+```
+
+### "No such option: --verbose"
+
+**Problem**: The `--verbose` flag is global, not command-specific.
+
+**Solution**: Use it before the command:
+
+```bash
+# Wrong - doesn't work
+glassalpha audit --config config.yaml --verbose
+
+# Right - global flag
+glassalpha --verbose audit --config config.yaml
+# or
+glassalpha -v audit --config config.yaml
 ```
 
 ### "Got unexpected extra argument"

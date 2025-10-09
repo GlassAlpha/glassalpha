@@ -198,13 +198,16 @@ def validate_config(config: dict[str, Any] | AuditConfig) -> AuditConfig:
         raise ValueError(f"Invalid configuration: {e}") from e
 
 
-def load_config(config_dict: dict[str, Any], profile_name: str | None = None, strict: bool = False) -> AuditConfig:
+def load_config(
+    config_dict: dict[str, Any], profile_name: str | None = None, strict: bool = False, strict_full: bool = False
+) -> AuditConfig:
     """Load configuration from dictionary.
 
     Args:
         config_dict: Configuration dictionary
         profile_name: Override audit profile
         strict: Enable strict mode validation
+        strict_full: Enable full strict mode (no built-in datasets allowed)
 
     Returns:
         Validated AuditConfig object
@@ -227,12 +230,26 @@ def load_config(config_dict: dict[str, Any], profile_name: str | None = None, st
 
     audit_config = validate_config(config_dict)
 
+    # Auto-detect target column for built-in datasets if not specified
+    if audit_config.data.dataset and audit_config.data.dataset != "custom" and not audit_config.data.target_column:
+        # Hardcoded target columns for known built-in datasets
+        known_target_columns = {
+            "german_credit": "credit_risk",
+            "adult_income": "income",
+        }
+
+        if audit_config.data.dataset in known_target_columns:
+            audit_config.data.target_column = known_target_columns[audit_config.data.dataset]
+            logger.info(
+                f"Auto-detected target column '{audit_config.data.target_column}' for built-in dataset '{audit_config.data.dataset}'"
+            )
+
     # Apply strict mode validation if enabled
-    if audit_config.strict_mode or strict:
+    if audit_config.strict_mode or strict or strict_full:
         from .strict import validate_strict_mode  # noqa: PLC0415
 
-        # Auto-detect quick mode: use if built-in dataset specified
-        quick_mode = bool(audit_config.data.dataset and audit_config.data.dataset != "custom")
+        # Determine quick mode: use if built-in dataset specified AND not in full strict mode
+        quick_mode = bool(audit_config.data.dataset and audit_config.data.dataset != "custom" and not strict_full)
         validate_strict_mode(audit_config, quick_mode=quick_mode)
 
     logger.info("Configuration validated successfully")
@@ -244,6 +261,7 @@ def load_config_from_file(
     override_path: str | Path | None = None,
     profile_name: str | None = None,
     strict: bool = False,
+    strict_full: bool = False,
 ) -> AuditConfig:
     """Load configuration from YAML file.
 
@@ -252,6 +270,7 @@ def load_config_from_file(
         override_path: Optional path to override configuration
         profile_name: Override audit profile
         strict: Enable strict mode validation
+        strict_full: Enable full strict mode (no built-in datasets allowed)
 
     Returns:
         Validated AuditConfig object
@@ -273,7 +292,7 @@ def load_config_from_file(
         config_dict = merge_configs(config_dict, override_dict)
 
     # Load and validate
-    return load_config(config_dict, profile_name, strict)
+    return load_config(config_dict, profile_name, strict, strict_full)
 
 
 def save_config(config: AuditConfig, path: str | Path, include_defaults: bool = False) -> None:

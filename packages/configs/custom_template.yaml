@@ -1,3 +1,16 @@
+# GlassAlpha Template: Comprehensive Custom Audit Configuration
+#
+# This is a CUSTOMIZABLE TEMPLATE - copy and modify for your specific use case.
+#
+# Before using:
+#   1. Replace data.path with your CSV file path (currently: /path/to/your/dataset.csv)
+#   2. Update all sections marked with "CUSTOMIZE:" comments
+#   3. Remove sections you don't need
+#   4. Test with: glassalpha validate --config your_custom_config.yaml
+#
+# Documentation: https://glassalpha.com/getting-started/custom-data/
+# Example Usage: glassalpha audit --config your_custom_config.yaml
+
 # ============================================================================
 # GlassAlpha Custom Audit Configuration Template
 # ============================================================================

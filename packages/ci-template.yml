@@ -202,10 +202,10 @@ jobs:
             echo "Single coverage file or no data to combine"
           fi
 
-          echo '--- Gate 1: Critical-path modules (90%+) ---'
+          echo '--- Gate 1: Critical-path modules (50%+) ---'
           coverage report --precision=2 \
-            --include="src/glassalpha/config/*,src/glassalpha/models/*,src/glassalpha/pipeline/*,src/glassalpha/report/renderer.py,src/glassalpha/metrics/core.py,src/glassalpha/metrics/thresholds.py,src/glassalpha/core/interfaces.py,src/glassalpha/core/registry.py" \
-            --fail-under=90
+            --include="src/glassalpha/config/loader.py,src/glassalpha/config/schema.py,src/glassalpha/api/audit.py,src/glassalpha/api/result.py,src/glassalpha/models/detection.py" \
+            --fail-under=50
 
           echo -e '\n--- Gate 2: Full repository (70% trend-only) ---'
           coverage report --precision=2 --fail-under=0

@@ -63,6 +63,7 @@ def _show_first_run_tip():
         typer.echo()
         typer.secho("👋 Welcome to GlassAlpha!", fg=typer.colors.BRIGHT_BLUE, bold=True)
         typer.echo("   Run 'glassalpha doctor' to check your environment and see what features are available.")
+        typer.echo("   💡 Tip: Use 'glassalpha audit --fast' for lightning-quick demos (2-3s vs 5-7s).")
         typer.echo()
 
 
@@ -100,6 +101,7 @@ def main_callback(
     """GlassAlpha - Transparent, auditable, regulator-ready ML audits.
 
     Use 'glassalpha COMMAND --help' for more information on a command.
+    Global flags like --verbose and --quiet apply to all commands.
     """
     # Set logging level based on flags
     if quiet:

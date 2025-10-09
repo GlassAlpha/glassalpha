@@ -180,6 +180,9 @@ id_ed25519*
 
 # AI-generated temporary test files
 .ai-scratch/
+.saved-prompts/
+temp-*
+**/temp-*
 
 # Generated PDFs (except example docs)
 *.pdf
