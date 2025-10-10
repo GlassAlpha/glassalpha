@@ -62,7 +62,7 @@ viz = ["seaborn>=0.13"]
 pdf = [
     "weasyprint>=63,<64; platform_system!='Windows'",
     "reportlab>=4.1; platform_system=='Windows'",
-    "pypdf>=3.0,<5.0",  # For PDF metadata normalization
+    "pypdf>=3.0,<7.0",  # For PDF metadata normalization
 ]
 
 # Docs alias for backward compatibility
