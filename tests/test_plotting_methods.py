@@ -91,7 +91,7 @@ def test_calibration_plot_not_implemented():
     calib = CalibrationMetrics(calib_data)
 
     # Should raise NotImplementedError with helpful message
-    with pytest.raises(NotImplementedError, match="Calibration curve plotting requires"):
+    with pytest.raises(NotImplementedError, match="Interactive calibration plotting not yet implemented"):
         calib.plot()
 
 

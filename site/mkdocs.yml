@@ -147,6 +147,7 @@ nav:
           - Counterfactual Recourse: guides/recourse.md
           - Testing Demographic Shifts: guides/shift-testing.md
           - Strict Mode: guides/strict-mode.md
+          - Determinism & Reproducibility: guides/determinism.md
 
   # === COMPLIANCE (Regulatory requirements) ===
   - Compliance:
@@ -193,6 +194,11 @@ nav:
           - Model Selection: reference/model-selection.md
           - Explainer Selection: reference/explainers.md
           - Model-Explainer Compatibility: reference/model-explainer-compatibility.md
+
+      # Utilities
+      - Utilities:
+          - DeterminismValidator: reference/utils/determinism-validator.md
+          - Explainer Registry: reference/explain/registry.md
 
       # Community
       - Contributing: reference/contributing.md

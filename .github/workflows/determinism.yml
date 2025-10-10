@@ -1,19 +1,18 @@
-name: Determinism Tests
+name: Determinism Validation
 
 on:
     push:
-        branches: [main, develop]
+        branches: [main]
     pull_request:
-        branches: [main, develop]
-
-permissions:
-    contents: read
-    pull-requests: read
+        branches: [main]
+    workflow_dispatch: # Allow manual triggers
 
 jobs:
-    test-determinism:
-        name: Test Byte-Identical Reproducibility
+    validate-determinism:
+        name: Validate Determinism (${{ matrix.os }}, Python ${{ matrix.python-version }})
         runs-on: ${{ matrix.os }}
+        timeout-minutes: 20
+
         strategy:
             fail-fast: false
             matrix:
@@ -21,64 +20,283 @@ jobs:
                 python-version: ["3.11", "3.12"]
 
         steps:
-            - uses: actions/checkout@v5
+            - name: Checkout repository
+              uses: actions/checkout@v5
 
             - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v6
               with:
                   python-version: ${{ matrix.python-version }}
+                  cache: "pip"
 
-            - name: Install dependencies
+            - name: Install system dependencies (Ubuntu)
+              if: runner.os == 'Linux'
               run: |
-                  pip install --upgrade pip
-                  pip install -e ".[dev]"
+                  sudo apt-get update
+                  sudo apt-get install -y --no-install-recommends \
+                    libgomp1 \
+                    libopenblas-dev
 
-            - name: Run determinism tests
+            - name: Install dependencies with constraints
               run: |
-                  pytest tests/integration/test_determinism.py -v --tb=short
+                  python -m pip install --upgrade pip setuptools wheel
+                  pip install -c constraints.txt -e ".[all]"
+                  pip install shap  # Required for deterministic explainer selection
 
-            - name: Validate deterministic environment
+            - name: Verify SHAP installation
               run: |
-                  python -c "
-                  from glassalpha.utils.determinism import validate_deterministic_environment, deterministic
-                  import sys
-                  with deterministic(42, strict=True):
-                      result = validate_deterministic_environment()
-                      sys.exit(0 if result['status'] == 'pass' else 1)
-                  "
+                  python -c "import shap; print(f'✅ SHAP {shap.__version__} available')" || \
+                    (echo "❌ SHAP not available - determinism validation requires SHAP"; exit 1)
 
-    test-cross-platform-consistency:
-        name: Cross-Platform Consistency Check
+            - name: Set deterministic environment
+              run: |
+                  echo "SOURCE_DATE_EPOCH=1577836800" >> $GITHUB_ENV
+                  echo "PYTHONHASHSEED=42" >> $GITHUB_ENV
+                  echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
+                  echo "OPENBLAS_NUM_THREADS=1" >> $GITHUB_ENV
+                  echo "MKL_NUM_THREADS=1" >> $GITHUB_ENV
+                  echo "GLASSALPHA_DETERMINISTIC=1" >> $GITHUB_ENV
+                  echo "TZ=UTC" >> $GITHUB_ENV
+                  echo "MPLBACKEND=Agg" >> $GITHUB_ENV
+
+            - name: Verify environment setup
+              run: |
+                  echo "=== Deterministic Environment ==="
+                  echo "SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
+                  echo "PYTHONHASHSEED: $PYTHONHASHSEED"
+                  echo "OMP_NUM_THREADS: $OMP_NUM_THREADS"
+                  echo "Python version: $(python --version)"
+                  echo "Platform: $(uname -a)"
+
+            - name: Run determinism regression test
+              run: |
+                  echo "=== Running determinism test (single run) ==="
+                  pytest tests/test_critical_regression_guards.py::TestCriticalRegressions::test_cli_determinism_regression_guard -v --tb=short
+
+            - name: Run multi-run validation (5 consecutive runs)
+              run: |
+                  echo "=== Running determinism test 5 times ==="
+                  for i in {1..5}; do
+                    echo "Run $i/5..."
+                    pytest tests/test_critical_regression_guards.py::TestCriticalRegressions::test_cli_determinism_regression_guard -v --tb=line || exit 1
+                  done
+                  echo "✅ All 5 runs passed"
+
+            - name: Cross-platform hash validation
+              run: |
+                  echo "=== Cross-platform determinism check ==="
+
+                  # Create test config
+                  cat > /tmp/test_config.yaml << 'EOF'
+                  audit_profile: tabular_compliance
+                  data:
+                    dataset: german_credit
+                    target_column: credit_risk
+                  model:
+                    type: logistic_regression
+                  seed: 42
+                  EOF
+
+                  # Run audit twice
+                  glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit1.pdf --seed 42
+                  glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit2.pdf --seed 42
+
+                  # Compute hashes
+                  hash1=$(sha256sum /tmp/audit1.pdf | cut -d' ' -f1)
+                  hash2=$(sha256sum /tmp/audit2.pdf | cut -d' ' -f1)
+
+                  echo "Hash 1: $hash1"
+                  echo "Hash 2: $hash2"
+
+                  # Compare
+                  if [ "$hash1" = "$hash2" ]; then
+                    echo "✅ Hashes match - deterministic"
+                  else
+                    echo "❌ Hashes differ - non-deterministic"
+                    exit 1
+                  fi
+
+            - name: Upload audit artifacts
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: determinism-artifacts-${{ matrix.os }}-py${{ matrix.python-version }}
+                  path: |
+                      /tmp/audit*.pdf
+                      /tmp/test_config.yaml
+                  retention-days: 7
+
+    compare-cross-platform:
+        name: Compare Cross-Platform Hashes
+        needs: validate-determinism
         runs-on: ubuntu-latest
-        needs: test-determinism
+        if: always()
 
         steps:
-            - uses: actions/checkout@v5
+            - name: Checkout repository
+              uses: actions/checkout@v5
+
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: artifacts
+
+            - name: Compare hashes across platforms
+              run: |
+                  echo "=== Cross-Platform Hash Comparison ==="
+
+                  # Find all audit1.pdf files
+                  find artifacts -name "audit1.pdf" -type f | while read file; do
+                    platform=$(echo "$file" | cut -d'-' -f3)
+                    python_ver=$(echo "$file" | cut -d'-' -f4)
+                    hash=$(sha256sum "$file" | cut -d' ' -f1)
+                    echo "$platform | Python $python_ver | $hash"
+                  done > /tmp/hashes.txt
+
+                  cat /tmp/hashes.txt
+
+                  # Check if all hashes are identical
+                  unique_hashes=$(cut -d'|' -f3 /tmp/hashes.txt | sort -u | wc -l)
+
+                  if [ "$unique_hashes" -eq 1 ]; then
+                    echo "✅ All platforms produce identical hashes"
+                  else
+                    echo "❌ Hash mismatch across platforms:"
+                    cut -d'|' -f3 /tmp/hashes.txt | sort | uniq -c
+                    exit 1
+                  fi
+
+    validate-determinism-framework:
+        name: Test Determinism Framework
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v5
 
             - name: Set up Python 3.11
               uses: actions/setup-python@v6
               with:
                   python-version: "3.11"
+                  cache: "pip"
 
             - name: Install dependencies
               run: |
-                  pip install --upgrade pip
-                  pip install -e ".[dev]"
+                  pip install -c constraints.txt -e ".[all]"
+                  pip install shap
 
-            - name: Generate reference outputs
+            - name: Test DeterminismValidator
               run: |
-                  # Generate reference manifest with deterministic context
-                  python -c "
-                  from glassalpha.utils.determinism import deterministic
-                  import json
-                  with deterministic(42, strict=True):
-                      manifest = {'seed': 42, 'platform': 'linux', 'python': '3.11'}
-                      with open('reference_manifest.json', 'w') as f:
-                          json.dump(manifest, f, sort_keys=True, indent=2)
-                  "
+                  python3 << 'EOF'
+                  from glassalpha.utils.determinism_validator import validate_audit_determinism
+                  from pathlib import Path
+                  import tempfile
+                  import yaml
 
-            - name: Upload reference artifacts
-              uses: actions/upload-artifact@v4
-              with:
-                  name: reference-outputs
-                  path: reference_manifest.json
+                  # Create test config
+                  config = {
+                      'audit_profile': 'tabular_compliance',
+                      'data': {
+                          'dataset': 'german_credit',
+                          'target_column': 'credit_risk',
+                      },
+                      'model': {'type': 'logistic_regression'},
+                      'seed': 42,
+                  }
+
+                  with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+                      yaml.dump(config, f)
+                      config_path = Path(f.name)
+
+                  try:
+                      # Run validation
+                      report = validate_audit_determinism(
+                          config_path=config_path,
+                          runs=3,
+                          seed=42,
+                          check_shap=True,
+                      )
+
+                      print(f"Is deterministic: {report.is_deterministic}")
+                      print(f"Summary: {report.summary}")
+                      print(f"Unique hashes: {len(set(report.hashes))}")
+
+                      if not report.is_deterministic:
+                          print("Non-determinism sources:")
+                          for source in report.non_determinism_sources:
+                              print(f"  - {source}")
+                          exit(1)
+
+                      print("✅ DeterminismValidator working correctly")
+
+                  finally:
+                      config_path.unlink()
+                  EOF
+
+            - name: Test explainer selection determinism
+              run: |
+                  python3 << 'EOF'
+                  from glassalpha.explain.registry import select_explainer_deterministic, _available_explainers
+                  from sklearn.linear_model import LogisticRegression
+                  import pandas as pd
+                  import numpy as np
+
+                  # Create test data
+                  np.random.seed(42)
+                  X = pd.DataFrame(np.random.randn(100, 5), columns=[f'f{i}' for i in range(5)])
+                  y = np.random.randint(0, 2, 100)
+
+                  # Train model
+                  model = LogisticRegression(random_state=42)
+                  model.fit(X, y)
+
+                  # Check available explainers
+                  available = _available_explainers()
+                  print(f"Available explainers: {list(available.keys())}")
+
+                  # Test deterministic selection
+                  explainer1, _ = select_explainer_deterministic(
+                      model=model,
+                      X_test=X.iloc[:10],
+                      priority=['treeshap', 'coefficients'],
+                      strict=False,
+                  )
+
+                  explainer2, _ = select_explainer_deterministic(
+                      model=model,
+                      X_test=X.iloc[:10],
+                      priority=['treeshap', 'coefficients'],
+                      strict=False,
+                  )
+
+                  assert explainer1 == explainer2, f"Non-deterministic selection: {explainer1} != {explainer2}"
+                  print(f"✅ Deterministic explainer selection: {explainer1}")
+                  EOF
+
+    report-status:
+        name: Report Validation Status
+        needs:
+            [
+                validate-determinism,
+                compare-cross-platform,
+                validate-determinism-framework,
+            ]
+        runs-on: ubuntu-latest
+        if: always()
+
+        steps:
+            - name: Check validation results
+              run: |
+                  echo "=== Determinism Validation Summary ==="
+                  echo "Determinism tests: ${{ needs.validate-determinism.result }}"
+                  echo "Cross-platform comparison: ${{ needs.compare-cross-platform.result }}"
+                  echo "Framework tests: ${{ needs.validate-determinism-framework.result }}"
+
+                  if [ "${{ needs.validate-determinism.result }}" != "success" ] || \
+                     [ "${{ needs.compare-cross-platform.result }}" != "success" ] || \
+                     [ "${{ needs.validate-determinism-framework.result }}" != "success" ]; then
+                    echo "❌ Determinism validation failed"
+                    exit 1
+                  fi
+
+                  echo "✅ All determinism checks passed"

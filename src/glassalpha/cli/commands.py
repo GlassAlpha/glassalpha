@@ -1313,15 +1313,31 @@ def audit(  # pragma: no cover
             typer.echo(f"   {output} ({file_size:.1f} KB)")
             typer.echo()
 
-        # Run audit pipeline
+        # Run audit pipeline in deterministic context
         typer.echo("Running audit pipeline...")
-        audit_results = _run_audit_pipeline(
-            audit_config,
-            output,
-            selected_explainer,
-            compact=compact_report,
-            requested_model=requested_model,
+
+        # Use deterministic context for entire pipeline execution
+        from ..utils.determinism import deterministic
+
+        seed = (
+            audit_config.reproducibility.random_seed
+            if hasattr(audit_config, "reproducibility")
+            and audit_config.reproducibility
+            and hasattr(audit_config.reproducibility, "random_seed")
+            else 42
         )
+
+        # Get strict mode from config, defaulting appropriately
+        strict_mode = getattr(config, "strict_mode", False)
+
+        with deterministic(seed=seed, strict=strict_mode):
+            audit_results = _run_audit_pipeline(
+                audit_config,
+                output,
+                selected_explainer,
+                compact=compact_report,
+                requested_model=requested_model,
+            )
 
         # Save model if requested
         if save_model and audit_results:
@@ -2639,7 +2655,7 @@ def reasons(  # pragma: no cover
                 "model_hash": result.model_hash,
                 "seed": result.seed,
             }
-            output_text = json.dumps(output_dict, indent=2)
+            output_text = json.dumps(output_dict, indent=2, sort_keys=True)
         else:
             # Text format (ECOA notice)
             output_text = format_adverse_action_notice(
@@ -3294,7 +3310,7 @@ def recourse(  # pragma: no cover
             "total_candidates": result.total_candidates,
             "feasible_candidates": result.feasible_candidates,
         }
-        output_text = json.dumps(output_dict, indent=2)
+        output_text = json.dumps(output_dict, indent=2, sort_keys=True)
 
         # Write or print output
         if output:

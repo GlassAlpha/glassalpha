@@ -6,8 +6,11 @@ import importlib.util
 import logging
 from collections.abc import Iterable
 
+import pandas as pd
+
 from glassalpha.constants import NO_EXPLAINER_MSG
 from glassalpha.core.decor_registry import DecoratorFriendlyRegistry
+from glassalpha.explain.base import ExplainerBase as ExplainerInterface
 
 logger = logging.getLogger(__name__)
 
@@ -414,13 +417,143 @@ except ImportError:
     pass
 
 
+class ExplainerUnavailableError(RuntimeError):
+    """Raised when requested explainer is not available in strict mode."""
+
+
+def select_explainer_deterministic(
+    model,
+    X_test: pd.DataFrame,
+    *,
+    priority: list[str] | None = None,
+    strict: bool = False,
+) -> tuple[str, ExplainerInterface]:
+    """Select explainer with guaranteed deterministic behavior.
+
+    Args:
+        model: Model object to explain
+        X_test: Test data for compatibility checking
+        priority: Ordered list of preferred explainers (first match wins)
+        strict: If True, fail if preferred explainer unavailable
+                If False, use deterministic fallback chain
+
+    Returns:
+        Tuple of (explainer_name, explainer_instance)
+
+    Raises:
+        ExplainerUnavailableError: If no compatible explainer in strict mode
+
+    """
+    # Check availability BEFORE attempting selection
+    available = _available_explainers()
+
+    if strict and priority:
+        # In strict mode, verify all requested explainers are available
+        for explainer_name in priority:
+            if explainer_name not in available:
+                raise ExplainerUnavailableError(
+                    f"Explainer '{explainer_name}' requested in strict mode but not available. "
+                    f"Available explainers: {list(available.keys())}",
+                )
+
+    # Extract model type for compatibility checking
+    if isinstance(model, str):
+        model_type = model.lower()
+    else:
+        info = getattr(model, "get_model_info", dict)() or {}
+        model_type = (
+            info.get("type")
+            or info.get("model_type")
+            or getattr(model, "type", None)
+            or model.__class__.__name__.lower()
+        )
+
+    # Deterministic fallback: use first available from priority list
+    if priority:
+        for explainer_name in priority:
+            if explainer_name in available:
+                explainer_class = available[explainer_name]
+                try:
+                    return explainer_name, explainer_class()
+                except Exception as e:
+                    logger.warning(f"Failed to instantiate {explainer_name}: {e}")
+                    continue
+
+    # No priority or all priority explainers failed - use family-based selection
+    if model_type in SUPPORTED_FAMILIES:
+        family_order = SUPPORTED_FAMILIES[model_type]
+        for explainer_name in family_order:
+            if explainer_name in available:
+                explainer_class = available[explainer_name]
+                try:
+                    return explainer_name, explainer_class()
+                except Exception as e:
+                    logger.warning(f"Failed to instantiate {explainer_name}: {e}")
+                    continue
+
+    # Final fallback: coefficients (always available for linear models)
+    if "coefficients" in available:
+        explainer_class = available["coefficients"]
+        try:
+            return "coefficients", explainer_class()
+        except Exception as e:
+            logger.warning(f"Failed to instantiate coefficients: {e}")
+
+    # No compatible explainer available
+    available_names = list(available.keys())
+    raise ExplainerUnavailableError(
+        f"No compatible explainer available for model type '{model_type}'. Available explainers: {available_names}",
+    )
+
+
+def _available_explainers() -> dict[str, type[ExplainerInterface]]:
+    """Get dictionary of available explainer classes.
+
+    Returns:
+        Dict mapping explainer name to explainer class
+
+    """
+    available = {}
+
+    # Check built-in explainers
+    if _available("coefficients"):
+        from .coefficients import CoefficientsExplainer
+
+        available["coefficients"] = CoefficientsExplainer
+
+    if _available("permutation"):
+        from .permutation import PermutationExplainer
+
+        available["permutation"] = PermutationExplainer
+
+    if _available("treeshap"):
+        from .shap.tree import TreeSHAPExplainer
+
+        available["treeshap"] = TreeSHAPExplainer
+
+    if _available("kernelshap"):
+        from .shap.kernel import KernelSHAPExplainer
+
+        available["kernelshap"] = KernelSHAPExplainer
+
+    if _available("noop"):
+        from .noop import NoOpExplainer
+
+        available["noop"] = NoOpExplainer
+
+    return available
+
+
 # Export the registry and selection utilities
 __all__ = [
     "ERR_UNSUPPORTED_MODEL",
     "REQUIRES",
     "SUPPORTED_FAMILIES",
     "ExplainerRegistry",
+    "ExplainerUnavailableError",
     "_available",
+    "_available_explainers",
     "_first_available",
     "select_explainer",
+    "select_explainer_deterministic",
 ]

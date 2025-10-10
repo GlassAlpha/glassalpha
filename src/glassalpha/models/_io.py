@@ -40,7 +40,7 @@ def write_wrapper_state(
         **extra_fields,
     }
 
-    path_obj.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    path_obj.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def read_wrapper_state(path: Path | str) -> tuple[str, list[str] | None, int | None]:

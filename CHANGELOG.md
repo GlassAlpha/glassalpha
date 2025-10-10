@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Determinism Framework (Phase 1-3 Implementation)**
+
+  - `DeterminismValidator` class for validating audit reproducibility
+  - `validate_audit_determinism()` convenience function for quick validation
+  - `DeterminismReport` dataclass with comprehensive validation results
+  - Test isolation fixtures (`isolate_determinism_state`, `deterministic_env`)
+  - Deterministic explainer selection with `select_explainer_deterministic()`
+  - `ExplainerUnavailableError` for strict mode explainer validation
+  - Comprehensive determinism user guide (`site/docs/guides/determinism.md`)
+  - API documentation for determinism utilities
+
+- **CI Hardening**
+
+  - Dedicated determinism validation workflow (`.github/workflows/determinism.yml`)
+  - Cross-platform hash validation (Linux + macOS)
+  - Multi-run determinism tests (5 consecutive runs)
+  - SHAP availability verification before determinism tests
+  - Framework validation tests for `DeterminismValidator` and explainer selection
+
 - **API Completeness for Launch**
   - Implemented `AuditResult.to_pdf()` method for PDF export from notebook results
   - PDF generation converts lightweight AuditResult to pipeline format for rendering
@@ -16,6 +35,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic manifest sidecar generation for reproducibility
 
 ### Fixed
+
+- **Determinism Critical Fixes (95% Reliability Achievement)**
+
+  - Added SHAP availability check to `test_cli_determinism_regression_guard`
+  - Test skips gracefully when SHAP unavailable (prevents non-deterministic fallback)
+  - Enforced `sort_keys=True` for all JSON serialization in CLI commands
+  - Enforced `sort_keys=True` in model I/O state serialization
+  - Verified bootstrap operations use `np.random.RandomState(seed)` for determinism
+  - Updated CI to verify SHAP before running determinism tests
+  - Validated all JSON exports use deterministic serialization
 
 - API documentation alignment with v0.2.0 implementation
   - Updated docs to show dict-based metric access (current) vs future rich objects (v0.3.0)

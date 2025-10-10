@@ -1,261 +1,94 @@
 name: Dataset Integration Tests
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
-    schedule:
-        # Run weekly to catch upstream dataset changes
-        - cron: "0 0 * * 0"
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly to catch upstream dataset changes
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: read
 
 jobs:
     test-dataset-offline:
-        name: Test Dataset Fetching (Offline Mode)
-        runs-on: ubuntu-latest
+    name: Test Dataset Fetching (Offline Mode)
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v5
+    steps:
+      - uses: actions/checkout@v5
 
-            - name: Set up Python
-              uses: actions/setup-python@v6
-              with:
-                  python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
 
-            - name: Install dependencies
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install -e ".[dev]"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
 
-            - name: Test offline mode behavior
-              run: |
-                  # Test that offline mode properly handles missing datasets
-                  python -c "
-                  import sys
-                  sys.path.insert(0, 'src')
-                  from glassalpha.config.schema import DataConfig
-                  from glassalpha.pipeline.audit import AuditPipeline
+      - name: Test offline mode behavior
+        run: pytest tests/ci/test_dataset_offline.py -v
 
-                  # Test offline mode with missing file
-                  config = DataConfig(
-                      dataset='german_credit',
-                      fetch='if_missing',
-                      offline=True
-                  )
+  test-dataset-online:
+    name: Test Dataset Fetching (Online Mode)
+    runs-on: ubuntu-latest
 
-                  pipeline = AuditPipeline.__new__(AuditPipeline)
-                  pipeline.config = type('Config', (), {'data': config})()
+    steps:
+      - uses: actions/checkout@v5
 
-                  try:
-                      # _resolve_dataset_path checks offline mode before returning path
-                      resolved_path = pipeline._resolve_dataset_path()
-                      print('❌ Should have failed in offline mode')
-                      sys.exit(1)
-                  except FileNotFoundError as e:
-                      if 'offline' in str(e).lower():
-                          print('✅ Offline mode correctly prevents fetching')
-                      else:
-                          print(f'❌ Wrong error message: {e}')
-                          sys.exit(1)
-                  "
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
 
-    test-dataset-online:
-        name: Test Dataset Fetching (Online Mode)
-        runs-on: ubuntu-latest
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
 
-        steps:
-            - uses: actions/checkout@v5
+      - name: Test online dataset fetching
+        run: pytest tests/ci/test_dataset_online.py -v
 
-            - name: Set up Python
-              uses: actions/setup-python@v6
-              with:
-                  python-version: "3.11"
+  test-dataset-concurrency:
+    name: Test Concurrent Dataset Fetching
+    runs-on: ubuntu-latest
 
-            - name: Install dependencies
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install -e ".[dev]"
+    steps:
+      - uses: actions/checkout@v5
 
-            - name: Test online dataset fetching
-              run: |
-                  # Test that online mode can fetch datasets
-                  python -c "
-                  import sys
-                  sys.path.insert(0, 'src')
-                  from glassalpha.config.loader import load_config_from_file
-                  from glassalpha.pipeline.audit import AuditPipeline
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
 
-                  # Use the german_credit_simple.yaml config
-                  config = load_config_from_file('configs/german_credit_simple.yaml')
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
 
-                  # Create pipeline (this should trigger dataset fetching)
-                  pipeline = AuditPipeline(config)
+      - name: Test concurrent fetching safety
+        run: pytest tests/ci/test_dataset_concurrent.py -v
 
-                  # Test path resolution
-                  resolved_path = pipeline._resolve_dataset_path()
-                  print(f'✅ Path resolved: {resolved_path}')
+  test-dataset-cli:
+    name: Test Dataset CLI Commands
+    runs-on: ubuntu-latest
 
-                  # Test dataset availability (should fetch if needed)
-                  final_path = pipeline._ensure_dataset_availability(resolved_path)
-                  print(f'✅ Dataset available: {final_path.exists()}')
+    steps:
+      - uses: actions/checkout@v5
 
-                  # Verify we can load the data
-                  import pandas as pd
-                  df = pd.read_csv(final_path)
-                  print(f'✅ Data loaded: {df.shape} rows, {len(df.columns)} columns')
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
 
-                  # Check that target column exists
-                  assert 'credit_risk' in df.columns
-                  print('✅ Target column found')
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
 
-                  # Verify data quality
-                  assert len(df) > 0
-                  assert df['credit_risk'].isin([0, 1]).all()
-                  print('✅ Data quality checks passed')
-                  "
-
-    test-dataset-concurrency:
-        name: Test Concurrent Dataset Fetching
-        runs-on: ubuntu-latest
-
-        steps:
-            - uses: actions/checkout@v5
-
-            - name: Set up Python
-              uses: actions/setup-python@v6
-              with:
-                  python-version: "3.11"
-
-            - name: Install dependencies
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install -e ".[dev]"
-
-            - name: Test concurrent fetching safety
-              run: |
-                  # Test that multiple processes can safely fetch the same dataset
-                  python -c "
-                  import sys
-                  import threading
-                  sys.path.insert(0, 'src')
-
-                  from glassalpha.config.schema import DataConfig
-                  from glassalpha.pipeline.audit import AuditPipeline
-
-                  # Setup test configuration
-                  config = DataConfig(
-                      dataset='german_credit',
-                      fetch='always',
-                      offline=False
-                  )
-
-                  pipeline = AuditPipeline.__new__(AuditPipeline)
-                  pipeline.config = type('Config', (), {'data': config})()
-
-                  results = []
-                  errors = []
-
-                  def fetch_worker():
-                      try:
-                          # Resolve path first (needs to happen per-thread to be safe)
-                          resolved_path = pipeline._resolve_dataset_path()
-                          # Then ensure availability
-                          result = pipeline._ensure_dataset_availability(resolved_path)
-                          results.append(result)
-                      except Exception as e:
-                          import traceback
-                          errors.append((e, traceback.format_exc()))
-
-                  # Start multiple threads
-                  threads = []
-                  for i in range(3):
-                      thread = threading.Thread(target=fetch_worker)
-                      threads.append(thread)
-                      thread.start()
-
-                  # Wait for completion
-                  for thread in threads:
-                      thread.join()
-
-                  # Verify results
-                  if len(errors) > 0:
-                      print('Errors occurred:')
-                      for err, tb in errors:
-                          print(f'  {err}')
-                          print(tb)
-                  assert len(errors) == 0, f'Errors occurred: {[e for e, _ in errors]}'
-                  assert len(results) == 3, f'Expected 3 results, got {len(results)}'
-
-                  # All should point to the same file
-                  assert all(r == results[0] for r in results), 'Not all results point to same file'
-
-                  # File should exist and be readable
-                  import pandas as pd
-                  df = pd.read_csv(results[0])
-                  assert len(df) > 0
-                  print('✅ Concurrent fetching works correctly')
-                  "
-
-    test-dataset-cli:
-        name: Test Dataset CLI Commands
-        runs-on: ubuntu-latest
-
-        steps:
-            - uses: actions/checkout@v5
-
-            - name: Set up Python
-              uses: actions/setup-python@v6
-              with:
-                  python-version: "3.11"
-
-            - name: Install dependencies
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install -e ".[dev]"
-
-            - name: Test CLI dataset commands
-              run: |
-                  # Test that CLI dataset commands work
-                  python -c "
-                  import sys
-                  import subprocess
-
-                  # Use 'glassalpha' entry point directly (avoids -m import side effects)
-                  glassalpha_cmd = 'glassalpha'
-
-                  # Test datasets list command
-                  result = subprocess.run([
-                      glassalpha_cmd, 'datasets', 'list'
-                  ], capture_output=True, text=True)
-
-                  if result.returncode != 0:
-                      print(f'STDOUT: {result.stdout}')
-                      print(f'STDERR: {result.stderr}')
-                  assert result.returncode == 0, f'Command failed: {result.stderr}'
-                  assert 'german_credit' in result.stdout
-                  print('✅ datasets list command works')
-
-                  # Test datasets cache-dir command
-                  result = subprocess.run([
-                      glassalpha_cmd, 'datasets', 'cache-dir'
-                  ], capture_output=True, text=True)
-
-                  if result.returncode != 0:
-                      print(f'STDOUT: {result.stdout}')
-                      print(f'STDERR: {result.stderr}')
-                  assert result.returncode == 0, f'Command failed: {result.stderr}'
-                  assert 'glassalpha' in result.stdout
-                  print('✅ datasets cache-dir command works')
-
-                  # Test datasets info command
-                  result = subprocess.run([
-                      glassalpha_cmd, 'datasets', 'info', 'german_credit'
-                  ], capture_output=True, text=True)
-
-                  if result.returncode != 0:
-                      print(f'STDOUT: {result.stdout}')
-                      print(f'STDERR: {result.stderr}')
-                  assert result.returncode == 0, f'Command failed: {result.stderr}'
-                  assert 'german_credit' in result.stdout
-                  print('✅ datasets info command works')
-                  "
+      - name: Test CLI dataset commands
+        run: pytest tests/ci/test_dataset_cli.py -v

@@ -38,16 +38,15 @@ result = ga.audit.from_model(
 # Display inline (Jupyter)
 result
 
-# Explore metrics (dict-based access in v0.2.0)
+# Explore metrics (dict-based access)
 result.performance['accuracy']
-result.fairness['demographic_parity_max_diff']  # Dict access for now
+result.fairness['demographic_parity_max_diff']
 result.calibration['expected_calibration_error']
 
-# Plots coming in v0.3.0
-# result.calibration.plot()
-# result.fairness.plot_group_metrics()
+# Visualization: fairness plots available now
+result.fairness.plot_group_metrics()
 
-# Export PDF
+# Export PDF with all visualizations
 result.to_pdf("audit.pdf")
 ```
 
@@ -68,13 +67,10 @@ config = ga.config.load("audit.yaml", strict=True)
 # Run audit
 result = ga.audit.from_config(config)
 
-# Check policy gates (coming in v0.3.0)
-# if result.policy_decision.failed():
-#     print("Policy gates failed")
-#     exit(1)
+# Export audit report
+result.to_pdf("audit.pdf")
 
-# Export evidence pack (coming in v0.3.0)
-# result.export_evidence_pack("evidence.zip")
+# Note: Policy gates and evidence pack export planned for future release
 ```
 
 **YAML Configuration:**
@@ -217,15 +213,16 @@ import sys
 config = ga.config.load("audit.yaml", strict=True)
 result = ga.audit.from_config(config)
 
-# Policy gates coming in v0.3.0
-# if result.policy_decision.failed():
-#     print("❌ Policy gates failed:")
-#     for gate, value in result.policy_decision.violations.items():
-#         print(f"  {gate}: {value}")
-#     sys.exit(1)
+# Check metrics manually
+bias_threshold = 0.10
+if result.fairness['demographic_parity_max_diff'] > bias_threshold:
+    print(f"❌ Fairness check failed: bias {result.fairness['demographic_parity_max_diff']:.3f} > {bias_threshold}")
+    sys.exit(1)
 
-print("✅ All policy gates passed")
+print("✅ All checks passed")
 result.to_pdf("audit_report.pdf")
+
+# Note: Automated policy gates planned for future release
 ```
 
 **GitHub Actions:**

@@ -218,17 +218,66 @@ def compute_shifted_weights(
             f"Attribute '{attribute}' not found in data. Available columns: {list(data.columns)}",
         )
 
-    # Extract attribute values
-    attr_values = data[attribute].values
+    # Extract attribute values and handle dtype conversion
+    attr_series = data[attribute]
+    attr_values = attr_series.values
 
-    # Validate binary attribute
-    unique_values = np.unique(attr_values[~pd.isna(attr_values)])
-    if not np.array_equal(unique_values, [0, 1]) and not np.array_equal(unique_values, [1]):
-        raise ValueError(
-            f"Attribute '{attribute}' must be binary (0/1). "
-            f"Found values: {unique_values}. "
-            "Multi-class shift testing is not supported (reserved for enterprise).",
-        )
+    # Convert to binary (0/1) if needed
+    if attr_series.dtype.name == "category":
+        # Handle categorical data
+        categories = attr_series.cat.categories
+        if len(categories) == 2:
+            # Binary categorical - convert to 0/1
+            attr_values = (attr_series == categories[1]).astype(int).values
+        else:
+            raise ValueError(
+                f"Attribute '{attribute}' is categorical with {len(categories)} categories. "
+                f"Expected 2 categories for binary attribute. Categories: {categories}. "
+                "Multi-class shift testing is not supported (reserved for enterprise).",
+            )
+    elif attr_series.dtype in [np.dtype("int64"), np.dtype("int32"), np.dtype("int8")]:
+        # Integer data - check if already 0/1
+        unique_values = np.unique(attr_values[~pd.isna(attr_values)])
+        if not np.array_equal(unique_values, [0, 1]) and not np.array_equal(unique_values, [1]):
+            raise ValueError(
+                f"Attribute '{attribute}' must be binary (0/1). "
+                f"Found values: {unique_values}. "
+                "Multi-class shift testing is not supported (reserved for enterprise).",
+            )
+    elif attr_series.dtype in [np.dtype("float64"), np.dtype("float32")]:
+        # Float data - check if it's effectively binary
+        unique_values = np.unique(attr_values[~pd.isna(attr_values)])
+        if not np.array_equal(unique_values, [0.0, 1.0]) and not np.array_equal(unique_values, [1.0]):
+            raise ValueError(
+                f"Attribute '{attribute}' must be binary (0/1). "
+                f"Found values: {unique_values}. "
+                "Multi-class shift testing is not supported (reserved for enterprise).",
+            )
+        # Convert to int for consistency
+        attr_values = attr_values.astype(int)
+    elif attr_series.dtype == np.dtype("bool"):
+        # Boolean data - convert to 0/1
+        attr_values = attr_values.astype(int)
+    else:
+        # Handle object/string dtypes by checking if they're effectively binary
+        unique_values = attr_series.dropna().unique()
+        if len(unique_values) == 2:
+            # Try to convert binary string/object to 0/1
+            try:
+                # Assume second unique value represents "1" (privileged group)
+                attr_values = (attr_series == unique_values[1]).astype(int).values
+            except Exception as e:
+                raise ValueError(
+                    f"Attribute '{attribute}' has unsupported dtype '{attr_series.dtype}' "
+                    f"and could not be converted to binary. Found values: {unique_values}. "
+                    "Multi-class shift testing is not supported (reserved for enterprise).",
+                ) from e
+        else:
+            raise ValueError(
+                f"Attribute '{attribute}' must be binary (0/1). "
+                f"Found {len(unique_values)} unique values: {unique_values}. "
+                "Multi-class shift testing is not supported (reserved for enterprise).",
+            )
 
     # Compute original proportion
     p_orig = float(np.mean(attr_values == 1))

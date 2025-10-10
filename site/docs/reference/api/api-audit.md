@@ -132,9 +132,10 @@ result = ga.audit.from_model(
     random_seed=42
 )
 
-# Check for bias
-if result.fairness.has_bias():
-    print(f"⚠️ Bias detected: {result.fairness.demographic_parity_difference:.3f}")
+# Check for bias (using custom threshold)
+bias_threshold = 0.10  # 10% threshold
+if result.fairness['demographic_parity_max_diff'] > bias_threshold:
+    print(f"⚠️ Bias detected: {result.fairness['demographic_parity_max_diff']:.3f}")
 ```
 
 #### Custom Threshold
@@ -231,11 +232,18 @@ Fairness analysis object (if `protected_attributes` provided):
 | `groups`                        | `list[str]` | Protected groups analyzed                      |
 | `group_metrics`                 | `dict`      | Per-group performance metrics                  |
 
-**Methods:** _(Coming in v0.3.0)_
+**Methods:**
 
-- `has_bias(threshold=0.05)`: Returns `True` if bias detected (difference > threshold)
-- `plot_group_metrics()`: Bar chart comparing metrics across groups _(planned)_
-- `plot_threshold_sweep()`: Show fairness vs threshold tradeoff _(planned)_
+- `plot_group_metrics(metric="selection_rate")`: Bar chart comparing metrics across groups _(implemented)_
+
+**Checking for bias:**
+
+```python
+# Custom threshold approach (recommended)
+bias_threshold = 0.10  # Customize per use case
+if result.fairness['demographic_parity_max_diff'] > bias_threshold:
+    print("⚠️ Bias detected")
+```
 
 #### `calibration`
 
@@ -248,9 +256,16 @@ Calibration metrics object (if `include_calibration=True`):
 | `calibration_curve_x`        | `np.ndarray` | Predicted probabilities (binned)                   |
 | `calibration_curve_y`        | `np.ndarray` | Observed frequencies                               |
 
-**Methods:** _(Coming in v0.3.0)_
+**Visualizing calibration:**
 
-- `plot()`: Display calibration curve with ECE annotation _(planned)_
+```python
+# Current approach: Use PDF report
+result.to_pdf("audit.pdf")  # Includes calibration curves
+
+# Or access raw data for custom plotting
+ece = result.calibration['expected_calibration_error']
+brier = result.calibration['brier_score']
+```
 
 #### `explanations`
 
@@ -392,8 +407,9 @@ print(f"Fairness gap: {result.fairness.demographic_parity_difference:.3f}")
 print(f"Calibration: ECE = {result.calibration.expected_calibration_error:.3f}")
 
 # Check for issues
-if result.fairness.has_bias(threshold=0.10):
-    print("⚠️ Bias detected above 10% threshold")
+bias_threshold = 0.10
+if result.fairness['demographic_parity_max_diff'] > bias_threshold:
+    print(f"⚠️ Bias detected above {bias_threshold:.0%} threshold")
     result.fairness.plot_group_metrics()
 
 # Export multiple formats
@@ -436,34 +452,51 @@ ax.set_title("Confusion Matrix (Normalized)")
 
 #### `result.performance.plot_roc_curve()`
 
-Plot ROC curve with AUC annotation.
+**Status**: Not yet implemented for interactive use.
 
-**Parameters:**
-
-- `ax` (`matplotlib.axes.Axes`, optional): Axes to plot on
-
-**Returns:** `(fig, ax)` tuple
-
-### Visualization Methods _(Coming in v0.3.0)_
-
-Interactive plotting methods are planned for a future release. For now, use:
+**Workaround**: ROC curves are included in PDF reports via `result.to_pdf()`. For custom ROC plots, use `sklearn.metrics.roc_curve()` directly with your predictions.
 
 ```python
-# Export to HTML/PDF for visualizations
-result.to_html("audit_report.html")
-result.to_pdf("audit_report.pdf")
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
 
-# Or access raw data for custom plotting
-cal_x = result.calibration['calibration_curve_x']
-cal_y = result.calibration['calibration_curve_y']
-# ... use matplotlib directly
+# Get predictions (you'll need to store these from your model)
+# y_pred_proba = model.predict_proba(X_test)[:, 1]
+# fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+# roc_auc = auc(fpr, tpr)
+
+# Plot
+# plt.plot(fpr, tpr, label=f'ROC curve (AUC = {roc_auc:.2f})')
+# plt.plot([0, 1], [0, 1], 'k--')
+# plt.xlabel('False Positive Rate')
+# plt.ylabel('True Positive Rate')
+# plt.legend()
 ```
 
-**Example:**
+### Calibration Visualization
+
+**Current approach**: Use PDF reports for comprehensive visualizations
 
 ```python
-fig, ax = result.calibration.plot(show_confidence=True)
-ax.set_title("Model Calibration Analysis")
+# Generate full report with all plots
+result.to_pdf("audit_report.pdf")
+result.to_html("audit_report.html")
+```
+
+**Custom plotting**: Access raw metrics for matplotlib
+
+```python
+import matplotlib.pyplot as plt
+
+# Access calibration data
+ece = result.calibration['expected_calibration_error']
+brier = result.calibration['brier_score']
+
+# Create custom plot
+fig, ax = plt.subplots()
+ax.bar(['ECE', 'Brier'], [ece, brier])
+ax.set_title("Calibration Metrics")
+plt.show()
 ```
 
 ### Explanation Plots
@@ -524,9 +557,9 @@ fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 10))
 
 # Plot on custom axes
 result.performance.plot_confusion_matrix(ax=ax1)
-result.performance.plot_roc_curve(ax=ax2)
+# Note: plot_roc_curve not yet implemented - use PDF report
 result.fairness.plot_group_metrics(ax=ax3)
-result.calibration.plot(ax=ax4)
+# Note: calibration.plot() not yet implemented - use PDF report
 
 plt.tight_layout()
 plt.savefig("combined_analysis.pdf", dpi=300)

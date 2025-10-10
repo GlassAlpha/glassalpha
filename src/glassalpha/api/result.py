@@ -276,8 +276,12 @@ class AuditResult:
             GlassAlphaError: If file exists and overwrite=False
 
         """
-        # Phase 3: Will implement with full export logic
-        msg = "to_json() will be implemented in Phase 3"
+        msg = (
+            "JSON export for AuditResult is not yet implemented. "
+            "Workaround: Access metrics directly via result.performance, result.fairness, etc. "
+            "and serialize manually with json.dumps(). "
+            "Track progress: https://github.com/GlassAlpha/glassalpha/issues"
+        )
         raise NotImplementedError(msg)
 
     def to_html(self, path: str | Path, *, overwrite: bool = False) -> Path:

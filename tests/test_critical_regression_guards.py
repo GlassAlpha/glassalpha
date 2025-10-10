@@ -5,8 +5,13 @@ that must never be violated in production deployments.
 """
 
 import numpy as np
+import pandas as pd
 import pytest
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
+from glassalpha.datasets import load_german_credit
 from glassalpha.metrics.core import compute_classification_metrics
 from glassalpha.runtime.repro import set_repro
 
@@ -187,6 +192,132 @@ class TestCriticalRegressions:
             )
 
         assert len(metrics) > 5, "Must compute multiple metrics efficiently"
+
+    def test_german_credit_categorical_encoding_regression(self):
+        """CRITICAL: German Credit age_group encoding must work with LogisticRegression.
+
+        Regression guard for: ValueError: could not convert string to float: 'senior'
+        This test ensures categorical encoding works properly for German Credit dataset.
+        """
+        # Load German Credit data (this used to cause encoding failures)
+        df = load_german_credit()
+
+        # Extract features and target
+        target_col = "credit_risk"
+        feature_cols = [col for col in df.columns if col not in [target_col]]
+
+        X = df[feature_cols]
+        y = df[target_col]
+
+        # Split data (same as failing test)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=0.3,
+            random_state=42,
+        )
+
+        # Encode categorical features (this used to fail)
+        le = LabelEncoder()
+        X_train_encoded = X_train.copy()
+        X_test_encoded = X_test.copy()
+
+        # This encoding loop used to cause failures with 'senior' values
+        for col in X_train.columns:
+            if X_train[col].dtype == "object":
+                X_train_encoded[col] = le.fit_transform(X_train[col])
+                X_test_encoded[col] = le.transform(X_test[col])
+
+        # Train model (this used to fail with "could not convert string to float")
+        model = LogisticRegression(random_state=42, max_iter=2000, solver="liblinear")
+        model.fit(X_train_encoded, y_train)
+
+        # Verify model works
+        predictions = model.predict(X_test_encoded)
+        assert len(predictions) == len(y_test), "Model prediction length mismatch"
+
+        # Verify categorical columns are properly encoded (no string values remain)
+        for col in X_test_encoded.columns:
+            if X_test[col].dtype == "object":  # Was originally categorical
+                assert X_test_encoded[col].dtype in [np.int32, np.int64], (
+                    f"Column {col} not properly encoded - still has dtype {X_test_encoded[col].dtype}"
+                )
+
+    def test_cli_determinism_regression_guard(self):
+        """CRITICAL: CLI must produce deterministic outputs across runs.
+
+        Regression guard for: AssertionError: CLI outputs not deterministic across runs
+        This test ensures SOURCE_DATE_EPOCH and other determinism controls work properly.
+        """
+        # Skip if SHAP not available (required for deterministic explainer selection)
+        try:
+            import shap
+        except ImportError:
+            pytest.skip("SHAP required for deterministic explainer selection in audit tests")
+        import os
+        import subprocess
+        import tempfile
+        from pathlib import Path
+
+        from glassalpha.utils.determinism import compute_file_hash
+
+        # Set up deterministic environment
+        env = os.environ.copy()
+        env["SOURCE_DATE_EPOCH"] = "1577836800"  # Fixed timestamp
+        env["PYTHONHASHSEED"] = "42"
+        env["OMP_NUM_THREADS"] = "1"
+        env["OPENBLAS_NUM_THREADS"] = "1"
+        env["MKL_NUM_THREADS"] = "1"
+
+        # Create minimal config for testing
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+
+            config = tmp_path / "config.yaml"
+            output = tmp_path / "audit.html"
+
+            # Create simple config that used to cause determinism issues
+            config.write_text("""
+audit_profile: tabular_compliance
+data:
+  dataset: german_credit
+  target_column: credit_risk
+model: {type: logistic_regression}
+""")
+
+            # Run CLI multiple times (this used to produce different outputs)
+            hashes = []
+            for run_num in range(2):  # Reduced for speed in critical tests
+                # Ensure clean state
+                if output.exists():
+                    output.unlink()
+
+                # Run CLI (this used to be non-deterministic)
+                result = subprocess.run(
+                    ["glassalpha", "audit", "-c", str(config), "-o", str(output)],
+                    env=env,
+                    check=True,
+                    capture_output=True,
+                    encoding="utf-8",
+                )
+
+                # Verify output created
+                assert output.exists(), f"Output not created in run {run_num + 1}"
+                assert output.stat().st_size > 0, f"Empty output in run {run_num + 1}"
+
+                # Compute hash
+                file_hash = compute_file_hash(output)
+                hashes.append(file_hash)
+
+                # Clean up for next run
+                output.unlink()
+
+            # Verify deterministic output (this used to fail)
+            assert len(set(hashes)) == 1, (
+                f"REGRESSION: CLI outputs not deterministic. Hashes: {hashes}\n"
+                f"Expected identical hashes but got {len(set(hashes))} different values.\n"
+                f"This breaks regulatory compliance requirements for reproducible audits."
+            )
 
 
 class TestArchitecturalConstraints:

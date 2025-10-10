@@ -351,6 +351,10 @@ class TestFromModelIntegration:
 
         from glassalpha.datasets import load_german_credit
 
+        # Skip if SHAP not available (required for explanations)
+        if not _check_shap_available():
+            pytest.skip("SHAP not available - required for explanations")
+
         # Load data
         df = load_german_credit()
 
@@ -366,12 +370,13 @@ class TestFromModelIntegration:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
         # Encode categorical features for LogisticRegression
-        le = LabelEncoder()
         X_train_encoded = X_train.copy()
         X_test_encoded = X_test.copy()
 
+        # Use separate LabelEncoder for each categorical column
         for col in X_train.columns:
             if X_train[col].dtype == "object":
+                le = LabelEncoder()
                 X_train_encoded[col] = le.fit_transform(X_train[col])
                 X_test_encoded[col] = le.transform(X_test[col])
 

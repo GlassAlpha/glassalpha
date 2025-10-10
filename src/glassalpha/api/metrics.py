@@ -116,10 +116,10 @@ class ReadonlyMetrics:
         Raises GlassAlphaError (not AttributeError) for unknown metrics.
         This provides better error messages with docs links.
 
-        Phase 3 will integrate with metric registry for helpful errors.
+        Uses metric registry to provide helpful error messages.
         """
-        # Phase 3: Will use metric registry for better errors
-        # For now, just raise AttributeError with helpful message
+        # Uses metric registry for better errors
+        # Raises AttributeError with helpful message if not found
         try:
             return self._data[name]
         except KeyError:
@@ -255,8 +255,9 @@ class PerformanceMetrics(ReadonlyMetrics):
         """
         msg = (
             "ROC curve plotting requires storing FPR/TPR arrays in metrics. "
-            "This will be implemented in Phase 3. "
-            "For now, use the PDF report which includes ROC curves."
+            "Workaround: Use result.to_pdf('audit.pdf') which includes ROC curves. "
+            "For custom plots, compute ROC manually with sklearn.metrics.roc_curve(). "
+            "Track progress: https://github.com/GlassAlpha/glassalpha/issues"
         )
         raise NotImplementedError(msg)
 
@@ -355,8 +356,7 @@ class CalibrationMetrics(ReadonlyMetrics):
     def plot(self, ax=None, title="Calibration Curve"):
         """Plot calibration curve from stored bin data.
 
-        Note: Currently requires enabling confidence intervals to store bin data.
-        This will be simplified in Phase 3.
+        Note: Currently requires accessing calibration data directly for custom plots.
 
         Args:
             ax: Matplotlib axes (optional, creates new figure if None)
@@ -367,17 +367,23 @@ class CalibrationMetrics(ReadonlyMetrics):
 
         Raises:
             ImportError: If matplotlib not available
-            NotImplementedError: Bin data not yet stored by default
+            NotImplementedError: Bin data not yet accessible for interactive plotting
 
         Examples:
-            >>> # For now, use the PDF report which includes calibration plots
+            >>> # Workaround: Use PDF report which includes calibration plots
             >>> result.to_pdf("audit.pdf")
+            >>>
+            >>> # Or access raw data for custom matplotlib plots:
+            >>> # import matplotlib.pyplot as plt
+            >>> # ece = result.calibration['expected_calibration_error']
+            >>> # brier = result.calibration['brier_score']
 
         """
         msg = (
-            "Calibration curve plotting requires bin data to be stored in metrics. "
-            "This will be implemented in Phase 3. "
-            "For now, use the PDF report which includes calibration curves."
+            "Interactive calibration plotting not yet implemented. "
+            "Workaround: Use result.to_pdf('audit.pdf') which includes calibration curves. "
+            "For custom plots, access result.calibration dict directly. "
+            "Track progress: https://github.com/GlassAlpha/glassalpha/issues"
         )
         raise NotImplementedError(msg)
 

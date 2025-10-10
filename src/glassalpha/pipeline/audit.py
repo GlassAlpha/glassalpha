@@ -1184,6 +1184,15 @@ class AuditPipeline:
                 logger.debug(f"Generated probability predictions with shape: {y_proba.shape}")
             except Exception as e:  # noqa: BLE001
                 logger.warning(f"Could not get prediction probabilities: {e}")
+                # Try fallback preprocessing if feature name mismatch
+                if "feature names" in str(e).lower():
+                    logger.info("Attempting fallback preprocessing due to feature name mismatch")
+                    X_processed = self._preprocess_for_training_fallback(X_for_model)
+                    try:
+                        y_proba = self.model.predict_proba(X_processed)
+                        logger.debug(f"Fallback preprocessing succeeded, shape: {y_proba.shape}")
+                    except Exception as fallback_e:
+                        logger.warning(f"Fallback preprocessing also failed: {fallback_e}")
 
         # Generate predictions using threshold policy (if binary classification with probabilities)
         if y_proba is not None and y_proba.shape[1] == 2:  # Binary classification
@@ -1193,8 +1202,28 @@ class AuditPipeline:
             self.results.model_performance["threshold_selection"] = threshold_info
         else:
             # Fallback to model's default predict method (multiclass or no probabilities)
-            y_pred = self.model.predict(X_processed)
-            logger.info("Using model's default predictions (multiclass or no probabilities available)")
+            try:
+                y_pred = self.model.predict(X_processed)
+                logger.info("Using model's default predictions (multiclass or no probabilities available)")
+            except Exception as e:
+                logger.warning(f"Model prediction failed: {e}")
+                # Try fallback preprocessing if feature name mismatch
+                if "feature names" in str(e).lower():
+                    logger.info("Attempting fallback preprocessing for prediction")
+                    X_processed = self._preprocess_for_training_fallback(X_for_model)
+                    try:
+                        y_pred = self.model.predict(X_processed)
+                        logger.info("Fallback preprocessing succeeded for prediction")
+                    except Exception as fallback_e:
+                        logger.error(f"Fallback preprocessing also failed: {fallback_e}")
+                        raise ValueError(
+                            f"Model prediction failed with both preprocessing methods. "
+                            f"Original error: {e}. Fallback error: {fallback_e}. "
+                            f"This typically indicates a mismatch between model training preprocessing "
+                            f"and audit pipeline preprocessing. Consider using consistent preprocessing.",
+                        ) from fallback_e
+                else:
+                    raise
 
         # Compute performance metrics (~5% of time)
         self._update_progress(progress_callback, "Computing performance metrics", 50)
@@ -1953,6 +1982,43 @@ class AuditPipeline:
         if hasattr(self.config, "preprocessing") and self.config.preprocessing.mode == "artifact":
             return self._preprocess_with_artifact(X)
         return self._preprocess_auto(X)
+
+    def _preprocess_for_training_fallback(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Fallback preprocessing using label encoding.
+
+        Used when one-hot encoding causes feature name mismatches with pre-trained models.
+        This uses label encoding to maintain original column names while converting
+        categorical values to numeric.
+
+        Args:
+            X: Raw features DataFrame
+
+        Returns:
+            Processed features DataFrame with label encoding
+
+        """
+        from sklearn.preprocessing import LabelEncoder  # noqa: PLC0415
+
+        logger.info("Using fallback label encoding preprocessing for feature name compatibility")
+
+        X_processed = X.copy()
+
+        # Identify categorical columns
+        categorical_cols = list(X.select_dtypes(include=["object"]).columns)
+
+        if not categorical_cols:
+            logger.debug("No categorical columns found for fallback preprocessing")
+            return X_processed
+
+        # Apply label encoding to each categorical column
+        for col in categorical_cols:
+            if col in X_processed.columns and X_processed[col].dtype == "object":
+                # Use LabelEncoder for each column separately (maintains column names)
+                le = LabelEncoder()
+                X_processed[col] = le.fit_transform(X_processed[col])
+
+        logger.info(f"Applied label encoding to {len(categorical_cols)} categorical columns")
+        return X_processed
 
     def _preprocess_with_artifact(self, X: pd.DataFrame) -> pd.DataFrame:
         """Preprocess using production artifact (artifact mode).

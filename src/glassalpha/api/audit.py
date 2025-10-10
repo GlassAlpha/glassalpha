@@ -1,6 +1,6 @@
 """Audit entry points: from_model, from_predictions, from_config, run_audit.
 
-Phase 3: Main API surface for generating audit results.
+Main API surface for generating audit results.
 
 LAZY IMPORTS: numpy and pandas are imported inside functions to enable
 basic module imports without scientific dependencies installed.
@@ -777,7 +777,6 @@ def _compute_performance_metrics(
 
     """
     import numpy as np
-
     from sklearn.metrics import (
         accuracy_score,
         brier_score_loss,

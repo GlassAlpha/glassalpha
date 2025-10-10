@@ -575,10 +575,12 @@ if result.policy_decision.failed():
         print(f"  {gate}: {value}")
     exit(1)
 
-# Export evidence pack (coming in v0.3.0)
-# result.export_evidence_pack("evidence_pack_2025-q1.zip")
+# Export audit report
+result.to_pdf("audit_report.pdf")
 
 print("✅ Audit complete and compliant")
+
+# Note: Automated evidence pack export planned for future release
 ```
 
 ---

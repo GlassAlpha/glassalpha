@@ -175,6 +175,15 @@ id_ed25519*
 .pypirc
 
 # ----------------------------------------------------------------------------
+# Documentation Management
+# ----------------------------------------------------------------------------
+# Documentation files that shouldn't be tracked (generated or temporary)
+# Exception: Permanent docs in site/docs/ are committed
+.github/*.md
+!site/docs/**/*.md
+!site/**/*.md
+
+# ----------------------------------------------------------------------------
 # Project-Specific: GlassAlpha
 # ----------------------------------------------------------------------------
 
@@ -240,3 +249,4 @@ notebook-test/
 # - Lock files are NOT ignored (poetry.lock, uv.lock, etc.) for reproducibility
 # - .vscode settings ARE committed for team consistency (except workspace files)
 # - PDFs are ignored except in site/docs/examples/ for documentation
+# - Documentation files in .github/ are ignored except permanent docs in site/
