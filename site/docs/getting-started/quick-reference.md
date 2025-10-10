@@ -83,9 +83,9 @@ print(f"Equal opportunity: {result.fairness['equal_opportunity_difference']:.3f}
 # Calibration
 print(f"ECE: {result.calibration['expected_calibration_error']:.3f}")
 
-# Plot results
-result.fairness.plot_group_metrics()
-result.calibration.plot()
+# Export results
+result.to_html("audit_report.html")
+result.to_pdf("audit_report.pdf")
 ```
 
 ## Configuration Patterns

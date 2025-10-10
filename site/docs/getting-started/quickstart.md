@@ -49,41 +49,44 @@ glassalpha audit --config your_config.yaml --fast --sample 1000
 
 ## The 5-minute version
 
-Get your first professional audit PDF in 5 minutes:
+Get your first professional audit report in 5 minutes with base installation:
 
 ### Using quickstart generator (easiest)
 
 ```bash
-# 1. Install (30 seconds)
+# 1. Install (1-2 minutes)
 pip install glassalpha
 
-# 2. Generate project (interactive wizard)
+# 2. Generate project (interactive wizard, 30 seconds)
 glassalpha quickstart
 
-# 3. Run audit (20 seconds)
+# 3. Run audit (30 seconds)
 cd my-audit-project && python run_audit.py
 
 # 4. Done! Open your professional report
 open reports/audit_report.html  # macOS
 ```
 
+**Note**: Base installation uses LogisticRegression model (fast, zero extra dependencies).
+For advanced models (XGBoost/LightGBM with SHAP), install with `pip install 'glassalpha[explain]'` (adds 5-10 minutes to initial setup).
+
 ### Using repository example
 
 ```bash
-# 1. Clone and install (90 seconds)
+# 1. Clone and install (1-2 minutes)
 git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha && pip install -e .
 
 # 2. Generate audit (lightning fast with --fast flag!)
-glassalpha audit --config german_credit_simple.yaml --output audit.pdf --fast
+glassalpha audit --config german_credit_simple.yaml --output audit.html --fast
 
-# 3. Done! Open your professional PDF
-open audit.pdf  # macOS
-# xdg-open audit.pdf  # Linux
-# start audit.pdf  # Windows
+# 3. Done! Open your professional report
+open audit.html  # macOS
+# xdg-open audit.html  # Linux
+# start audit.html  # Windows
 ```
 
-**What you get**: A 10-page professional audit PDF with:
+**What you get**: A comprehensive audit report with:
 
 - ✅ Model performance metrics (accuracy, precision, recall, F1, AUC)
 - ✅ Fairness analysis (bias detection across demographic groups)

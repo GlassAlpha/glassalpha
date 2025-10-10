@@ -66,6 +66,10 @@ class TestConcurrencyFetch:
             offline=False,
         )
 
+        # Clear any path field that might be set
+        if hasattr(config, 'path'):
+            config.path = None
+
         pipeline = AuditPipeline.__new__(AuditPipeline)
         pipeline.config = type("Config", (), {"data": config})()
 

@@ -206,33 +206,62 @@ def _ask_dataset() -> str:
 
 
 def _ask_model() -> str:
-    """Ask user about model choice.
+    """Ask user about model choice with dependency awareness.
 
     Returns:
         Model name (xgboost, lightgbm, logistic_regression)
 
     """
+    import importlib.util
+
+    # Check if advanced models are available
+    has_shap = importlib.util.find_spec("shap") is not None
+    has_xgboost = importlib.util.find_spec("xgboost") is not None
+    has_lightgbm = importlib.util.find_spec("lightgbm") is not None
+    has_explain = has_shap and (has_xgboost or has_lightgbm)
+
     typer.echo("Which model type would you like to use?")
     typer.echo()
-    typer.echo("  1. XGBoost (recommended, TreeSHAP explainability)")
-    typer.echo("  2. LightGBM (fast, TreeSHAP explainability)")
-    typer.echo("  3. Logistic Regression (simple, coefficient explainability)")
+
+    if has_explain:
+        # Full feature set available
+        typer.echo("  1. Logistic Regression (simple, coefficient explanations)")
+        typer.echo("  2. XGBoost (recommended, TreeSHAP explanations) ⭐")
+        typer.echo("  3. LightGBM (fast, TreeSHAP explanations)")
+        default_choice = 2
+        max_choice = 3
+    else:
+        # Base install only
+        typer.echo("  1. Logistic Regression (fast, coefficient explanations) ⭐")
+        typer.echo()
+        typer.secho("  💡 For XGBoost/LightGBM with SHAP explanations:", fg=typer.colors.CYAN)
+        typer.echo("     pip install 'glassalpha[explain]'")
+        typer.echo("     Then re-run quickstart to use advanced models")
+        default_choice = 1
+        max_choice = 1
+
     typer.echo()
 
     try:
-        choice = typer.prompt("Select model (1-3)", type=int, default=1, show_default=True)
+        if has_explain:
+            choice = typer.prompt("Select model (1-3)", type=int, default=default_choice, show_default=True)
+        else:
+            # Only accept option 1 if explain not installed
+            choice = typer.prompt("Select model (1 only)", type=int, default=1, show_default=True)
+            if choice != 1:
+                typer.secho(
+                    "⚠️  Advanced models require 'glassalpha[explain]'. Using Logistic Regression.",
+                    fg=typer.colors.YELLOW,
+                )
+                choice = 1
     except (EOFError, RuntimeError):
         # Handle non-interactive environments or EOF
-        typer.echo("Using default: 1")
-        choice = 1
+        typer.echo(f"Using default: {default_choice}")
+        choice = default_choice
 
-    model_map = {
-        1: "xgboost",
-        2: "lightgbm",
-        3: "logistic_regression",
-    }
+    model_map = {1: "logistic_regression", 2: "xgboost", 3: "lightgbm"}
 
-    model = model_map.get(choice, "xgboost")
+    model = model_map.get(choice, "logistic_regression")
 
     typer.echo()
     typer.secho(f"Selected: {model}", fg=typer.colors.GREEN)
@@ -328,14 +357,7 @@ model:
 # Explainers configuration
 explainers:
   strategy: first_compatible
-  priority:
-    - treeshap
-    - kernelshap
-  config:
-    treeshap:
-      max_samples: 1000
-    kernelshap:
-      n_samples: 500
+  {_get_explainer_config(model)}
 
 # Metrics configuration
 metrics:
@@ -385,6 +407,38 @@ def _get_model_params(model: str) -> str:
     }
 
     return params_map.get(model, "")
+
+
+def _get_explainer_config(model: str) -> str:
+    """Get explainer configuration appropriate for model type.
+
+    Args:
+        model: Model type
+
+    Returns:
+        YAML-formatted explainer configuration
+
+    """
+    if model == "logistic_regression":
+        # Use coefficient-based explainers (no extra dependencies needed)
+        return """priority:
+    - coefficients  # Fast for linear models
+    - permutation   # Universal fallback
+  config:
+    coefficients:
+      normalize: true
+    permutation:
+      n_samples: 100"""
+    else:
+        # Tree models use SHAP explainers
+        return """priority:
+    - treeshap       # Best for tree models (requires: pip install 'glassalpha[explain]')
+    - kernelshap     # SHAP fallback
+  config:
+    treeshap:
+      max_samples: 1000
+    kernelshap:
+      n_samples: 500"""
 
 
 def _create_run_script(path: Path, dataset: str, model: str) -> None:

@@ -44,7 +44,7 @@ def run_fairness_metrics(
     sensitive: np.ndarray | pd.DataFrame,
     metrics: list[Any],
     compute_confidence_intervals: bool = True,
-    n_bootstrap: int = 1000,
+    n_bootstrap: int = 500,  # Reduced for performance - was 1000, now 500 for balance
     confidence_level: float = 0.95,
     seed: int | None = None,
     intersections: list[str] | None = None,

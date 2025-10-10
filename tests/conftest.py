@@ -6,6 +6,7 @@ import random
 import signal
 import sys
 import threading
+import warnings
 
 # MUST set BEFORE any imports that might use it
 # Use assignment (not setdefault) to override any existing values
@@ -21,6 +22,11 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import pytest
+
+# Suppress sklearn convergence warnings in tests
+# LogisticRegression on high-dimensional categorical features may not fully converge
+# but produces valid results. Users can adjust max_iter in their configs if needed.
+warnings.filterwarnings("ignore", message="lbfgs failed to converge")
 
 # Track active threads for cleanup
 _test_threads: list[threading.Thread] = []

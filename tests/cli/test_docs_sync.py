@@ -29,7 +29,7 @@ def test_cli_documentation_is_current():
         check=False,
         capture_output=True,
         text=True,
-        cwd=script_path.parent,  # Run from packages directory
+        cwd=script_path.parent,  # Run from scripts directory
         encoding="utf-8",
     )
 

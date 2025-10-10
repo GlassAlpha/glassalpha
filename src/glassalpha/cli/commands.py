@@ -1979,9 +1979,10 @@ def list_components_cmd(  # pragma: no cover
         help="Show component details",
     ),
 ):
-    """List available components.
+    """List available components with runtime availability status.
 
     Shows registered models, explainers, metrics, and audit profiles.
+    Indicates which components are available vs require additional dependencies.
 
     Examples:
         # List all components
@@ -1994,6 +1995,8 @@ def list_components_cmd(  # pragma: no cover
         glassalpha list --include-enterprise
 
     """
+    import importlib.util
+
     from ..core import list_components
 
     components = list_components(component_type=component_type, include_enterprise=include_enterprise)
@@ -2005,6 +2008,11 @@ def list_components_cmd(  # pragma: no cover
     typer.echo("Available Components")
     typer.echo("=" * 40)
 
+    # Check dependencies
+    has_shap = importlib.util.find_spec("shap") is not None
+    has_xgboost = importlib.util.find_spec("xgboost") is not None
+    has_lightgbm = importlib.util.find_spec("lightgbm") is not None
+
     for comp_type, items in components.items():
         typer.echo(f"\n{comp_type.upper()}:")
 
@@ -2012,11 +2020,26 @@ def list_components_cmd(  # pragma: no cover
             typer.echo("  (none registered)")
         else:
             for item in sorted(items):
+                # Determine availability status
+                status = "✅"
+                note = ""
+
+                if comp_type == "models":
+                    if item == "xgboost" and not has_xgboost:
+                        status = "⚠️"
+                        note = " (requires: pip install 'glassalpha[explain]')"
+                    elif item == "lightgbm" and not has_lightgbm:
+                        status = "⚠️"
+                        note = " (requires: pip install 'glassalpha[explain]')"
+                elif comp_type == "explainers":
+                    if item in ("treeshap", "kernelshap") and not has_shap:
+                        status = "⚠️"
+                        note = " (requires: pip install 'glassalpha[explain]')"
+
                 if verbose:
-                    # TODO: Show more details about each component
-                    typer.echo(f"  - {item}")
+                    typer.echo(f"  {status} {item}{note}")
                 else:
-                    typer.echo(f"  - {item}")
+                    typer.echo(f"  {status} {item}{note}")
 
 
 def reasons(  # pragma: no cover
@@ -2456,10 +2479,13 @@ def reasons(  # pragma: no cover
 
         # Get prediction (with better error handling for feature mismatch)
         try:
+            # Convert DataFrame to numpy for XGBoost compatibility
+            X_numpy = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+
             if hasattr(model_obj, "predict_proba"):
-                prediction = float(model_obj.predict_proba(X_instance_encoded)[0, 1])
+                prediction = float(model_obj.predict_proba(X_numpy)[0, 1])
             else:
-                prediction = float(model_obj.predict(X_instance_encoded)[0])
+                prediction = float(model_obj.predict(X_numpy)[0])
         except ValueError as e:
             if "Too many missing features" in str(e):
                 typer.secho(
@@ -2485,21 +2511,77 @@ def reasons(  # pragma: no cover
             native_model = model_obj.model
             typer.echo(f"Extracted native model from wrapper: {type(native_model).__name__}")
 
-        # Generate SHAP values (use TreeSHAP for tree models)
+        # Generate feature contributions (SHAP or coefficients fallback)
+        shap_values = None
         try:
+            # Try SHAP first (best for tree models and non-linear models)
             import shap
 
-            explainer = shap.TreeExplainer(native_model)
-            shap_values = explainer.shap_values(X_instance_encoded)
+            try:
+                explainer = shap.TreeExplainer(native_model)
+                # Convert DataFrame to numpy for SHAP compatibility
+                X_shap = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+                shap_values = explainer.shap_values(X_shap)
 
-            # Handle multi-output case (binary classification)
-            if isinstance(shap_values, list):
-                shap_values = shap_values[1]  # Positive class
+                # Handle multi-output case (binary classification)
+                if isinstance(shap_values, list):
+                    shap_values = shap_values[1]  # Positive class
 
-            # Flatten to 1D
-            if len(shap_values.shape) > 1:
-                shap_values = shap_values[0]
+                # Flatten to 1D
+                if len(shap_values.shape) > 1:
+                    shap_values = shap_values[0]
+            except Exception as tree_error:
+                # TreeSHAP failed, try KernelSHAP
+                error_msg = str(tree_error).lower()
+                if any(
+                    phrase in error_msg
+                    for phrase in [
+                        "model type not yet supported",
+                        "treeexplainer",
+                        "does not support treeexplainer",
+                        "linear model",
+                        "logisticregression",
+                    ]
+                ):
+                    typer.secho(
+                        f"Note: TreeSHAP not compatible with {type(native_model).__name__}. Using KernelSHAP...",
+                        fg=typer.colors.CYAN,
+                    )
+                    # Convert to numpy for compatibility
+                    X_sample = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+                    explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_sample, 100))
+                    shap_values = explainer.shap_values(X_sample)[0, :, 1]
+                else:
+                    raise
 
+        except ImportError:
+            # SHAP not available - try coefficient-based fallback for linear models
+            if hasattr(native_model, "coef_"):
+                typer.secho(
+                    "Note: SHAP not installed. Using coefficient-based explanations for linear model.",
+                    fg=typer.colors.CYAN,
+                )
+                typer.echo("  For better explanations: pip install 'glassalpha[explain]'")
+                typer.echo()
+
+                # Use coefficients as feature importance
+                coefficients = native_model.coef_[0] if len(native_model.coef_.shape) > 1 else native_model.coef_
+
+                # Convert to contributions: coef * (feature_value - mean)
+                # This approximates local explanation for linear models
+                X_numpy = X_instance_encoded.values[0] if hasattr(X_instance_encoded, "values") else X_instance_encoded
+                shap_values = coefficients * X_numpy
+            else:
+                typer.secho(
+                    "Error: SHAP not installed and model doesn't support coefficient extraction.",
+                    fg=typer.colors.RED,
+                    err=True,
+                )
+                typer.echo()
+                typer.echo("Solutions:")
+                typer.echo("  1. Install SHAP: pip install 'glassalpha[explain]'")
+                typer.echo("  2. Use a model with coefficients (LogisticRegression)")
+                raise typer.Exit(ExitCode.USER_ERROR)
         except Exception as e:
             if "Too many missing features" in str(e):
                 typer.secho(
@@ -2516,36 +2598,14 @@ def reasons(  # pragma: no cover
                 typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
                 typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
             else:
-                # Check if this is a TreeSHAP compatibility error for non-tree models
-                error_msg = str(e).lower()
-                if any(
-                    phrase in error_msg
-                    for phrase in [
-                        "model type not yet supported",
-                        "treeexplainer",
-                        "does not support treeexplainer",
-                        "linear model",
-                        "logisticregression",
-                    ]
-                ):
-                    typer.secho(
-                        f"Warning: TreeSHAP not compatible with {type(native_model).__name__}. Using KernelSHAP instead...",
-                        fg=typer.colors.YELLOW,
-                    )
-                    # Fallback to KernelSHAP (use original model_obj for predict interface)
-                    import shap
-
-                    explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_instance_encoded, 100))
-                    shap_values = explainer.shap_values(X_instance_encoded)[0, :, 1]
-                else:
-                    typer.secho(
-                        f"Error generating SHAP values: {e}",
-                        fg=typer.colors.RED,
-                        err=True,
-                    )
-                    typer.echo("\nTip: Ensure model is TreeSHAP-compatible (XGBoost, LightGBM, RandomForest)")
-                    typer.echo("If using a wrapped model, save the native model directly instead.")
-                    raise typer.Exit(ExitCode.USER_ERROR) from None
+                typer.secho(
+                    f"Error generating explanations: {e}",
+                    fg=typer.colors.RED,
+                    err=True,
+                )
+                typer.echo("\nTip: Ensure model is compatible (XGBoost, LightGBM, RandomForest, LogisticRegression)")
+                typer.echo("For linear models without SHAP: pip install 'glassalpha[explain]'")
+            raise typer.Exit(ExitCode.USER_ERROR) from None
 
         # Extract reason codes
         from ..explain.reason_codes import extract_reason_codes, format_adverse_action_notice
@@ -3125,7 +3185,9 @@ def recourse(  # pragma: no cover
             import shap
 
             explainer = shap.TreeExplainer(native_model)
-            shap_values = explainer.shap_values(X_instance_encoded)
+            # Convert DataFrame to numpy for SHAP compatibility
+            X_shap = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+            shap_values = explainer.shap_values(X_shap)
 
             # Handle multi-output case (binary classification)
             if isinstance(shap_values, list):

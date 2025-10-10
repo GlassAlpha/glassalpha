@@ -208,6 +208,17 @@ test_outputs/
 logs/
 *.log
 
+# Test artifacts that shouldn't be committed
+/test_*.html
+/test_*.pdf
+/test_*.pkl
+/test_*.json
+/test.manifest.json
+/test.pdf
+/*_simple_audit.html
+/*_simple_audit.manifest.json
+/malformed.yaml
+
 # Config overrides (user-specific configurations)
 configs/local/
 *.local.yaml

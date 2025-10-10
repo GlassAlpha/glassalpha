@@ -321,7 +321,7 @@ class AuditPipeline:
             Comprehensive audit results
 
         """
-        from datetime import UTC, datetime  # noqa: PLC0415
+        from datetime import datetime  # noqa: PLC0415
 
         # Store progress callback for use in nested methods
         self._progress_callback = progress_callback
@@ -362,7 +362,7 @@ class AuditPipeline:
 
             # Step 7: Finalize results and manifest (~5% of time)
             self._finalize_results(explanations)
-            self._update_progress(progress_callback, "Audit complete", 100)
+            self._update_progress(progress_callback, "Pipeline complete", 100)
 
             # Friend's spec: On success - set end time and call set execution info
             end = datetime.now(UTC).isoformat()
@@ -1452,7 +1452,7 @@ class AuditPipeline:
                 seed = get_component_seed("calibration_ci")
 
                 # Get bootstrap count from config
-                n_bootstrap = 1000  # Default
+                n_bootstrap = 500  # Default (reduced for performance - was 1000, now 500 for balance)
                 if hasattr(self.config, "metrics") and hasattr(self.config.metrics, "n_bootstrap"):
                     n_bootstrap = self.config.metrics.n_bootstrap
                 elif isinstance(self.config, dict):
@@ -1858,7 +1858,6 @@ class AuditPipeline:
         self.manifest_generator.mark_completed("success")
 
         # Record end time for provenance
-        from datetime import datetime  # noqa: PLC0415
         from glassalpha.utils.determinism import get_deterministic_timestamp  # noqa: PLC0415
 
         # Use deterministic timestamp for reproducibility
@@ -2259,8 +2258,8 @@ class AuditPipeline:
             raise ValueError(
                 f"Unknown dataset key: {cfg.dataset}\n\n"
                 f"Available datasets:\n  " + ", ".join(available) + "\n\n"
-                f"To see details: glassalpha datasets info <dataset_key>\n"
-                f"To list all: glassalpha datasets list"
+                "To see details: glassalpha datasets info <dataset_key>\n"
+                "To list all: glassalpha datasets list",
             )
 
         cache_root = resolve_data_root()
@@ -2399,7 +2398,7 @@ class AuditPipeline:
             return requested_path
 
         # Built-in dataset: ensure cache exists, then mirror to requested if different
-        spec = REGISTRY[ds_key]  # Should be validated in _resolve_requested_path
+        spec = REGISTRY[ds_key]  # Should be validated in _resolve_dataset_path
         cache_root = ensure_dir_writable(resolve_data_root())
         final_cache_path = (cache_root / spec.default_relpath).resolve()
         final_cache_path.parent.mkdir(parents=True, exist_ok=True)

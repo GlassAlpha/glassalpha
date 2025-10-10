@@ -217,7 +217,7 @@ jobs:
                   # Test datasets list command
                   result = subprocess.run([
                       sys.executable, '-m', 'glassalpha.cli.main', 'datasets', 'list'
-                  ], capture_output=True, text=True, cwd='packages')
+                  ], capture_output=True, text=True)
 
                   assert result.returncode == 0, f'Command failed: {result.stderr}'
                   assert 'german_credit' in result.stdout
@@ -226,7 +226,7 @@ jobs:
                   # Test datasets cache-dir command
                   result = subprocess.run([
                       sys.executable, '-m', 'glassalpha.cli.main', 'datasets', 'cache-dir'
-                  ], capture_output=True, text=True, cwd='packages')
+                  ], capture_output=True, text=True)
 
                   assert result.returncode == 0, f'Command failed: {result.stderr}'
                   assert 'glassalpha' in result.stdout
@@ -235,7 +235,7 @@ jobs:
                   # Test datasets info command
                   result = subprocess.run([
                       sys.executable, '-m', 'glassalpha.cli.main', 'datasets', 'info', 'german_credit'
-                  ], capture_output=True, text=True, cwd='packages')
+                  ], capture_output=True, text=True)
 
                   assert result.returncode == 0, f'Command failed: {result.stderr}'
                   assert 'german_credit' in result.stdout

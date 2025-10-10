@@ -20,6 +20,14 @@ pipx install glassalpha
 pip install glassalpha
 ```
 
+**Base installation** includes LogisticRegression model with coefficient-based explanations (fast, zero extra dependencies).
+
+**For advanced models** (XGBoost/LightGBM with SHAP):
+
+```bash
+pip install 'glassalpha[explain]'  # Adds 5-10 minutes to initial setup
+```
+
 ### Option 2: Install from source (for development)
 
 ```bash
@@ -44,7 +52,7 @@ glassalpha audit --fast
 glassalpha audit
 ```
 
-That's it. You now have a complete audit report with model performance, SHAP explanations, and fairness metrics.
+That's it. You now have a complete audit report with model performance, explanations, and fairness metrics.
 
 **Tip:** Run `glassalpha doctor` anytime to check what features are available and see installation options.
 

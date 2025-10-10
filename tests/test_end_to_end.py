@@ -74,17 +74,15 @@ class TestEndToEndWorkflow:
                 "protected_attributes": ["gender"],
             },
             "model": {
-                "type": "xgboost",
+                "type": "logistic_regression",
                 "params": {
-                    "objective": "binary:logistic",
-                    "n_estimators": 20,  # Fast for testing
-                    "max_depth": 3,
+                    "max_iter": 2000,  # Higher for high-dimensional categorical encodings
                 },
             },
             "explainers": {
                 "strategy": "first_compatible",
-                "priority": ["treeshap"],
-                "config": {"treeshap": {"max_samples": 50}},
+                "priority": ["coefficients"],
+                "config": {"coefficients": {"normalize": True}},
             },
             "metrics": {
                 "performance": {"metrics": ["accuracy", "precision", "recall"]},
@@ -232,21 +230,36 @@ class TestEndToEndWorkflow:
         data_path, _ = german_credit_data
 
         model_configs = [
-            {"type": "xgboost", "params": {"objective": "binary:logistic", "n_estimators": 10}},
             {"type": "logistic_regression", "params": {"max_iter": 2000, "solver": "lbfgs"}},
         ]
 
-        # Add LightGBM if available
+        # Add tree models if SHAP is available
         try:
-            import lightgbm
+            import shap
+            import xgboost
 
             model_configs.append(
-                {"type": "lightgbm", "params": {"objective": "binary", "num_leaves": 10, "n_estimators": 10}},
+                {"type": "xgboost", "params": {"objective": "binary:logistic", "n_estimators": 10}},
             )
+
+            try:
+                import lightgbm
+
+                model_configs.append(
+                    {"type": "lightgbm", "params": {"objective": "binary", "num_leaves": 10, "n_estimators": 10}},
+                )
+            except ImportError:
+                pass
         except ImportError:
             pass
 
         for _i, model_config in enumerate(model_configs):
+            # Select explainer based on model type
+            if model_config["type"] == "logistic_regression":
+                explainer_priority = ["coefficients"]
+            else:  # xgboost, lightgbm
+                explainer_priority = ["treeshap", "kernelshap"]
+
             config_dict = {
                 "audit_profile": "tabular_compliance",
                 "reproducibility": {"random_seed": 42},
@@ -262,7 +275,7 @@ class TestEndToEndWorkflow:
                     ),
                 },
                 "model": model_config,
-                "explainers": {"strategy": "first_compatible", "priority": ["treeshap", "kernelshap"]},
+                "explainers": {"strategy": "first_compatible", "priority": explainer_priority},
                 "metrics": {"performance": {"metrics": ["accuracy"]}},
             }
 
@@ -347,13 +360,13 @@ class TestEndToEndWorkflow:
                 ),
             },
             "model": {
-                "type": "xgboost",
-                "params": {"objective": "binary:logistic", "n_estimators": 50, "max_depth": 6},
+                "type": "logistic_regression",
+                "params": {"max_iter": 2000},  # Higher for high-dimensional categorical encodings
             },
             "explainers": {
                 "strategy": "first_compatible",
-                "priority": ["treeshap", "kernelshap"],
-                "config": {"treeshap": {"max_samples": 200}},
+                "priority": ["coefficients"],
+                "config": {"coefficients": {"normalize": True}},
             },
             "metrics": {
                 "performance": {"metrics": ["accuracy", "precision", "recall", "f1", "auc_roc"]},
@@ -512,8 +525,8 @@ class TestCLIEndToEnd:
                 "feature_columns": ["checking_account_status", "duration_months", "credit_amount"],
                 "protected_attributes": [],  # Simplified for CLI testing
             },
-            "model": {"type": "xgboost", "params": {"objective": "binary:logistic", "n_estimators": 10}},
-            "explainers": {"strategy": "first_compatible", "priority": ["treeshap"]},
+            "model": {"type": "logistic_regression", "params": {"max_iter": 2000}},  # Higher for categorical encodings
+            "explainers": {"strategy": "first_compatible", "priority": ["coefficients"]},
             "metrics": {"performance": {"metrics": ["accuracy"]}},
         }
 
@@ -643,7 +656,7 @@ class TestScalabilityAndLimits:
                 "feature_columns": ["checking_account_status", "duration_months"],
             },
             "model": {"type": "logistic_regression"},
-            "explainers": {"strategy": "first_compatible", "priority": ["kernelshap"]},
+            "explainers": {"strategy": "first_compatible", "priority": ["coefficients"]},
             "metrics": {"performance": {"metrics": ["accuracy"]}},
         }
 
@@ -707,8 +720,8 @@ class TestScalabilityAndLimits:
                 "target_column": "credit_risk",
                 "feature_columns": features,
             },
-            "model": {"type": "xgboost", "params": {"n_estimators": 10}},
-            "explainers": {"priority": ["treeshap"]},
+            "model": {"type": "logistic_regression", "params": {"max_iter": 2000}},  # Higher for categorical encodings
+            "explainers": {"priority": ["coefficients"]},
             "metrics": {"performance": {"metrics": ["accuracy"]}},
         }
 

@@ -31,8 +31,8 @@ class TestDatasetFetchingIntegration:
 
         # Verify config loaded correctly
         assert config.data.dataset == "german_credit"
-        assert config.data.fetch == "if_missing"
-        assert config.data.offline is False
+        assert config.data.fetch == "never"  # Disabled for tests to avoid network downloads
+        assert config.data.offline is True
 
         # Create pipeline
         pipeline = AuditPipeline(config)
@@ -138,7 +138,7 @@ class TestDatasetFetchingIntegration:
         """Test offline mode integration."""
         config = DataConfig(
             dataset="custom",
-            path="/tmp/test.csv",
+            path="/tmp/non_existent_test_file.csv",
             fetch="if_missing",
             offline=True,  # Offline mode
         )

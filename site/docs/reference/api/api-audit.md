@@ -231,11 +231,11 @@ Fairness analysis object (if `protected_attributes` provided):
 | `groups`                        | `list[str]` | Protected groups analyzed                      |
 | `group_metrics`                 | `dict`      | Per-group performance metrics                  |
 
-**Methods:**
+**Methods:** _(Coming in v0.3.0)_
 
 - `has_bias(threshold=0.05)`: Returns `True` if bias detected (difference > threshold)
-- `plot_group_metrics()`: Bar chart comparing metrics across groups
-- `plot_threshold_sweep()`: Show fairness vs threshold tradeoff
+- `plot_group_metrics()`: Bar chart comparing metrics across groups _(planned)_
+- `plot_threshold_sweep()`: Show fairness vs threshold tradeoff _(planned)_
 
 #### `calibration`
 
@@ -248,9 +248,9 @@ Calibration metrics object (if `include_calibration=True`):
 | `calibration_curve_x`        | `np.ndarray` | Predicted probabilities (binned)                   |
 | `calibration_curve_y`        | `np.ndarray` | Observed frequencies                               |
 
-**Methods:**
+**Methods:** _(Coming in v0.3.0)_
 
-- `plot()`: Display calibration curve with ECE annotation
+- `plot()`: Display calibration curve with ECE annotation _(planned)_
 
 #### `explanations`
 
@@ -444,54 +444,20 @@ Plot ROC curve with AUC annotation.
 
 **Returns:** `(fig, ax)` tuple
 
-### Fairness Plots
+### Visualization Methods _(Coming in v0.3.0)_
 
-#### `result.fairness.plot_group_metrics()`
-
-Bar chart comparing performance across protected groups.
-
-**Parameters:**
-
-- `metrics` (`list[str]`, optional): Metrics to plot (default: `["accuracy", "tpr", "fpr"]`)
-- `ax` (`matplotlib.axes.Axes`, optional): Axes to plot on
-
-**Returns:** `(fig, ax)` tuple
-
-**Example:**
+Interactive plotting methods are planned for a future release. For now, use:
 
 ```python
-fig, ax = result.fairness.plot_group_metrics(metrics=["tpr", "precision"])
+# Export to HTML/PDF for visualizations
+result.to_html("audit_report.html")
+result.to_pdf("audit_report.pdf")
+
+# Or access raw data for custom plotting
+cal_x = result.calibration['calibration_curve_x']
+cal_y = result.calibration['calibration_curve_y']
+# ... use matplotlib directly
 ```
-
-#### `result.fairness.plot_threshold_sweep()`
-
-Show fairness/performance tradeoff across decision thresholds.
-
-**Parameters:**
-
-- `thresholds` (`np.ndarray`, optional): Thresholds to test (default: `np.linspace(0.1, 0.9, 17)`)
-
-**Returns:** `(fig, ax)` tuple
-
-**Example:**
-
-```python
-fig, ax = result.fairness.plot_threshold_sweep()
-ax.axhline(y=0.05, color='r', linestyle='--', label='Tolerance')
-```
-
-### Calibration Plots
-
-#### `result.calibration.plot()`
-
-Plot calibration curve with ECE annotation.
-
-**Parameters:**
-
-- `show_confidence` (`bool`, default `True`): Show confidence intervals
-- `ax` (`matplotlib.axes.Axes`, optional): Axes to plot on
-
-**Returns:** `(fig, ax)` tuple
 
 **Example:**
 

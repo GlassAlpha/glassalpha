@@ -71,6 +71,8 @@ data:
     - "dependents_count"
     - "telephone"
     - "foreign_worker"
+    - "gender" # Gender (extracted from personal_status_sex during preprocessing)
+    - "age_group" # Age groups (young, middle_young, middle_aged, senior)
 
   # Protected attributes for fairness analysis
   # These are sensitive demographic characteristics that should not lead to discrimination
