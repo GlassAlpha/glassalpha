@@ -1,0 +1,147 @@
+name: Publish to PyPI
+
+on:
+    release:
+        types: [published]
+    workflow_dispatch: # Manual trigger for testing
+
+permissions:
+    contents: read
+    id-token: write # For PyPI Trusted Publishing (future)
+
+jobs:
+    build:
+        name: Build Distribution
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Install build tools
+              run: |
+                  python -m pip install --upgrade pip build twine cyclonedx-bom
+
+            - name: Build package
+              run: |
+                  python -m build
+                  echo "Built artifacts:"
+                  ls -lh dist/
+
+            - name: Generate SBOM
+              run: |
+                  cyclonedx-py --format json --outfile dist/sbom.json
+                  echo "✅ Generated SBOM: $(ls -lh dist/sbom.json)"
+
+            - name: Check distribution
+              run: |
+                  twine check dist/*.whl dist/*.tar.gz
+                  echo "✅ Distribution checks passed"
+
+            - name: Sign artifacts with Sigstore
+              uses: sigstore/gh-action-sigstore-python@v2
+              with:
+                  inputs: dist/*.whl dist/*.tar.gz dist/sbom.json
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dist-${{ github.run_id }}
+                  path: |
+                      dist/*.whl
+                      dist/*.tar.gz
+                      dist/sbom.json
+                      dist/*.sig
+                  retention-days: 90
+
+    publish-testpypi:
+        name: Publish to TestPyPI
+        needs: build
+        runs-on: ubuntu-latest
+        if: github.event_name == 'workflow_dispatch'
+        environment:
+            name: testpypi
+            url: https://test.pypi.org/p/glassalpha
+
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  name: dist-${{ github.run_id }}
+                  path: dist/
+
+            - name: Publish to TestPyPI
+              uses: pypa/gh-action-pypi-publish@release/v1
+              with:
+                  repository-url: https://test.pypi.org/legacy/
+                  password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+    publish-pypi:
+        name: Publish to PyPI
+        needs: build
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+        environment:
+            name: pypi
+            url: https://pypi.org/p/glassalpha
+
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  name: dist-${{ github.run_id }}
+                  path: dist/
+
+            - name: Publish to PyPI
+              uses: pypa/gh-action-pypi-publish@release/v1
+              with:
+                  password: ${{ secrets.PYPI_API_TOKEN }}
+
+            - name: Create release assets summary
+              run: |
+                  echo "## Published to PyPI 🎉" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "### Artifacts:" >> $GITHUB_STEP_SUMMARY
+                  echo "- Wheel: \`$(ls dist/*.whl)\`" >> $GITHUB_STEP_SUMMARY
+                  echo "- Source: \`$(ls dist/*.tar.gz)\`" >> $GITHUB_STEP_SUMMARY
+                  echo "- SBOM: \`dist/sbom.json\`" >> $GITHUB_STEP_SUMMARY
+                  echo "- Signatures: \`dist/*.sig\`" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "### Verification:" >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+                  echo "pip install glassalpha" >> $GITHUB_STEP_SUMMARY
+                  echo "glassalpha --version" >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+    upload-release-assets:
+        name: Upload Release Assets
+        needs: [build, publish-pypi]
+        runs-on: ubuntu-latest
+        if: github.event_name == 'release'
+        permissions:
+            contents: write
+
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  name: dist-${{ github.run_id }}
+                  path: dist/
+
+            - name: Generate checksums
+              run: |
+                  cd dist
+                  sha256sum * > SHA256SUMS.txt
+                  echo "Checksums:"
+                  cat SHA256SUMS.txt
+
+            - name: Upload release assets
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: |
+                      dist/*.whl
+                      dist/*.tar.gz
+                      dist/sbom.json
+                      dist/*.sig
+                      dist/SHA256SUMS.txt
