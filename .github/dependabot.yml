@@ -1,9 +1,9 @@
 # .github/dependabot.yml
 version: 2
 updates:
-  # Main Python package (packages/ directory)
+  # Main Python package (project root)
   - package-ecosystem: "pip"
-    directory: "/packages"
+    directory: "/"
     schedule:
       interval: "weekly"
       day: "monday" # Explicit day for consistency

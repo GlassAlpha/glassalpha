@@ -104,14 +104,14 @@ def test_all_example_notebooks_covered():
 #   - name: Test example notebooks
 #     run: |
 #       cd examples/notebooks
-#       pytest ../../packages/tests/notebooks/ \
+#       pytest ../../tests/notebooks/ \
 #         --nbmake *.ipynb \
 #         --nbmake-timeout=600 \
 #         -v
 #
 # Local testing:
 #   cd examples/notebooks
-#   pytest ../../packages/tests/notebooks/ --nbmake *.ipynb -v
+#   pytest ../../tests/notebooks/ --nbmake *.ipynb -v
 #
 # Run specific notebook:
 #   pytest --nbmake examples/notebooks/quickstart_colab.ipynb -v

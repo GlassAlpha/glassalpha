@@ -38,5 +38,5 @@ def test_cli_documentation_is_current():
         "CLI documentation is out of date.\n"
         f"Script output: {result.stdout}\n"
         f"Script errors: {result.stderr}\n"
-        "Run: python packages/scripts/generate_cli_docs.py --output site/docs/reference/cli.md"
+        "Run: python scripts/generate_cli_docs.py --output site/docs/reference/cli.md"
     )

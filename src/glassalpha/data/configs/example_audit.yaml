@@ -6,11 +6,12 @@ audit_profile: "tabular_compliance"
 
 # Model configuration
 model:
-  type: "xgboost"  # Triggers XGBoostWrapper from registry
+  type: "xgboost" # Triggers XGBoostWrapper from registry
   path: "models/credit_risk.pkl"
 
 # Data configuration
 data:
+  dataset: custom
   path: "data/german_credit.csv"
   schema_path: "schemas/german_credit.yaml"
   protected_attributes:
@@ -19,8 +20,8 @@ data:
 
 # Explainer configuration with deterministic selection
 explainers:
-  strategy: "first_compatible"  # Deterministic selection strategy
-  priority:                      # Ordered list (first match wins)
+  strategy: "first_compatible" # Deterministic selection strategy
+  priority: # Ordered list (first match wins)
     - treeshap
     - kernelshap
   config:
@@ -59,7 +60,7 @@ recourse:
 
 # Report configuration
 report:
-  template: "standard_audit"  # Can be overridden with enterprise templates
+  template: "standard_audit" # Can be overridden with enterprise templates
   output_format: "pdf"
   include_sections:
     - lineage
@@ -85,4 +86,4 @@ manifest:
   include_data_hash: true
 
 # Strict mode can be enabled via CLI flag or config
-strict_mode: false  # Set to true for regulatory compliance
+strict_mode: false # Set to true for regulatory compliance

@@ -24,8 +24,8 @@ model:
   # Model type - triggers XGBoostWrapper from registry
   type: "xgboost"
 
-  # Path to pre-trained model (optional - will train new model if not found)
-  # path: "models/german_credit_xgboost.pkl"
+  # Path to pre-trained model (required in strict mode)
+  path: "models/german_credit_xgboost.pkl"
 
   # Additional model parameters (optional)
   params:
@@ -42,7 +42,9 @@ model:
 data:
   # Data will be loaded using German Credit dataset loader
   # This path will be created automatically by the dataset loader
+  dataset: "custom"
   path: "~/.glassalpha/data/german_credit_processed.csv"
+  schema_path: "~/.glassalpha/schemas/german_credit.yaml"
 
   # Target and feature definitions
   target_column: "credit_risk"
@@ -73,9 +75,9 @@ data:
   # Protected attributes for fairness analysis
   # These are sensitive demographic characteristics that should not lead to discrimination
   protected_attributes:
-    - "gender"           # Gender (extracted from personal_status_sex)
-    - "age_group"        # Age groups (young, middle_young, middle_aged, senior)
-    - "foreign_worker"   # Nationality/residency status
+    - "gender" # Gender (extracted from personal_status_sex)
+    - "age_group" # Age groups (young, middle_young, middle_aged, senior)
+    - "foreign_worker" # Nationality/residency status
 
 # =============================================================================
 # EXPLAINER CONFIGURATION
@@ -87,9 +89,9 @@ explainers:
 
   # Priority order - first compatible explainer will be selected
   priority:
-    - "treeshap"      # TreeSHAP - exact SHAP values for tree models (preferred)
-    - "kernelshap"    # KernelSHAP - model-agnostic fallback
-    - "noop"          # No-op fallback (should not be reached)
+    - "treeshap" # TreeSHAP - exact SHAP values for tree models (preferred)
+    - "kernelshap" # KernelSHAP - model-agnostic fallback
+    - "noop" # No-op fallback (should not be reached)
 
   # Explainer-specific configuration
   config:
@@ -112,25 +114,25 @@ explainers:
 metrics:
   # Performance metrics for model evaluation
   performance:
-    - "accuracy"              # Overall classification accuracy
-    - "precision"             # Positive predictive value
-    - "recall"                # Sensitivity/true positive rate
-    - "f1"                    # Harmonic mean of precision and recall
-    - "auc_roc"               # Area under ROC curve
+    - "accuracy" # Overall classification accuracy
+    - "precision" # Positive predictive value
+    - "recall" # Sensitivity/true positive rate
+    - "f1" # Harmonic mean of precision and recall
+    - "auc_roc" # Area under ROC curve
     - "classification_report" # Comprehensive classification metrics
 
   # Fairness metrics for bias detection
   fairness:
-    - "demographic_parity"    # Statistical parity across demographic groups
-    - "equal_opportunity"     # Equal true positive rates across groups
-    - "equalized_odds"        # Equal TPR and FPR across groups
-    - "predictive_parity"     # Equal precision across demographic groups
+    - "demographic_parity" # Statistical parity across demographic groups
+    - "equal_opportunity" # Equal true positive rates across groups
+    - "equalized_odds" # Equal TPR and FPR across groups
+    - "predictive_parity" # Equal precision across demographic groups
 
   # Drift metrics for model stability (requires reference data)
   drift:
-    - "population_stability_index"  # PSI for distribution shift detection
-    - "kl_divergence"              # KL divergence between distributions
-    - "kolmogorov_smirnov"         # Two-sample test for distribution changes
+    - "population_stability_index" # PSI for distribution shift detection
+    - "kl_divergence" # KL divergence between distributions
+    - "kolmogorov_smirnov" # Two-sample test for distribution changes
 
 # =============================================================================
 # REPRODUCIBILITY CONFIGURATION
@@ -145,9 +147,6 @@ reproducibility:
 
   # Capture complete execution environment
   capture_environment: true
-
-  # Validate deterministic execution
-  validate_determinism: true
 
 # =============================================================================
 # AUDIT MANIFEST CONFIGURATION
@@ -166,12 +165,6 @@ manifest:
   # Include dataset hash for data integrity verification
   include_data_hash: true
 
-  # Include selected component information
-  track_component_selection: true
-
-  # Include execution timing and environment
-  include_execution_info: true
-
 # =============================================================================
 # REPORT CONFIGURATION
 # =============================================================================
@@ -185,15 +178,15 @@ report:
 
   # Report sections to include
   include_sections:
-    - "executive_summary"      # High-level findings and risk assessment
-    - "data_overview"          # Dataset characteristics and quality
-    - "model_performance"      # Performance metrics and validation
-    - "global_explanations"    # Feature importance and model behavior
-    - "local_explanations"     # Individual prediction explanations
-    - "fairness_analysis"      # Bias detection and demographic analysis
-    - "drift_detection"        # Model stability and data shift analysis
-    - "audit_manifest"         # Complete reproducibility information
-    - "regulatory_compliance"  # Compliance checklist and recommendations
+    - "executive_summary" # High-level findings and risk assessment
+    - "data_overview" # Dataset characteristics and quality
+    - "model_performance" # Performance metrics and validation
+    - "global_explanations" # Feature importance and model behavior
+    - "local_explanations" # Individual prediction explanations
+    - "fairness_analysis" # Bias detection and demographic analysis
+    - "drift_detection" # Model stability and data shift analysis
+    - "audit_manifest" # Complete reproducibility information
+    - "regulatory_compliance" # Compliance checklist and recommendations
 
   # Report styling and formatting
   styling:
@@ -220,140 +213,28 @@ recourse:
 
   # Features that cannot be changed (immutable constraints)
   immutable_features:
-    - "age_years"            # Age cannot be changed
-    - "gender"               # Gender is protected characteristic
-    - "personal_status_sex"  # Personal status is largely fixed
-    - "foreign_worker"       # Nationality/residency status
+    - "age_years" # Age cannot be changed
+    - "gender" # Gender is protected characteristic
+    - "personal_status_sex" # Personal status is largely fixed
+    - "foreign_worker" # Nationality/residency status
 
   # Directional constraints (features that can only improve)
   monotonic_constraints:
-    credit_amount: "decrease_preferred"      # Lower loan amount is safer
-    duration_months: "decrease_preferred"    # Shorter duration is safer
-    savings_account: "increase_only"         # More savings is always better
-    employment_duration: "increase_only"     # Longer employment is better
-    existing_credits_count: "decrease_only"  # Fewer existing credits is better
+    credit_amount: "decrease_only" # Lower loan amount is safer
+    duration_months: "decrease_only" # Shorter duration is safer
+    savings_account: "increase_only" # More savings is always better
+    employment_duration: "increase_only" # Longer employment is better
+    existing_credits_count: "decrease_only" # Fewer existing credits is better
 
   # Cost function for feature changes (L1 weighted distance)
   cost_function: "weighted_l1"
+  max_iterations: 100
 
-  # Feature change costs (higher cost = harder to change)
-  feature_costs:
-    checking_account_status: 0.8    # Moderate effort to improve account status
-    credit_history: 0.9             # Very hard to change credit history
-    savings_account: 0.7            # Moderate effort to increase savings
-    employment_duration: 0.9        # Hard to change employment quickly
-    job: 0.8                        # Moderate effort to change job category
-    housing: 0.6                    # Possible to change housing situation
-    telephone: 0.1                  # Easy to get telephone
-
-  # Maximum number of recourse examples to generate
-  max_recourse_examples: 10
-
-  # Maximum allowed cost for recourse suggestions
-  max_total_cost: 3.0
-
-# =============================================================================
-# ADVANCED CONFIGURATION
-# =============================================================================
-
-# Data preprocessing options
+# Preprocessing artifact verification (required in strict mode)
 preprocessing:
-  # Handle missing values
-  handle_missing: true
-  missing_strategy: "median"  # For numerical: median, for categorical: mode
-
-  # Feature scaling (important for some explainers)
-  scale_features: false  # XGBoost handles raw features well
-  scaling_method: "standard"  # standard, minmax, robust
-
-  # Categorical encoding
-  categorical_encoding: "label"  # label, onehot, target
-
-  # Feature selection
-  feature_selection: false
-  selection_method: "mutual_info"
-  max_features: 20
-
-# Validation configuration
-validation:
-  # Cross-validation for model evaluation
-  cv_folds: 5
-  cv_scoring: "roc_auc"
-
-  # Train/test split configuration
-  test_size: 0.2
-  stratify_split: true
-
-  # Bootstrap confidence intervals
-  bootstrap_samples: 1000
-  confidence_level: 0.95
-
-# Performance optimization
-performance:
-  # Parallel processing
-  n_jobs: -1  # Use all available cores
-
-  # Memory optimization
-  low_memory_mode: false
-
-  # Progress reporting
-  verbose: true
-  progress_bar: true
-
-# =============================================================================
-# REGULATORY COMPLIANCE SETTINGS
-# =============================================================================
-
-compliance:
-  # Regulatory frameworks to check against
-  frameworks:
-    - "gdpr"           # EU General Data Protection Regulation
-    - "ecoa"           # US Equal Credit Opportunity Act
-    - "fcra"           # US Fair Credit Reporting Act
-    - "eu_ai_act"      # EU AI Act (proposed)
-
-  # Bias tolerance thresholds (stricter for regulated use cases)
-  fairness_thresholds:
-    demographic_parity: 0.05      # 5% maximum difference between groups
-    equal_opportunity: 0.05       # 5% maximum TPR difference
-    equalized_odds: 0.05          # 5% maximum TPR/FPR difference
-    predictive_parity: 0.05       # 5% maximum precision difference
-
-  # Documentation requirements
-  documentation:
-    model_cards: true             # Generate model cards
-    dataset_cards: true           # Generate dataset documentation
-    audit_reports: true           # Generate compliance audit reports
-    risk_assessments: true        # Generate algorithmic risk assessments
-
-  # Approval workflows (for production deployment)
-  approval_required: false        # Set to true for production
-  approver_roles:
-    - "model_validator"
-    - "compliance_officer"
-    - "legal_reviewer"
-
-# =============================================================================
-# ENVIRONMENT-SPECIFIC OVERRIDES
-# =============================================================================
-
-# Development environment settings
-development:
-  # Use smaller datasets for faster iteration
-  sample_size: 500
-  # Reduced validation for speed
-  cv_folds: 3
-  # Less strict fairness requirements
-  fairness_thresholds:
-    demographic_parity: 0.10
-
-# Production environment settings
-production:
-  # Full dataset and rigorous validation
-  sample_size: null
-  cv_folds: 10
-  # Strict fairness requirements
-  fairness_thresholds:
-    demographic_parity: 0.02
-  # Required approvals
-  approval_required: true
+  mode: artifact
+  artifact_path: artifacts/german_credit_preprocessor.joblib
+  expected_file_hash: "sha256:9373ae67dbcd5c1558fa4ba7a727e05575f9421358a8604a1d0eb0da80385a26"
+  expected_params_hash: "sha256:cf5e71ee7e1733ca6d857b7f21df94a41f29ebeaaec9c6d46783336757cfcf37"
+  expected_sparse: false
+  fail_on_mismatch: true

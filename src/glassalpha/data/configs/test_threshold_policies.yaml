@@ -1,6 +1,7 @@
 audit_profile: "tabular_compliance"
 
 data:
+  dataset: custom
   path: "~/.glassalpha/data/insurance_risk.csv"
   target_column: "claim_outcome"
   feature_columns:
@@ -47,7 +48,7 @@ report:
   threshold:
     policy: "cost_sensitive"
     cost_fp: 1.0
-    cost_fn: 5.0  # High cost for false negatives (missing claims)
+    cost_fn: 5.0 # High cost for false negatives (missing claims)
 
 reproducibility:
   random_seed: 42

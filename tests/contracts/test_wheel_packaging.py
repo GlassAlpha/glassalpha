@@ -43,14 +43,14 @@ class TestWheelPackaging:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
-            # Build wheel (requires packages/ directory context)
+            # Build wheel from project root
             import subprocess  # noqa: PLC0415
             import sys
 
-            packages_dir = Path(__file__).parent.parent.parent
+            project_root = Path(__file__).parent.parent.parent
             result = subprocess.run(  # noqa: S603
                 [sys.executable, "-m", "build", "--wheel", "--outdir", str(temp_path)],
-                cwd=packages_dir,
+                cwd=project_root,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -122,8 +122,8 @@ class TestWheelPackaging:
 
         Prevents tests from finding wrong wheels due to dist/ contamination.
         """
-        packages_dir = Path(__file__).parent.parent.parent
-        dist_dir = packages_dir / "dist"
+        project_root = Path(__file__).parent.parent.parent
+        dist_dir = project_root / "dist"
 
         if dist_dir.exists():
             wheel_files = list(dist_dir.glob("*.whl"))

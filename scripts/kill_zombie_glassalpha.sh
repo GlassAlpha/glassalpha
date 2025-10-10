@@ -2,8 +2,8 @@
 # Kill zombie GlassAlpha Python processes that survive terminal closure
 #
 # Usage:
-#   ./packages/scripts/kill_zombie_glassalpha.sh          # Dry run (list processes)
-#   ./packages/scripts/kill_zombie_glassalpha.sh --kill   # Actually kill them
+#   ./scripts/kill_zombie_glassalpha.sh          # Dry run (list processes)
+#   ./scripts/kill_zombie_glassalpha.sh --kill   # Actually kill them
 #
 # This script finds Python processes running GlassAlpha that are:
 # 1. Orphaned (parent process no longer exists)

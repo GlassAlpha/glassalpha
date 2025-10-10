@@ -126,7 +126,7 @@ class TestPreprocessingIntegration:
         from glassalpha.pipeline.audit import AuditPipeline
 
         # Use quickstart config which doesn't have preprocessing configured
-        config_path = Path(__file__).parent.parent.parent / "configs" / "quickstart.yaml"
+        config_path = Path(__file__).parent.parent.parent / "src" / "glassalpha" / "data" / "configs" / "quickstart.yaml"
         assert config_path.exists(), f"Quickstart config not found: {config_path}"
 
         config = load_config_from_file(config_path)
@@ -176,7 +176,7 @@ class TestPreprocessingIntegration:
         """
         from glassalpha.config.loader import load_config_from_file
 
-        config_path = Path(__file__).parent.parent.parent / "configs" / "german_credit.yaml"
+        config_path = Path(__file__).parent.parent.parent / "src" / "glassalpha" / "data" / "configs" / "german_credit.yaml"
         config = load_config_from_file(config_path)
 
         # Enable preprocessing and set up artifact path for hash validation
@@ -261,48 +261,41 @@ class TestPreprocessingIntegration:
         from glassalpha.config.loader import load_config_from_file
         from glassalpha.pipeline.audit import AuditPipeline
 
-        config_path = Path(__file__).parent.parent.parent / "configs" / "german_credit.yaml"
-        config = load_config_from_file(config_path)
+        # Create a minimal config for this test instead of using german_credit.yaml
+        # which has complex column requirements that conflict with our test artifact
+        from glassalpha.config.schema import AuditConfig
+
+        config = AuditConfig(
+            audit_profile="tabular_compliance",
+            model={"type": "logistic_regression", "params": {"random_state": 42}},
+            data={
+                "dataset": "custom",
+                "path": str(tmp_path / "dummy_data.csv"),
+                "target_column": "target",
+                "protected_attributes": ["group"]
+            },
+            explainers={"strategy": "first_compatible", "priority": ["noop"]},
+            metrics={"performance": ["accuracy"], "fairness": ["demographic_parity"]},
+            reproducibility={"random_seed": 42, "deterministic": True},
+            manifest={"enabled": True, "include_git_sha": False, "include_config_hash": False, "include_data_hash": False}
+        )
 
         # Enable preprocessing for this test
         config.preprocessing.mode = "artifact"
         config.preprocessing.artifact_path = str(tmp_path / "test_artifact.pkl")
+        # Remove hash check since we're creating our own artifact
+        config.preprocessing.expected_file_hash = None
 
-        # Create a proper sklearn preprocessing artifact file that can handle mixed data types
+        # Create a simple preprocessing artifact for testing
         import joblib
         import numpy as np
+        import pandas as pd
         from sklearn.compose import ColumnTransformer
-        from sklearn.pipeline import Pipeline
         from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-        # Create preprocessing pipeline that handles both numeric and categorical features
-        # This mimics what the actual preprocessing system does
-        numeric_features = [
-            "duration_months",
-            "credit_amount",
-            "installment_rate",
-            "present_residence_since",
-            "age_years",
-            "existing_credits_count",
-            "dependents_count",
-        ]
-        categorical_features = [
-            "checking_account_status",
-            "credit_history",
-            "purpose",
-            "savings_account",
-            "employment_duration",
-            "personal_status_sex",
-            "other_debtors",
-            "property",
-            "other_installment_plans",
-            "housing",
-            "job",
-            "telephone",
-            "foreign_worker",
-            "gender",
-            "age_group",
-        ]
+        # Create simple preprocessing pipeline for test data
+        numeric_features = ["age", "income"]
+        categorical_features = ["group"]
 
         # Create preprocessing pipeline
         preprocessor = ColumnTransformer(
@@ -312,17 +305,22 @@ class TestPreprocessingIntegration:
             ]
         )
 
-        # Fit on dummy data that matches the expected structure
-        dummy_data = {}
-        for col in numeric_features:
-            dummy_data[col] = np.random.randn(10)
-        for col in categorical_features:
-            dummy_data[col] = np.random.choice(["A", "B", "C"], 10)
+        # Create dummy data that matches our test config
+        dummy_data = {
+            "age": np.random.randn(10),
+            "income": np.random.randn(10),
+            "group": np.random.choice(["A", "B"], 10),
+            "target": np.random.choice([0, 1], 10)
+        }
 
         dummy_df = pd.DataFrame(dummy_data)
         preprocessor.fit(dummy_df)
 
+        # Save artifact
         joblib.dump(preprocessor, config.preprocessing.artifact_path)
+
+        # Create dummy data file for the config
+        dummy_df.to_csv(tmp_path / "dummy_data.csv", index=False)
 
         pipeline = AuditPipeline(config)
         results = pipeline.run()

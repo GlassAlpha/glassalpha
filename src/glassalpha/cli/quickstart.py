@@ -403,7 +403,7 @@ This script demonstrates the simplest way to run a GlassAlpha audit programmatic
 
 Requirements:
     - GlassAlpha must be installed: pip install 'glassalpha[all]'
-    - For development from source: pip install -e ".[all]" from packages/ directory
+    - For development from source: pip install -e ".[all]" from project root
 """
 
 import sys

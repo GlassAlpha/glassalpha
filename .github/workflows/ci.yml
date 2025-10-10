@@ -281,7 +281,7 @@ jobs:
             python -m coverage combine || true
           fi
           # Current threshold: 65% for critical modules after test improvements
-          # See packages/dev/reviews/COVERAGE_ANALYSIS.md for test roadmap
+          # See dev/reviews/COVERAGE_ANALYSIS.md for test roadmap
           # Target: 90%+ after adding strict mode, renderer, and pipeline tests
           python -m coverage report --precision=2 \
             --include="*/glassalpha/config/*,*/glassalpha/models/*,*/glassalpha/pipeline/*,*/glassalpha/report/renderer.py,*/glassalpha/metrics/core.py,*/glassalpha/metrics/thresholds.py,*/glassalpha/core/interfaces.py" \

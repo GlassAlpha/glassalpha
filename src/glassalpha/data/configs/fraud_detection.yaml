@@ -10,6 +10,7 @@ reproducibility:
 
 # Dataset configuration
 data:
+  dataset: custom
   path: ~/.glassalpha/data/german_credit_processed.csv
   target_column: credit_risk
   feature_columns:
@@ -22,8 +23,6 @@ data:
     - gender
   protected_attributes:
     - gender
-  target_column: credit_risk
-  protected_attributes:
     - cardholder_age
     - card_type
 
@@ -38,15 +37,15 @@ model:
     learning_rate: 0.1
     subsample: 0.8
     colsample_bytree: 0.8
-    scale_pos_weight: 99  # Handle 1% fraud rate
+    scale_pos_weight: 99 # Handle 1% fraud rate
     random_state: 42
 
 # Explanation configuration
 explainers:
   strategy: first_compatible
   priority:
-    - treeshap    # XGBoost supports TreeSHAP for exact explanations
-    - kernelshap  # Fallback for any model type
+    - treeshap # XGBoost supports TreeSHAP for exact explanations
+    - kernelshap # Fallback for any model type
   config:
     treeshap:
       max_samples: 1000
@@ -57,20 +56,20 @@ metrics:
   performance:
     metrics:
       - accuracy
-      - precision    # Critical for fraud - minimize false positives
-      - recall       # Critical for fraud - catch actual fraud
-      - f1          # Balance between precision and recall
-      - auc_roc     # Overall discriminative ability
+      - precision # Critical for fraud - minimize false positives
+      - recall # Critical for fraud - catch actual fraud
+      - f1 # Balance between precision and recall
+      - auc_roc # Overall discriminative ability
 
   fairness:
     metrics:
-      - demographic_parity    # Equal fraud detection rates across groups
-      - equal_opportunity     # Equal true positive rates for fraud detection
-      - predictive_parity      # Equal precision across demographic groups
+      - demographic_parity # Equal fraud detection rates across groups
+      - equal_opportunity # Equal true positive rates for fraud detection
+      - predictive_parity # Equal precision across demographic groups
     config:
       # Stricter thresholds for fraud detection
       demographic_parity:
-        threshold: 0.02  # Maximum 2% difference
+        threshold: 0.02 # Maximum 2% difference
       equal_opportunity:
         threshold: 0.02
       predictive_parity:

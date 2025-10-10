@@ -39,7 +39,7 @@ def test_all_documented_config_files_exist():
     missing_files = []
 
     for doc_path, config_name in config_references:
-        config_path = project_root / "packages" / "configs" / config_name
+        config_path = project_root / "src" / "glassalpha" / "data" / "configs" / config_name
         if not config_path.exists():
             missing_files.append((doc_path, config_name))
 
@@ -55,8 +55,8 @@ def test_config_files_are_valid_yaml():
     """Test that all configuration files in configs/ are valid YAML."""
     import yaml
 
-    project_root = Path(__file__).parent.parent.parent
-    configs_dir = project_root / "packages" / "configs"
+    project_root = Path(__file__).parent.parent
+    configs_dir = project_root / "src" / "glassalpha" / "data" / "configs"
 
     for config_file in configs_dir.glob("*.yaml"):
         if config_file.name in ["custom_template.yaml"]:  # Skip template files that may have template syntax
@@ -73,8 +73,8 @@ def test_config_files_have_required_fields():
     """Test that configuration files have basic required structure."""
     import yaml
 
-    project_root = Path(__file__).parent.parent.parent
-    configs_dir = project_root / "packages" / "configs"
+    project_root = Path(__file__).parent.parent
+    configs_dir = project_root / "src" / "glassalpha" / "data" / "configs"
 
     required_fields = ["audit_profile"]
 
@@ -96,7 +96,7 @@ def test_example_notebooks_reference_existing_configs():
     """Test that example notebooks reference existing configuration files."""
     import re
 
-    project_root = Path(__file__).parent.parent.parent
+    project_root = Path(__file__).parent.parent
     examples_dir = project_root / "examples" / "notebooks"
 
     # Common patterns for config file references in notebooks
@@ -114,5 +114,5 @@ def test_example_notebooks_reference_existing_configs():
         for pattern in config_patterns:
             matches = re.findall(pattern, content)
             for config_name in matches:
-                config_path = project_root / "packages" / "configs" / config_name
+                config_path = project_root / "src" / "glassalpha" / "data" / "configs" / config_name
                 assert config_path.exists(), f"Notebook {notebook.name} references non-existent config: {config_name}"

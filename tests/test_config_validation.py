@@ -12,8 +12,9 @@ from glassalpha.config.loader import load_config_from_file
 
 def get_all_config_files():
     """Get all YAML config files from configs directory."""
-    configs_dir = Path(__file__).parent.parent / "configs"
-    return list(configs_dir.glob("*.yaml"))
+    configs_dir = Path(__file__).parent.parent / "src" / "glassalpha" / "data" / "configs"
+    # Exclude test configs (they're for testing specific features, not full validation)
+    return [f for f in configs_dir.glob("*.yaml") if not f.name.startswith("test_")]
 
 
 @pytest.mark.parametrize("config_file", get_all_config_files(), ids=lambda p: p.name)
@@ -52,7 +53,7 @@ def test_config_file_validates(config_file: Path) -> None:
 def test_all_configs_found() -> None:
     """Verify that config files were found for testing."""
     config_files = get_all_config_files()
-    assert len(config_files) > 0, "No config files found in configs/ directory"
+    assert len(config_files) > 0, "No config files found in src/glassalpha/data/configs/ directory"
     print(f"\nFound {len(config_files)} config files to validate:")
     for config_file in config_files:
         print(f"  - {config_file.name}")
@@ -60,7 +61,7 @@ def test_all_configs_found() -> None:
 
 def test_specific_config_examples_exist() -> None:
     """Verify that key example configs exist."""
-    configs_dir = Path(__file__).parent.parent / "configs"
+    configs_dir = Path(__file__).parent.parent / "src" / "glassalpha" / "data" / "configs"
 
     required_examples = [
         "quickstart.yaml",
@@ -75,7 +76,7 @@ def test_specific_config_examples_exist() -> None:
 
 def test_quickstart_config_works() -> None:
     """Verify the quickstart config specifically (most important for new users)."""
-    configs_dir = Path(__file__).parent.parent / "configs"
+    configs_dir = Path(__file__).parent.parent / "src" / "glassalpha" / "data" / "configs"
     quickstart_path = configs_dir / "quickstart.yaml"
 
     config = load_config_from_file(quickstart_path)

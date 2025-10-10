@@ -14,7 +14,7 @@ def main():
     print("\n📁 PROJECT STRUCTURE CREATED:")
     print(
         """
-    packages/src/glassalpha/
+    src/glassalpha/
     ├── core/                     # ✅ Phase 0 - Architecture Foundation
     │   ├── __init__.py
     │   ├── interfaces.py        # Protocol definitions

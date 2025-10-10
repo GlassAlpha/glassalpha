@@ -10,6 +10,7 @@ reproducibility:
 
 # Dataset configuration
 data:
+  dataset: custom
   path: ~/.glassalpha/data/insurance_risk.csv
   target_column: claim_outcome
   protected_attributes:
@@ -33,8 +34,8 @@ model:
 explainers:
   strategy: first_compatible
   priority:
-    - treeshap    # LightGBM supports TreeSHAP for exact explanations
-    - kernelshap  # Fallback for any model type
+    - treeshap # LightGBM supports TreeSHAP for exact explanations
+    - kernelshap # Fallback for any model type
   config:
     treeshap:
       max_samples: 1000
@@ -45,20 +46,20 @@ metrics:
   performance:
     metrics:
       - accuracy
-      - precision    # Important for false positive analysis
-      - recall       # Important for false negative analysis
+      - precision # Important for false positive analysis
+      - recall # Important for false negative analysis
       - f1
-      - auc_roc     # Overall discriminative ability
+      - auc_roc # Overall discriminative ability
 
   fairness:
     metrics:
-      - demographic_parity    # Equal approval rates across groups
-      - equal_opportunity     # Equal true positive rates
-      - equalized_odds        # Equal TPR and FPR across groups
+      - demographic_parity # Equal approval rates across groups
+      - equal_opportunity # Equal true positive rates
+      - equalized_odds # Equal TPR and FPR across groups
     config:
       # Stricter thresholds for insurance industry
       demographic_parity:
-        threshold: 0.05  # Maximum 5% difference
+        threshold: 0.05 # Maximum 5% difference
       equal_opportunity:
         threshold: 0.05
       equalized_odds:

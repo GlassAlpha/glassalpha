@@ -7,7 +7,7 @@ Automated testing of example notebooks using [nbmake](https://github.com/treebea
 ```bash
 # Test all notebooks
 cd examples/notebooks
-pytest ../../packages/tests/notebooks/ --nbmake *.ipynb -v
+pytest ../../tests/notebooks/ --nbmake *.ipynb -v
 
 # Test specific notebook
 pytest --nbmake examples/notebooks/quickstart_colab.ipynb -v
@@ -36,11 +36,11 @@ For Colab-specific testing, see `examples/notebooks/COLAB_TESTING_GUIDE.md`.
 Runs automatically in CI on every PR:
 
 ```yaml
-# In packages/ci-template.yml
+# In .github/workflows/ci.yml
 - name: Test example notebooks
   run: |
     cd examples/notebooks
-    pytest ../../packages/tests/notebooks/ \
+    pytest ../../tests/notebooks/ \
       --nbmake *.ipynb \
       --nbmake-timeout=600 \
       -v

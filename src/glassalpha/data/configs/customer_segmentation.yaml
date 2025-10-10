@@ -10,6 +10,7 @@ reproducibility:
 
 # Dataset configuration
 data:
+  dataset: custom
   path: ~/.glassalpha/data/customer_segmentation.csv
   target_column: customer_segment
   protected_attributes:
@@ -33,8 +34,8 @@ model:
 explainers:
   strategy: first_compatible
   priority:
-    - treeshap    # XGBoost supports TreeSHAP for exact explanations
-    - kernelshap  # Fallback for any model type
+    - treeshap # XGBoost supports TreeSHAP for exact explanations
+    - kernelshap # Fallback for any model type
   config:
     treeshap:
       max_samples: 1000
@@ -45,17 +46,17 @@ metrics:
   performance:
     metrics:
       - accuracy
-      - precision_macro    # Average precision across all segments
-      - recall_macro       # Average recall across all segments
-      - f1_macro          # Macro-averaged F1 score
+      - precision_macro # Average precision across all segments
+      - recall_macro # Average recall across all segments
+      - f1_macro # Macro-averaged F1 score
 
   fairness:
     metrics:
-      - demographic_parity    # Equal representation in each segment
-      - equal_opportunity     # Equal classification accuracy across groups
+      - demographic_parity # Equal representation in each segment
+      - equal_opportunity # Equal classification accuracy across groups
     config:
       demographic_parity:
-        threshold: 0.05  # Maximum 5% difference in segment distribution
+        threshold: 0.05 # Maximum 5% difference in segment distribution
       equal_opportunity:
         threshold: 0.05
 

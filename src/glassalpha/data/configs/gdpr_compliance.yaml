@@ -10,6 +10,7 @@ reproducibility:
 
 # Dataset configuration
 data:
+  dataset: custom
   path: ~/.glassalpha/data/german_credit_processed.csv
   target_column: credit_risk
   feature_columns:
@@ -41,8 +42,8 @@ model:
 explainers:
   strategy: first_compatible
   priority:
-    - treeshap    # LightGBM supports TreeSHAP for GDPR transparency
-    - kernelshap  # Fallback for any model type
+    - treeshap # LightGBM supports TreeSHAP for GDPR transparency
+    - kernelshap # Fallback for any model type
   config:
     treeshap:
       max_samples: 1000
@@ -53,20 +54,20 @@ metrics:
   performance:
     metrics:
       - accuracy
-      - precision    # Important for consent accuracy
-      - recall       # Important for consent completeness
+      - precision # Important for consent accuracy
+      - recall # Important for consent completeness
       - f1
-      - auc_roc     # Overall discriminative ability
+      - auc_roc # Overall discriminative ability
 
   fairness:
     metrics:
-      - demographic_parity    # Equal consent rates across groups
-      - equal_opportunity     # Equal TPR for consent prediction
-      - predictive_parity      # Equal precision across demographic groups
+      - demographic_parity # Equal consent rates across groups
+      - equal_opportunity # Equal TPR for consent prediction
+      - predictive_parity # Equal precision across demographic groups
     config:
       # GDPR-compliant thresholds
       demographic_parity:
-        threshold: 0.05  # Maximum 5% difference
+        threshold: 0.05 # Maximum 5% difference
       equal_opportunity:
         threshold: 0.05
       predictive_parity:

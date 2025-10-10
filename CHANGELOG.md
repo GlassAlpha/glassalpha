@@ -111,7 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Documentation and Guides**
 
-  - Updated `packages/README.md` CLI examples to use `--output` flag
+  - Updated CLI examples to use `--output` flag
   - Corrected `reasons` and `recourse` command examples (use `--model` + `--data`, not `--config`)
   - Added comprehensive [Strict Mode Guide](site/docs/guides/strict-mode.md)
   - Added [Troubleshooting Guide](site/docs/getting-started/troubleshooting.md)
@@ -119,7 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Testing and Quality**
 
-  - Added comprehensive smoke test script (`packages/scripts/smoke_test.sh`)
+  - Added comprehensive smoke test script (`scripts/smoke_test.sh`)
   - Tests all critical user journeys before PyPI publication
   - Validates: QuickStart (both datasets), file sizes, warnings, model saving, CLI commands
 

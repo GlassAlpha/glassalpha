@@ -1,4 +1,4 @@
-# packages/tests/conftest.py
+# tests/conftest.py
 import atexit
 import locale
 import os

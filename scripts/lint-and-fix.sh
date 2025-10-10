@@ -7,14 +7,14 @@ set -e  # Exit on any error
 echo "🔍 GlassAlpha - Pre-commit Linting & Auto-fix"
 echo "=============================================="
 
-# Navigate to packages directory
-cd "$(dirname "$0")"
+# Navigate to project root
+cd "$(dirname "$0")/.."
 
 # Check if we're in a virtual environment
 if [ -z "$VIRTUAL_ENV" ]; then
     echo "❌ No virtual environment detected!"
     echo "   Please activate your venv first:"
-    echo "   cd .. && source .venv/bin/activate && cd packages"
+    echo "   source .venv/bin/activate"
     exit 1
 fi
 

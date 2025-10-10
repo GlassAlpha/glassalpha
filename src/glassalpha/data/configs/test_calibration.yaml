@@ -1,6 +1,7 @@
 audit_profile: "tabular_compliance"
 
 data:
+  dataset: custom
   path: "~/.glassalpha/data/insurance_risk.csv"
   target_column: "claim_outcome"
   feature_columns:

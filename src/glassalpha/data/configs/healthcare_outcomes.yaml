@@ -10,6 +10,7 @@ reproducibility:
 
 # Dataset configuration
 data:
+  dataset: custom
   path: ~/.glassalpha/data/healthcare_outcomes.csv
   target_column: treatment_outcome
   protected_attributes:
@@ -33,8 +34,8 @@ model:
 explainers:
   strategy: first_compatible
   priority:
-    - treeshap    # XGBoost supports TreeSHAP for clinical interpretability
-    - kernelshap  # Fallback for any model type
+    - treeshap # XGBoost supports TreeSHAP for clinical interpretability
+    - kernelshap # Fallback for any model type
   config:
     treeshap:
       max_samples: 1000
@@ -45,20 +46,20 @@ metrics:
   performance:
     metrics:
       - accuracy
-      - precision    # Critical for clinical decisions - avoid false positives
-      - recall       # Critical for clinical decisions - catch treatment failures
-      - f1          # Balance between precision and recall
-      - auc_roc     # Overall discriminative ability
+      - precision # Critical for clinical decisions - avoid false positives
+      - recall # Critical for clinical decisions - catch treatment failures
+      - f1 # Balance between precision and recall
+      - auc_roc # Overall discriminative ability
 
   fairness:
     metrics:
-      - demographic_parity    # Equal treatment outcomes across groups
-      - equal_opportunity     # Equal true positive rates for treatment success
-      - equalized_odds        # Equal TPR and FPR across demographic groups
+      - demographic_parity # Equal treatment outcomes across groups
+      - equal_opportunity # Equal true positive rates for treatment success
+      - equalized_odds # Equal TPR and FPR across demographic groups
     config:
       # Stricter thresholds for healthcare
       demographic_parity:
-        threshold: 0.03  # Maximum 3% difference
+        threshold: 0.03 # Maximum 3% difference
       equal_opportunity:
         threshold: 0.03
       equalized_odds:

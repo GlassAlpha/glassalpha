@@ -394,7 +394,6 @@ def _get_constraints_provenance() -> dict[str, Any]:
     # Look for constraints.txt in common locations
     possible_paths = [
         Path("constraints.txt"),
-        Path("packages/constraints.txt"),
         Path("../constraints.txt"),
     ]
 

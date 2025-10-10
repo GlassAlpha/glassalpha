@@ -13,7 +13,7 @@ GlassAlpha uses platform- and Python-version-specific constraint files to ensure
 ## Constraint File Structure
 
 ```
-packages/constraints/
+constraints/
 ├── tooling-ubuntu-latest-py3.11.txt    # pip, setuptools, build, wheel
 ├── tooling-ubuntu-latest-py3.12.txt
 ├── tooling-macos-14-py3.11.txt
@@ -230,6 +230,6 @@ Example Renovate config for constraint files:
 ## Related Files
 
 - `pyproject.toml` - Source of truth for dependency ranges
-- `packages/constraints.txt` - Legacy unified constraint file (deprecated)
+- `constraints/` - Platform-specific constraint files
 - `.github/workflows/ci.yml` - CI workflow that uses these constraints
 - `CONSTRAINTS.md` - This file

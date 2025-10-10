@@ -240,7 +240,7 @@ For faster local feedback before pushing:
 
 ```bash
 # Install pre-commit hook
-cp packages/scripts/pre-commit .git/hooks/pre-commit
+cp scripts/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
@@ -380,7 +380,7 @@ pip freeze > constraints.txt
 pip install -r requirements.txt -c constraints.txt
 ```
 
-GlassAlpha provides platform-specific constraints in `packages/constraints/`.
+GlassAlpha provides platform-specific constraints in `constraints/`.
 
 ### Workflow 5: Performance Optimization
 

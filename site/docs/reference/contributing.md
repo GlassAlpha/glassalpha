@@ -73,7 +73,7 @@ The `[dev]` installation includes:
 Understanding the codebase structure helps target contributions effectively:
 
 ```
-glassalpha/packages/
+glassalpha/
 ├── src/glassalpha/           # Main package
 │   ├── core/                # Interfaces and registries
 │   ├── models/              # Model wrappers (XGBoost, LightGBM, etc.)
