@@ -133,13 +133,13 @@ pip install -e ".[dev]"       # Development tools
 
 ```bash
 glassalpha audit \
-  --config configs/german_credit_simple.yaml \
+  --config german_credit_simple.yaml \
   --output my_audit.pdf
 ```
 
 3. **For your own data:**
    - See [Using Custom Data](../getting-started/custom-data.md) for a complete tutorial
-   - Use our configuration template in `configs/custom_template.yaml` with detailed comments
+   - Use our configuration template `custom_template.yaml` (packaged with GlassAlpha) with detailed comments
 
 ```yaml
 audit_profile: tabular_compliance
@@ -519,10 +519,10 @@ report:
 
 ```bash
 # Development environment
-glassalpha audit --config configs/german_credit_simple.yaml --output dev_audit.pdf
+glassalpha audit --config german_credit_simple.yaml --output dev_audit.pdf
 
-# Production environment
-glassalpha audit --config configs/gdpr_compliance.yaml --output prod_audit.pdf --strict
+# Production environment (create your own config or use packaged templates)
+glassalpha audit --config gdpr_compliance.yaml --output prod_audit.pdf --strict
 ```
 
 **Configuration Overrides:**

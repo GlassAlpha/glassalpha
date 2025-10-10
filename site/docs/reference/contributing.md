@@ -317,7 +317,7 @@ pytest --cov=src/glassalpha --cov-report=html
 pytest -k deterministic
 
 # Test end-to-end workflow
-glassalpha audit --config configs/german_credit_simple.yaml --output test.pdf
+glassalpha audit --config german_credit_simple.yaml --output test.pdf
 ```
 
 ### 5. Quality checks
@@ -712,7 +712,7 @@ pip install -e ".[dev]" && pre-commit install
 # Development
 ./lint-and-fix.sh              # Code quality checks
 pytest                         # Run tests
-glassalpha audit --config configs/german_credit_simple.yaml --output test.pdf
+glassalpha audit --config german_credit_simple.yaml --output test.pdf
 
 # Quality gates
 black --check src/             # Formatting

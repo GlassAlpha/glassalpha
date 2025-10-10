@@ -27,7 +27,7 @@ glassalpha recourse \
   --model models/german_credit.pkl \
   --data data/test.csv \
   --instance 42 \
-  --config configs/recourse_german_credit.yaml \
+  --config recourse_german_credit.yaml \
   --output recourse/instance_42.json
 ```
 
@@ -232,7 +232,7 @@ glassalpha recourse \
   -m models/credit_model.pkl \
   -d data/test.csv \
   -i 42 \
-  -c configs/recourse_config.yaml
+  -c recourse_config.yaml
 ```
 
 **With custom threshold and top-N**:
@@ -244,7 +244,7 @@ glassalpha recourse \
   -i 10 \
   --threshold 0.6 \
   --top-n 3 \
-  -c configs/recourse_config.yaml
+  -c recourse_config.yaml
 ```
 
 **Save to file**:
@@ -254,7 +254,7 @@ glassalpha recourse \
   -m models/credit_model.pkl \
   -d data/test.csv \
   -i 5 \
-  -c configs/recourse_config.yaml \
+  -c recourse_config.yaml \
   --output recourse/recommendations.json
 ```
 
@@ -657,7 +657,7 @@ This provides a **complete audit trail** for regulatory review.
 ### Example 1: German Credit
 
 ```yaml
-# configs/recourse_german_credit.yaml
+# recourse_german_credit.yaml
 recourse:
   enabled: true
   immutable_features: [age, gender, foreign_worker]
@@ -671,14 +671,14 @@ glassalpha recourse \
   -m models/german_credit.pkl \
   -d data/german_credit_test.csv \
   -i 42 \
-  -c configs/recourse_german_credit.yaml \
+  -c recourse_german_credit.yaml \
   --output recourse/gc_instance_42.json
 ```
 
 ### Example 2: Adult Income
 
 ```yaml
-# configs/recourse_adult_income.yaml
+# recourse_adult_income.yaml
 recourse:
   enabled: true
   immutable_features: [age, gender, race, native_country]
@@ -693,14 +693,14 @@ glassalpha recourse \
   -m models/adult_income.pkl \
   -d data/adult_income_test.csv \
   -i 100 \
-  -c configs/recourse_adult_income.yaml \
+  -c recourse_adult_income.yaml \
   --top-n 3
 ```
 
 ### Example 3: Healthcare Outcomes
 
 ```yaml
-# configs/recourse_healthcare.yaml
+# recourse_healthcare.yaml
 recourse:
   enabled: true
   immutable_features: [patient_age, patient_gender, diagnosis_date]
@@ -715,7 +715,7 @@ glassalpha recourse \
   -m models/healthcare_risk.pkl \
   -d data/patients_test.csv \
   -i 50 \
-  -c configs/recourse_healthcare.yaml \
+  -c recourse_healthcare.yaml \
   --threshold 0.3
 ```
 

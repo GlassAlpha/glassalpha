@@ -18,12 +18,12 @@ glassalpha list
 # Alternative: PYTHONPATH=src python3 -m glassalpha list
 
 # Validate configuration
-glassalpha validate --config configs/german_credit_simple.yaml
-# Alternative: PYTHONPATH=src python3 -m glassalpha validate --config configs/german_credit_simple.yaml
+glassalpha validate --config german_credit_simple.yaml
+# Alternative: PYTHONPATH=src python3 -m glassalpha validate --config german_credit_simple.yaml
 
 # Test with minimal configuration
-glassalpha audit --config configs/german_credit_simple.yaml --output test.pdf --dry-run
-# Alternative: PYTHONPATH=src python3 -m glassalpha audit --config configs/german_credit_simple.yaml --output test.pdf --dry-run
+glassalpha audit --config german_credit_simple.yaml --output test.pdf --dry-run
+# Alternative: PYTHONPATH=src python3 -m glassalpha audit --config german_credit_simple.yaml --output test.pdf --dry-run
 ```
 
 ## CLI command issues
@@ -49,7 +49,7 @@ This indicates GlassAlpha isn't properly installed or the CLI entry point isn't 
    ```bash
    cd glassalpha
    PYTHONPATH=src python3 -m glassalpha --version
-   PYTHONPATH=src python3 -m glassalpha audit --config configs/german_credit_simple.yaml --output test.pdf --dry-run
+   PYTHONPATH=src python3 -m glassalpha audit --config german_credit_simple.yaml --output test.pdf --dry-run
    ```
 
 3. **Check your environment**:
@@ -200,13 +200,9 @@ FileNotFoundError: Configuration file 'nonexistent.yaml' not found
 # Use absolute paths
 glassalpha audit --config /full/path/to/config.yaml --output report.pdf
 
-# Check current directory
-pwd
-ls -la configs/
-
-# Use relative paths from correct directory
-cd /Users/gabe/Sites/glassalpha/packages
-glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf
+# Config files are packaged with GlassAlpha - no need for configs/ directory
+# Just reference by name:
+glassalpha audit --config german_credit_simple.yaml --output audit.pdf
 ```
 
 ### Model type not found
@@ -387,7 +383,7 @@ OR use zero-dependency explainers: ['coefficients', 'permutation']
 3. **Use the quickstart config** which works without SHAP:
 
    ```bash
-   glassalpha audit --config configs/quickstart.yaml --output audit.html
+   glassalpha audit --config quickstart.yaml --output audit.html
    ```
 
 **Which explainer should I use?**
@@ -891,7 +887,7 @@ metrics:
       - pr_auc # Better than roc_auc for imbalanced data
 ```
 
-**Example configurations:** See `configs/credit_card_fraud_template.yaml` for handling 99.8% class imbalance.
+**Example configurations:** See `credit_card_fraud_template.yaml` (packaged with GlassAlpha) for handling 99.8% class imbalance.
 
 ## Runtime errors
 

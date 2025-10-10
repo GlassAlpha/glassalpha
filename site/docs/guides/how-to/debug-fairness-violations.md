@@ -583,7 +583,7 @@ y_pred_fair = postprocessor.predict(X_test, sensitive_features=test_protected_at
 ### 7.3: GlassAlpha Policy Gates
 
 ```yaml
-# configs/fairness_policy.yaml
+# fairness_policy.yaml
 policy_gates:
   fairness:
     demographic_parity:

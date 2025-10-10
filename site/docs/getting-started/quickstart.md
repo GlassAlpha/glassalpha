@@ -75,7 +75,7 @@ git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha && pip install -e .
 
 # 2. Generate audit (lightning fast with --fast flag!)
-glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf --fast
+glassalpha audit --config german_credit_simple.yaml --output audit.pdf --fast
 
 # 3. Done! Open your professional PDF
 open audit.pdf  # macOS
@@ -211,7 +211,7 @@ The interactive wizard will ask you:
 
 **What you get:**
 
-- Complete project directory structure (data/, models/, reports/, configs/)
+- Complete project directory structure (data/, models/, reports/)
 - Pre-configured audit configuration file (`audit_config.yaml`)
 - Example run script (`run_audit.py`) demonstrating programmatic API
 - Project README with next steps and advanced usage
@@ -297,7 +297,7 @@ Run these checks to confirm everything is working:
 - [ ] **Python version correct**: `python --version` shows 3.11+ (3.11.x, 3.12.x, or 3.13.x)
 - [ ] **Base dependencies installed**: `glassalpha list` shows available components
 - [ ] **Models available**: `glassalpha list models` shows at least `logistic_regression`
-- [ ] **Config validation works**: `glassalpha validate --config configs/german_credit_simple.yaml` passes
+- [ ] **Config validation works**: `glassalpha validate --config german_credit_simple.yaml` passes
 
 **All checks passed?** → Proceed to Step 2
 
@@ -313,7 +313,7 @@ Generate audit report (takes ~2-3 seconds with --fast):
 
 ```bash
 glassalpha audit \
-  --config configs/german_credit_simple.yaml \
+  --config german_credit_simple.yaml \
   --output my_first_audit.html \
   --fast
 ```
@@ -445,7 +445,7 @@ Open `my_first_audit.pdf` to see your comprehensive audit report containing:
 
 ## Step 4: Understanding the configuration
 
-The `configs/german_credit_simple.yaml` file contains all audit settings:
+The `german_credit_simple.yaml` configuration file contains all audit settings (packaged with GlassAlpha):
 
 Audit profile determines component selection:
 
@@ -565,7 +565,7 @@ Enable strict mode for regulatory compliance:
 
 ```bash
 glassalpha audit \
-  --config configs/german_credit_simple.yaml \
+  --config german_credit_simple.yaml \
   --output regulatory_audit.pdf \
   --strict
 ```
@@ -574,7 +574,7 @@ Use a different model (edit config file: model.type: lightgbm):
 
 ```bash
 glassalpha audit \
-  --config configs/german_credit_simple.yaml \
+  --config german_credit_simple.yaml \
   --output lightgbm_audit.pdf
 ```
 
@@ -595,7 +595,7 @@ glassalpha list
 Validate configuration without running audit:
 
 ```bash
-glassalpha validate --config configs/german_credit_simple.yaml
+glassalpha validate --config german_credit_simple.yaml
 ```
 
 Manage datasets:
@@ -611,7 +611,7 @@ glassalpha datasets cache-dir   # Show where datasets are cached
 Ready to audit your own models? We've made it easy:
 
 1. **Follow the tutorial**: See [Using Custom Data](custom-data.md) for step-by-step guidance
-2. **Use our template**: The fully-commented configuration template is in `configs/custom_template.yaml`
+2. **Use our template**: The fully-commented configuration template `custom_template.yaml` (packaged with GlassAlpha)
 3. **Try public datasets**: Browse [freely available data sources](data-sources.md) for testing
 
 **Need to choose a model?** The [Model Selection Guide](../reference/model-selection.md) helps you pick between LogisticRegression, XGBoost, and LightGBM with performance benchmarks.
@@ -734,10 +734,7 @@ glassalpha models
 
 ```bash
 # Validate config before running audit
-glassalpha validate --config configs/german_credit_simple.yaml
-
-# Check if config file exists
-ls -la configs/german_credit_simple.yaml
+glassalpha validate --config german_credit_simple.yaml
 
 # If file doesn't exist, ensure you're in correct directory
 cd glassalpha
@@ -811,7 +808,7 @@ glassalpha datasets info german_credit
 
 ```bash
 # Use HTML output instead (works without WeasyPrint)
-glassalpha audit --config configs/german_credit_simple.yaml --output audit.html
+glassalpha audit --config german_credit_simple.yaml --output audit.html
 
 # Or install PDF dependencies
 pip install -e ".[pdf]"

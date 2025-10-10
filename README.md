@@ -53,9 +53,9 @@ That's it. You now have a complete audit report with model performance, SHAP exp
 ## Repository Structure
 
 - **`src/glassalpha/`** - Main Python package source code
+  - **`src/glassalpha/data/configs/`** - Example audit configurations (packaged with install)
 - **`tests/`** - Test suite
 - **`site/`** - User documentation and tutorials ([glassalpha.com](https://glassalpha.com/))
-- **`configs/`** - Example audit configurations
 - **`examples/`** - Jupyter notebooks and tutorials
 - **`scripts/`** - Development and build scripts
 

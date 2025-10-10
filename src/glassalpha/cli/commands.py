@@ -173,6 +173,23 @@ def _run_audit_pipeline(
         # Default to HTML for speed and fewer dependencies
         output_format = "html"
 
+    # Check for format/extension mismatch and resolve it
+    # CLI flag (--output extension) overrides config for better UX
+    if output_format == "pdf" and output_path.suffix.lower() in [".html", ".htm"]:
+        typer.secho(
+            f"⚠️  Format mismatch: config specifies PDF but output file is {output_path.suffix}",
+            fg=typer.colors.YELLOW,
+        )
+        typer.echo("   Using HTML format to match file extension (CLI flag overrides config)\n")
+        output_format = "html"
+    elif output_format == "html" and output_path.suffix.lower() == ".pdf":
+        typer.secho(
+            f"⚠️  Format mismatch: config specifies HTML but output file is {output_path.suffix}",
+            fg=typer.colors.YELLOW,
+        )
+        typer.echo("   Using PDF format to match file extension (CLI flag overrides config)\n")
+        output_format = "pdf"
+
     # Inform user about format inference if not explicitly configured
     if hasattr(config, "report") and hasattr(config.report, "output_format") and config.report.output_format is None:
         if output_path.suffix.lower() == ".pdf":
@@ -252,6 +269,7 @@ def _run_audit_pipeline(
                 output_format = "html"
                 output_path = output_path.with_suffix(".html")
 
+        # Print format-specific message after fallback handling
         if output_format == "pdf":
             typer.echo(f"\nGenerating PDF report: {output_path}")
             typer.echo("⏳ PDF generation in progress... (this may take 1-3 minutes)")
@@ -269,11 +287,12 @@ def _run_audit_pipeline(
             pdf_start = time.time()
             # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
             import os
+            from datetime import datetime, timezone
 
             source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
             if source_date_epoch:
-                report_date = datetime.fromtimestamp(int(source_date_epoch), tz=UTC).strftime("%Y-%m-%d")
-                generation_date = datetime.fromtimestamp(int(source_date_epoch), tz=UTC).strftime(
+                report_date = datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).strftime("%Y-%m-%d")
+                generation_date = datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).strftime(
                     "%Y-%m-%d %H:%M:%S UTC",
                 )
             else:
@@ -322,6 +341,20 @@ def _run_audit_pipeline(
                 raise typer.Exit(code=1)
 
             pdf_time = time.time() - pdf_start
+
+            # Validate PDF was actually created (P0 fix: issue #1, #3)
+            if not pdf_path.exists():
+                typer.secho("\n❌ PDF generation failed - file was not created", fg=typer.colors.RED, err=True)
+                typer.echo("\nPossible causes:", err=True)
+                typer.echo("  • WeasyPrint dependencies missing or misconfigured", err=True)
+                typer.echo("  • System font issues", err=True)
+                typer.echo("  • Insufficient memory or disk space", err=True)
+                typer.echo("\nSolutions:", err=True)
+                typer.echo("  1. Use HTML output instead: --output report.html", err=True)
+                typer.echo("  2. Check PDF dependencies: glassalpha doctor", err=True)
+                typer.echo("  3. Install PDF dependencies: pip install 'glassalpha[pdf]'", err=True)
+                raise typer.Exit(ExitCode.SYSTEM_ERROR)
+
             file_size = pdf_path.stat().st_size
 
             # Generate manifest sidecar if provenance manifest is available
@@ -1548,9 +1581,9 @@ def doctor():  # pragma: no cover
 
     # Smart recommendation based on what's installed
     if has_pdf_backend:
-        suggested_command = "glassalpha audit --config configs/quickstart.yaml --output quickstart.pdf"
+        suggested_command = "glassalpha audit --config quickstart.yaml --output quickstart.pdf"
     else:
-        suggested_command = "glassalpha audit --config configs/quickstart.yaml --output quickstart.html"
+        suggested_command = "glassalpha audit --config quickstart.yaml --output quickstart.html"
 
     typer.echo(f"Ready to run: {suggested_command}")
     typer.echo()

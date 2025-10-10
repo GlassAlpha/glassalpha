@@ -88,7 +88,7 @@ Models that predict patient risk for hospitalization, readmission, or disease pr
 
 ```bash
 glassalpha audit \
-  --config configs/risk_stratification.yaml \
+  --config risk_stratification.yaml \
   --output risk_model_audit.pdf \
   --strict \
   --fairness-focus equalized_odds \
@@ -111,10 +111,10 @@ Models that assist with disease diagnosis (e.g., diabetic retinopathy detection,
 
 ```bash
 glassalpha audit \
-  --config configs/diagnostic_support.yaml \
+  --config diagnostic_support.yaml \
   --output diagnostic_audit.pdf \
   --fairness-focus fnr \
-  --policy-gates configs/policy/clinical_equity.yaml
+  --policy-gates policy/clinical_equity.yaml
 ```
 
 ### Resource Allocation Models
@@ -133,10 +133,10 @@ Models that prioritize patients for interventions (e.g., care management program
 
 ```bash
 glassalpha audit \
-  --config configs/resource_allocation.yaml \
+  --config resource_allocation.yaml \
   --output allocation_audit.pdf \
   --fairness-focus equalized_odds \
-  --policy-gates configs/policy/allocation_fairness.yaml
+  --policy-gates policy/allocation_fairness.yaml
 ```
 
 ## Typical Audit Workflow
@@ -146,7 +146,7 @@ glassalpha audit \
 Ensure data is HIPAA-compliant:
 
 ```yaml
-# configs/risk_stratification.yaml
+# risk_stratification.yaml
 model:
   path: "models/readmission_risk.pkl"
   type: "xgboost"
@@ -186,9 +186,9 @@ calibration:
 
 ```bash
 glassalpha audit \
-  --config configs/risk_stratification.yaml \
+  --config risk_stratification.yaml \
   --output reports/readmission_model_2025Q4.pdf \
-  --policy-gates configs/policy/clinical_equity.yaml \
+  --policy-gates policy/clinical_equity.yaml \
   --strict
 ```
 
@@ -256,7 +256,7 @@ clinical_interpretation:
 Example policy configuration for health equity:
 
 ```yaml
-# configs/policy/clinical_equity.yaml
+# policy/clinical_equity.yaml
 policy_name: "Clinical Health Equity Baseline"
 version: "1.0"
 citation: "CMS quality measures, institutional equity policy"

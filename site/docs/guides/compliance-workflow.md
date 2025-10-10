@@ -156,7 +156,7 @@ Work with legal, risk, and compliance teams to establish thresholds:
 Document requirements in YAML:
 
 ```yaml
-# configs/policy/firm_credit_baseline.yaml
+# policy/firm_credit_baseline.yaml
 policy_name: "Firm Credit Model Baseline"
 version: "1.0"
 effective_date: "2025-10-01"

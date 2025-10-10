@@ -182,6 +182,14 @@ class AuditPDFRenderer:
             logger.error(f"Failed to generate PDF: {e}")
             raise RuntimeError(f"PDF generation failed: {e}") from e
 
+        finally:
+            # P2 fix: issue #4 - Explicit resource cleanup for multiprocessing
+            # Note: WeasyPrint uses loky for multiprocessing which can leave semaphore warnings
+            # This is a known cosmetic issue and doesn't affect functionality
+            # See: https://github.com/Kozea/WeasyPrint/issues/
+            import gc
+            gc.collect()
+
     def _generate_pdf_css(self) -> str:
         """Generate additional CSS optimized for PDF output.
 

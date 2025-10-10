@@ -82,10 +82,10 @@ Models that flag suspicious credit card or payment transactions in real-time.
 
 ```bash
 glassalpha audit \
-  --config configs/transaction_fraud.yaml \
+  --config transaction_fraud.yaml \
   --output transaction_fraud_audit.pdf \
   --fairness-focus fpr \
-  --policy-gates configs/policy/fraud_fairness.yaml \
+  --policy-gates policy/fraud_fairness.yaml \
   --strict
 ```
 
@@ -105,7 +105,7 @@ Models that detect suspicious login attempts or account activity.
 
 ```bash
 glassalpha audit \
-  --config configs/account_takeover.yaml \
+  --config account_takeover.yaml \
   --output takeover_audit.pdf \
   --fairness-focus fpr \
   --check-shift geography:+0.1
@@ -127,10 +127,10 @@ Models that flag fraudulent applications (new accounts, loans, insurance claims)
 
 ```bash
 glassalpha audit \
-  --config configs/application_fraud.yaml \
+  --config application_fraud.yaml \
   --output application_fraud_audit.pdf \
   --fairness-focus equalized_odds \
-  --policy-gates configs/policy/adverse_action.yaml
+  --policy-gates policy/adverse_action.yaml
 ```
 
 ## Typical Audit Workflow
@@ -140,7 +140,7 @@ glassalpha audit \
 Create a config file with your model, data, and protected attributes:
 
 ```yaml
-# configs/transaction_fraud.yaml
+# transaction_fraud.yaml
 model:
   path: "models/fraud_model.pkl"
   type: "xgboost"
@@ -181,9 +181,9 @@ reason_codes:
 
 ```bash
 glassalpha audit \
-  --config configs/transaction_fraud.yaml \
+  --config transaction_fraud.yaml \
   --output reports/fraud_model_2025Q4.pdf \
-  --policy-gates configs/policy/fraud_fairness.yaml \
+  --policy-gates policy/fraud_fairness.yaml \
   --strict
 ```
 
@@ -269,7 +269,7 @@ glassalpha reasons \
 Example policy configuration for fairness and consumer protection:
 
 ```yaml
-# configs/policy/fraud_fairness.yaml
+# policy/fraud_fairness.yaml
 policy_name: "Fraud Detection Fairness Baseline"
 version: "1.0"
 citation: "FTC fairness guidelines, FCRA adverse action requirements"

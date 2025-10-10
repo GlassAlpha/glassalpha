@@ -297,7 +297,7 @@ ls -la data/your_data.csv
 
 # Use built-in datasets for testing
 glassalpha datasets list
-glassalpha audit --config configs/german_credit_simple.yaml --fast
+glassalpha audit --config german_credit_simple.yaml --fast
 ```
 
 ### 4. Slow Audit Performance

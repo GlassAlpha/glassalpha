@@ -439,15 +439,15 @@ jobs:
       - name: Run compliance audit
         run: |
           glassalpha audit \
-            --config configs/eu_compliance.yaml \
-            --policy-gates configs/policy/eu_ai_act_gates.yaml \
+            --config eu_compliance.yaml \
+            --policy-gates policy/eu_ai_act_gates.yaml \
             --output audit_report.pdf \
             --strict
 
       - name: Check Article 15 robustness
         run: |
           glassalpha audit \
-            --config configs/eu_compliance.yaml \
+            --config eu_compliance.yaml \
             --check-shift gender:+0.10 \
             --check-shift age:-0.10 \
             --fail-on-degradation 0.10
@@ -549,7 +549,7 @@ jobs:
 ## Example Policy Gates for EU AI Act
 
 ```yaml
-# configs/policy/eu_ai_act_gates.yaml
+# policy/eu_ai_act_gates.yaml
 policy_name: "EU AI Act High-Risk AI Compliance"
 version: "1.0"
 effective_date: "2026-08-02"

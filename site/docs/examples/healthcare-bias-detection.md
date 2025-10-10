@@ -185,25 +185,25 @@ monitoring:
 ```bash
 # Quick demo (use --fast for 2-3 second audits)
 glassalpha audit \
-  --config configs/healthcare_outcomes.yaml \
+  --config healthcare_outcomes.yaml \
   --output healthcare_bias_assessment.pdf \
   --fast
 
 # With additional validation
 glassalpha validate \
-  --config configs/healthcare_outcomes.yaml \
+  --config healthcare_outcomes.yaml \
   --profile tabular_compliance \
   --strict
 
 # Multi-model comparison for robustness
 glassalpha audit \
-  --config configs/healthcare_outcomes.yaml \
+  --config healthcare_outcomes.yaml \
   --output xgboost_healthcare.pdf \
   --override '{"model": {"type": "xgboost"}}' \
   --fast
 
 glassalpha audit \
-  --config configs/healthcare_outcomes.yaml \
+  --config healthcare_outcomes.yaml \
   --output lightgbm_healthcare.pdf \
   --override '{"model": {"type": "lightgbm"}}' \
   --fast

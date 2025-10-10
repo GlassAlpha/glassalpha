@@ -76,6 +76,24 @@ def preflight_check_model(config: Any, allow_fallback: bool = True) -> tuple[Any
                 typer.secho("=" * 60, fg=typer.colors.YELLOW)
                 typer.echo()
 
+                # P1 fix: issue #2 - Interactive confirmation (skip in CI)
+                import os
+                import sys
+                is_ci = os.getenv("CI") or os.getenv("GLASSALPHA_CI") or not sys.stdin.isatty()
+
+                if not is_ci:
+                    typer.echo("💡 Options:")
+                    typer.echo("  1. Continue with fallback (press Enter)")
+                    typer.echo("  2. Cancel and install correct model (Ctrl+C)")
+                    typer.echo()
+                    try:
+                        input("Press Enter to continue with fallback, or Ctrl+C to cancel... ")
+                    except KeyboardInterrupt:
+                        typer.echo()
+                        typer.secho("\nCancelled by user", fg=typer.colors.YELLOW)
+                        raise typer.Exit(ExitCode.USER_ERROR)
+                    typer.echo()
+
                 config.model.type = fallback_model
                 return config, model_type
             # No fallback available

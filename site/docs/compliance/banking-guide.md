@@ -78,7 +78,7 @@ Models that predict probability of default or creditworthiness.
 
 ```bash
 glassalpha audit \
-  --config configs/credit_scoring.yaml \
+  --config credit_scoring.yaml \
   --output credit_audit.pdf \
   --strict \
   --fairness-focus approval_rate \
@@ -101,9 +101,9 @@ Models that set interest rates based on risk assessment.
 
 ```bash
 glassalpha audit \
-  --config configs/loan_pricing.yaml \
+  --config loan_pricing.yaml \
   --output pricing_audit.pdf \
-  --policy-gates configs/policy/sr_11_7_banking.yaml \
+  --policy-gates policy/sr_11_7_banking.yaml \
   --strict
 ```
 
@@ -123,10 +123,10 @@ Models that flag suspicious transactions or applications.
 
 ```bash
 glassalpha audit \
-  --config configs/fraud_detection.yaml \
+  --config fraud_detection.yaml \
   --output fraud_audit.pdf \
   --fairness-focus fpr \
-  --policy-gates configs/policy/fraud_fairness.yaml
+  --policy-gates policy/fraud_fairness.yaml
 ```
 
 ## Typical Audit Workflow
@@ -136,7 +136,7 @@ glassalpha audit \
 Create a config file with your model, data, and protected attributes:
 
 ```yaml
-# configs/credit_audit.yaml
+# credit_audit.yaml
 model:
   path: "models/credit_model.pkl"
   type: "xgboost"
@@ -172,9 +172,9 @@ recourse:
 
 ```bash
 glassalpha audit \
-  --config configs/credit_audit.yaml \
+  --config credit_audit.yaml \
   --output reports/credit_model_audit_2025Q4.pdf \
-  --policy-gates configs/policy/sr_11_7_banking.yaml \
+  --policy-gates policy/sr_11_7_banking.yaml \
   --strict
 ```
 
@@ -223,7 +223,7 @@ Checks:
 Example policy configuration for SR 11-7 compliance:
 
 ```yaml
-# configs/policy/sr_11_7_banking.yaml
+# policy/sr_11_7_banking.yaml
 policy_name: "SR 11-7 Banking Baseline"
 version: "1.0"
 citation: "Federal Reserve SR 11-7 (April 2011)"

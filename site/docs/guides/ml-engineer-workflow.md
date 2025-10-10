@@ -51,7 +51,7 @@ Diagnose audit failures:
 Create a config file for quick iteration:
 
 ```yaml
-# configs/dev_audit.yaml
+# dev_audit.yaml
 model:
   path: "models/credit_model.pkl"
   type: "xgboost"
@@ -91,7 +91,7 @@ python train_model.py --config model_config.yaml
 
 # Audit immediately
 glassalpha audit \
-  --config configs/dev_audit.yaml \
+  --config dev_audit.yaml \
   --output dev_audit.pdf
 
 # Check exit code
@@ -102,7 +102,7 @@ echo $?  # 0 = pass, 1 = failed gates, 2 = error
 
 ```bash
 glassalpha audit \
-  --config configs/dev_audit.yaml \
+  --config dev_audit.yaml \
   --no-pdf \
   --output metrics.json
 ```
@@ -151,7 +151,7 @@ diff metrics_v1.json metrics_v2.json
 #### Step 1: Define policy gates
 
 ```yaml
-# configs/policy/ci_baseline.yaml
+# policy/ci_baseline.yaml
 policy_name: "CI Baseline Gates"
 version: "1.0"
 
@@ -206,8 +206,8 @@ jobs:
       - name: Run model audit
         run: |
           glassalpha audit \
-            --config configs/prod_audit.yaml \
-            --policy-gates configs/policy/ci_baseline.yaml \
+            --config prod_audit.yaml \
+            --policy-gates policy/ci_baseline.yaml \
             --output audit_report.pdf \
             --strict
 

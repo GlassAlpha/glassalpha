@@ -2254,7 +2254,14 @@ class AuditPipeline:
         # Built-in dataset
         spec = REGISTRY.get(cfg.dataset)
         if not spec:
-            raise ValueError(f"Unknown dataset key: {cfg.dataset}")
+            # P1 fix: issue #9 - Show available datasets in error
+            available = list(REGISTRY.keys())
+            raise ValueError(
+                f"Unknown dataset key: {cfg.dataset}\n\n"
+                f"Available datasets:\n  " + ", ".join(available) + "\n\n"
+                f"To see details: glassalpha datasets info <dataset_key>\n"
+                f"To list all: glassalpha datasets list"
+            )
 
         cache_root = resolve_data_root()
         cache_path = (cache_root / spec.default_relpath).resolve()

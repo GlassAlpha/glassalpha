@@ -85,7 +85,7 @@ python -m pip install --upgrade pip
 pip install -e .
 
 # Verify installation works immediately
-glassalpha validate --config configs/quickstart.yaml
+glassalpha validate --config quickstart.yaml
 ```
 
 This installation provides:
@@ -154,7 +154,7 @@ If you request a model that isn't installed, GlassAlpha automatically falls back
 
 ```bash
 # This works even without XGBoost installed
-glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf
+glassalpha audit --config german_credit_simple.yaml --output audit.pdf
 # → Falls back to LogisticRegression with clear message
 ```
 
@@ -410,13 +410,13 @@ Run a complete audit to verify all components:
 ```bash
 # Quick smoke test with German Credit dataset
 glassalpha audit \
-  --config configs/german_credit_simple.yaml \
+  --config german_credit_simple.yaml \
   --output test_audit.html \
   --dry-run
 
 # If dry-run passes, run actual audit (add [docs] for PDF)
 glassalpha audit \
-  --config configs/german_credit_simple.yaml \
+  --config german_credit_simple.yaml \
   --output test_audit.html
 ```
 

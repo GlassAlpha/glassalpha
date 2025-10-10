@@ -154,8 +154,8 @@ pip install -e .
 ### Getting started
 
 1. **Install**: `pip install -e .` in the packages directory
-2. **First Audit**: `glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf`
-3. **Customize**: Modify configuration files for your specific use case
+2. **First Audit**: `glassalpha audit --config german_credit_simple.yaml --output audit.pdf`
+3. **Customize**: Create your own configuration files for your specific use case
 4. **Deploy**: Use in production with confidence in licensing and security
 
 For detailed technical information, see the [Contributing Guide](contributing.md) and [Troubleshooting](troubleshooting.md).

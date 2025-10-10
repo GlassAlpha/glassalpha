@@ -92,7 +92,7 @@ dev-setup:
 	@echo "Next steps:"
 	@echo "  - Run 'make check' before committing"
 	@echo "  - Run 'make test' for full test suite"
-	@echo "  - Run 'glassalpha audit --config configs/quickstart.yaml --output test.pdf' for a quick test"
+	@echo "  - Run 'glassalpha audit --config quickstart.yaml --output test.pdf' for a quick test"
 
 # Fast pre-commit check
 check: smoke

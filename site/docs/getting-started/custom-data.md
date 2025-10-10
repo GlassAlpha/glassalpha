@@ -12,13 +12,13 @@ Use our fully-commented template from the repository:
 
 ```bash
 # Copy the template from the repository
-cp configs/custom_template.yaml my_audit_config.yaml
+glassalpha init --template custom_template --output my_audit_config.yaml
 
 # Edit it with your settings
 nano my_audit_config.yaml
 ```
 
-The template (in `configs/custom_template.yaml`) includes extensive comments explaining every option. Just update:
+The `custom_template.yaml` (packaged with GlassAlpha) includes extensive comments explaining every option. Just update:
 
 - `data.path` → your dataset path
 - `data.target_column` → your prediction target

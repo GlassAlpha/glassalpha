@@ -82,7 +82,7 @@ Requirements:
 Translate requirements into policy-as-code:
 
 ```yaml
-# configs/policy/org_credit_baseline_v1.yaml
+# policy/org_credit_baseline_v1.yaml
 policy_name: "Organization Credit Model Baseline"
 version: "1.0"
 effective_date: "2025-01-01"
@@ -177,7 +177,7 @@ Effective January 1, 2025, all credit models must meet baseline compliance gates
 ## Required Actions
 
 1. Update your audit config to reference this policy
-2. Run audit with `--policy-gates configs/policy/org_credit_baseline_v1.yaml`
+2. Run audit with `--policy-gates policy/org_credit_baseline_v1.yaml`
 3. Address any failed gates before requesting deployment approval
 
 ## Policy Gates
@@ -193,7 +193,7 @@ Effective January 1, 2025, all credit models must meet baseline compliance gates
 ```bash
 glassalpha audit \
   --config your_model_config.yaml \
-  --policy-gates configs/policy/org_credit_baseline_v1.yaml \
+  --policy-gates policy/org_credit_baseline_v1.yaml \
   --strict \
   --output audit_report.pdf
 ```
@@ -222,7 +222,7 @@ Roll out to one team first:
 cd team-credit-scoring/
 glassalpha audit \
   --config models/current_model.yaml \
-  --policy-gates ../configs/policy/org_credit_baseline_v1.yaml \
+  --policy-gates policy/org_credit_baseline_v1.yaml \
   --strict
 ````
 
@@ -265,7 +265,7 @@ glassalpha registry init --database postgresql://host/model_registry
 Teams submit audits to registry:
 
 ```yaml
-# Add to all model configs: configs/common_settings.yaml
+# Add to all model configs: common_settings.yaml
 registry:
   enabled: true
   database: "postgresql://registry.company.com/models"
@@ -473,7 +473,7 @@ cp my_data.csv data/
 vim configs/prod_audit.yaml
 
 # 4. Run audit
-glassalpha audit --config configs/prod_audit.yaml --output audit.pdf
+glassalpha audit --config prod_audit.yaml --output audit.pdf
 ```
 ````
 

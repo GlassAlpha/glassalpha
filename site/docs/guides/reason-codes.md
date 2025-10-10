@@ -63,7 +63,7 @@ Features are ranked by SHAP magnitude (most negative first). Ties are broken det
 ### Basic Config
 
 ```yaml
-# configs/reason_codes.yaml
+# reason_codes.yaml
 reason_codes:
   top_n: 4
   threshold: 0.5
@@ -150,7 +150,7 @@ glassalpha reasons \
   --model model.pkl \
   --data test.csv \
   --instance 10 \
-  --config configs/reason_codes.yaml
+  --config reason_codes.yaml
 ```
 
 ### Custom Threshold and Top-N
@@ -494,7 +494,7 @@ glassalpha reasons \
   --model artifacts/german_credit_model.pkl \
   --data artifacts/german_credit_test.csv \
   --instance 42 \
-  --config configs/reason_codes_german_credit.yaml
+  --config reason_codes_german_credit.yaml
 ```
 
 ### Adult Income

@@ -86,7 +86,7 @@ Models that determine premium rates based on risk assessment.
 
 ```bash
 glassalpha audit \
-  --config configs/insurance_pricing.yaml \
+  --config insurance_pricing.yaml \
   --output pricing_audit.pdf \
   --strict \
   --fairness-focus rate_parity \
@@ -109,9 +109,9 @@ Models that determine eligibility and coverage limits.
 
 ```bash
 glassalpha audit \
-  --config configs/underwriting.yaml \
+  --config underwriting.yaml \
   --output underwriting_audit.pdf \
-  --policy-gates configs/policy/naic_underwriting.yaml \
+  --policy-gates policy/naic_underwriting.yaml \
   --fairness-focus approval_rate
 ```
 
@@ -131,10 +131,10 @@ Models that predict claim severity, detect fraud, or automate claims decisions.
 
 ```bash
 glassalpha audit \
-  --config configs/claims_fraud.yaml \
+  --config claims_fraud.yaml \
   --output claims_audit.pdf \
   --fairness-focus fpr \
-  --policy-gates configs/policy/claims_fairness.yaml
+  --policy-gates policy/claims_fairness.yaml
 ```
 
 ## Typical Audit Workflow
@@ -144,7 +144,7 @@ glassalpha audit \
 Create a config file with your model, data, and protected attributes:
 
 ```yaml
-# configs/insurance_pricing.yaml
+# insurance_pricing.yaml
 model:
   path: "models/pricing_model.pkl"
   type: "xgboost"
@@ -184,9 +184,9 @@ recourse:
 
 ```bash
 glassalpha audit \
-  --config configs/insurance_pricing.yaml \
+  --config insurance_pricing.yaml \
   --output reports/pricing_model_2025Q4.pdf \
-  --policy-gates configs/policy/naic_pricing.yaml \
+  --policy-gates policy/naic_pricing.yaml \
   --strict
 ```
 
@@ -242,7 +242,7 @@ risk_factors:
 Example policy configuration for NAIC compliance:
 
 ```yaml
-# configs/policy/naic_pricing.yaml
+# policy/naic_pricing.yaml
 policy_name: "NAIC Model Act #670 Pricing Baseline"
 version: "1.0"
 citation: "NAIC Model Act #670, state anti-discrimination laws"

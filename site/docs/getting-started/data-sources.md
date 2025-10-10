@@ -56,7 +56,7 @@ data:
 **Quick start:**
 
 ```bash
-glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf
+glassalpha audit --config german_credit_simple.yaml --output audit.pdf
 ```
 
 ### Adult Income (Census)
@@ -279,7 +279,7 @@ Requires Kaggle account: https://www.kaggle.com/mlg-ulb/creditcardfraud
 
 **Usage with GlassAlpha:**
 
-See our complete example configuration in `configs/credit_card_fraud_template.yaml`
+See our complete example configuration `credit_card_fraud_template.yaml` (packaged with GlassAlpha)
 
 ```yaml
 data:
@@ -360,7 +360,7 @@ df.to_csv('acs_income_ca_2018.csv', index=False)
 
 **Usage with GlassAlpha:**
 
-See our complete example configuration in `configs/folktables_income_template.yaml`
+See our complete example configuration `folktables_income_template.yaml` (packaged with GlassAlpha)
 
 ```yaml
 data:
