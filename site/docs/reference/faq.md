@@ -139,7 +139,7 @@ glassalpha audit \
 
 3. **For your own data:**
    - See [Using Custom Data](../getting-started/custom-data.md) for a complete tutorial
-   - Use our configuration template in `packages/configs/custom_template.yaml` with detailed comments
+   - Use our configuration template in `configs/custom_template.yaml` with detailed comments
 
 ```yaml
 audit_profile: tabular_compliance

@@ -19,16 +19,11 @@ def test_audit_german_credit_simple_works(tmp_path):
     """
     pdf = tmp_path / "audit.pdf"
 
-    # Find the config file - try packages/configs first, then root configs
-    packages_config = Path(__file__).parent.parent / "configs" / "german_credit_simple.yaml"
-    root_config = Path(__file__).parent.parent.parent / "configs" / "german_credit_simple.yaml"
+    # Find the config file
+    config_path = Path(__file__).parent.parent / "configs" / "german_credit_simple.yaml"
 
-    if packages_config.exists():
-        config_path = packages_config
-    elif root_config.exists():
-        config_path = root_config
-    else:
-        pytest.skip(f"german_credit_simple.yaml not found at {packages_config} or {root_config}")
+    if not config_path.exists():
+        pytest.skip(f"german_credit_simple.yaml not found at {config_path}")
 
     # Run audit command
     result = subprocess.run(
@@ -123,7 +118,7 @@ def test_audit_stderr_no_explainer_errors(tmp_path):
 
 
 @pytest.mark.skipif(
-    not Path("configs/quickstart.yaml").exists() and not Path("packages/configs/quickstart.yaml").exists(),
+    not Path("configs/quickstart.yaml").exists(),
     reason="quickstart.yaml not found",
 )
 def test_quickstart_audit_works(tmp_path):

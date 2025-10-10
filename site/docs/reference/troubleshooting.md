@@ -891,7 +891,7 @@ metrics:
       - pr_auc # Better than roc_auc for imbalanced data
 ```
 
-**Example configurations:** See `packages/configs/credit_card_fraud_template.yaml` for handling 99.8% class imbalance.
+**Example configurations:** See `configs/credit_card_fraud_template.yaml` for handling 99.8% class imbalance.
 
 ## Runtime errors
 

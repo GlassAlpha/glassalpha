@@ -85,7 +85,7 @@ python -m pip install --upgrade pip
 pip install -e .
 
 # Verify installation works immediately
-glassalpha validate --config packages/configs/quickstart.yaml
+glassalpha validate --config configs/quickstart.yaml
 ```
 
 This installation provides:

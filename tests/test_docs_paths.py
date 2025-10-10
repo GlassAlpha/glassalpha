@@ -12,7 +12,7 @@ import pytest
 
 def test_all_documented_config_files_exist():
     """Test that all configuration files referenced in documentation actually exist."""
-    project_root = Path(__file__).parent.parent.parent
+    project_root = Path(__file__).parent.parent
 
     # Explicitly test known config file references in documentation
     config_references = [
@@ -102,7 +102,7 @@ def test_example_notebooks_reference_existing_configs():
     # Common patterns for config file references in notebooks
     config_patterns = [
         r'configs/([^"]+\.yaml)',
-        r'packages/configs/([^"]+\.yaml)',
+        r'configs/([^"]+\.yaml)',
     ]
 
     for notebook in examples_dir.glob("*.ipynb"):
