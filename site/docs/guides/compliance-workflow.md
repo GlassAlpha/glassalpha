@@ -131,7 +131,7 @@ Include evidence pack in submission with cover letter:
 
 **Example cover letter language**:
 
-> "Model documentation was generated using GlassAlpha v0.1.0, an open-source audit framework. The attached evidence pack contains a comprehensive audit report addressing SR 11-7 requirements (Sections III.A through V), including model validation testing, fairness analysis, and outcomes monitoring.
+> "Model documentation was generated using GlassAlpha v0.2.0, an open-source audit framework. The attached evidence pack contains a comprehensive audit report addressing SR 11-7 requirements (Sections III.A through V), including model validation testing, fairness analysis, and outcomes monitoring.
 >
 > All artifacts in the evidence pack are checksummed for integrity verification. Independent validation can be performed using the included verification instructions. The provenance manifest documents all random seeds, package versions, and data hashes for full reproducibility."
 

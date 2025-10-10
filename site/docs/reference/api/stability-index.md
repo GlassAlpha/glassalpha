@@ -325,7 +325,7 @@ If you're unsure about an API's stability:
 ## Related Documentation
 
 - [API Reference](index.md) - Full API documentation
-- [Changelog](https://github.com/glassalpha/glassalpha/blob/main/CHANGELOG.md) - Version history
+- [Changelog](https://github.com/GlassAlpha/glassalpha/blob/main/CHANGELOG.md) - Version history
 - [Tolerance Policy](tolerance-policy.md) - Default tolerances for metric comparisons
 
 ---

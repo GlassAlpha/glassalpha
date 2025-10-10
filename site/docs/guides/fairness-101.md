@@ -572,4 +572,4 @@ Evidence pack: SHA256 checksum attached
 
 ---
 
-**Questions?** [Join our community](https://github.com/glassalpha/glassalpha/discussions) or [contact us](../contact.md).
+**Questions?** [Join our community](https://github.com/GlassAlpha/glassalpha/discussions) or [contact us](../contact.md).

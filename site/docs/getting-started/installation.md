@@ -358,7 +358,7 @@ glassalpha list
 Expected output:
 
 ```
-GlassAlpha version 0.1.0
+GlassAlpha version 0.2.0
 
 Available Components
 ==================
@@ -661,7 +661,7 @@ RUN apt-get update && apt-get install -y \
 
 # Clone and install GlassAlpha
 RUN git clone https://github.com/GlassAlpha/glassalpha.git
-WORKDIR /glassalpha/packages
+WORKDIR /glassalpha
 RUN pip install -e .
 
 # Set entry point

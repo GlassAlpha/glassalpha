@@ -333,9 +333,9 @@ glassalpha audit --config config.yaml --output audit.pdf
 If your issue isn't covered here:
 
 1. **Check documentation**: https://glassalpha.com/guides/
-2. **Search issues**: https://github.com/glassalpha/glassalpha/issues
-3. **Ask for help**: https://github.com/glassalpha/glassalpha/discussions
-4. **Report bugs**: https://github.com/glassalpha/glassalpha/issues/new
+2. **Search issues**: https://github.com/GlassAlpha/glassalpha/issues
+3. **Ask for help**: https://github.com/GlassAlpha/glassalpha/discussions
+4. **Report bugs**: https://github.com/GlassAlpha/glassalpha/issues/new
 
 When reporting issues, include:
 

@@ -746,6 +746,6 @@ glassalpha recourse \
 
 For questions or issues:
 
-- GitHub Issues: [github.com/glassalpha/glassalpha/issues](https://github.com/glassalpha/glassalpha/issues)
+- GitHub Issues: [github.com/GlassAlpha/glassalpha/issues](https://github.com/GlassAlpha/glassalpha/issues)
 - Documentation: [glassalpha.com](https://glassalpha.com)
-- Examples: [github.com/glassalpha/glassalpha/tree/main/examples](https://github.com/glassalpha/glassalpha/tree/main/examples)
+- Examples: [github.com/GlassAlpha/glassalpha/tree/main/examples](https://github.com/GlassAlpha/glassalpha/tree/main/examples)

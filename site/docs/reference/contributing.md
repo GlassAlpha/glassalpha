@@ -665,7 +665,7 @@ def process_audit_data(data: pd.DataFrame):
 **Expected behavior:** TreeSHAP should work with CatBoost like other tree models
 
 **Environment:**
-- GlassAlpha version: 0.1.0
+- GlassAlpha version: 0.2.0
 - Python version: 3.11.5
 - CatBoost version: 1.2.0
 

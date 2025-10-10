@@ -526,5 +526,5 @@ glassalpha reasons \
 Questions or issues?
 
 - **Documentation**: [glassalpha.com](https://glassalpha.com)
-- **Issues**: [github.com/glassalpha/glassalpha/issues](https://github.com/glassalpha/glassalpha/issues)
+- **Issues**: [github.com/GlassAlpha/glassalpha/issues](https://github.com/GlassAlpha/glassalpha/issues)
 - **Contact**: [Contact form](https://glassalpha.com/contact)

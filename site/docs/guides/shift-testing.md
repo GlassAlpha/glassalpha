@@ -526,4 +526,4 @@ data:
 
 ---
 
-**Questions?** See [FAQ](../reference/faq.md) or [file an issue](https://github.com/glassalpha/glassalpha/issues).
+**Questions?** See [FAQ](../reference/faq.md) or [file an issue](https://github.com/GlassAlpha/glassalpha/issues).

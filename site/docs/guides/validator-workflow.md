@@ -228,7 +228,7 @@ python -m venv validator_env
 source validator_env/bin/activate
 
 # Install exact versions from manifest
-pip install glassalpha==0.1.0  # Use version from manifest
+pip install glassalpha==0.2.0  # Use version from manifest
 pip install -r constraints.txt  # Use constraints from evidence pack
 ```
 

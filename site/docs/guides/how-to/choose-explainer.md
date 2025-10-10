@@ -863,4 +863,4 @@ Measured on German Credit dataset (1000 rows, 20 features) on MacBook Pro M1.
 
 ---
 
-**Questions?** [Join our community](https://github.com/glassalpha/glassalpha/discussions) or [contact us](../../contact.md).
+**Questions?** [Join our community](https://github.com/GlassAlpha/glassalpha/discussions) or [contact us](../../contact.md).
