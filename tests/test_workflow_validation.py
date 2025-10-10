@@ -120,3 +120,55 @@ class TestWorkflowValidation:
         # Should contain information about the syntax error
         # The actual error message format depends on the YAML parser
         assert "parsing" in error_msg or "scanning" in error_msg or "expected" in error_msg
+
+    def test_all_workflow_files_are_valid_yaml(self):
+        """Test that all actual workflow files in .github/workflows/ are valid YAML."""
+        from pathlib import Path
+
+        import yaml
+
+        workflows_dir = Path(__file__).parent.parent / ".github" / "workflows"
+        if not workflows_dir.exists():
+            pytest.skip("No .github/workflows directory found")
+
+        invalid_files = []
+        for workflow_file in workflows_dir.glob("*.yml"):
+            try:
+                with open(workflow_file, encoding="utf-8") as f:
+                    yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                invalid_files.append((workflow_file.name, str(e)))
+            except Exception as e:
+                invalid_files.append((workflow_file.name, f"Error reading file: {e}"))
+
+        if invalid_files:
+            error_msg = "Invalid workflow files found:\n"
+            for filename, error in invalid_files:
+                error_msg += f"  {filename}: {error}\n"
+            pytest.fail(error_msg)
+
+    def test_workflow_files_have_required_structure(self):
+        """Test that workflow files have the expected GitHub Actions structure."""
+        from pathlib import Path
+
+        import yaml
+
+        workflows_dir = Path(__file__).parent.parent / ".github" / "workflows"
+        if not workflows_dir.exists():
+            pytest.skip("No .github/workflows directory found")
+
+        for workflow_file in workflows_dir.glob("*.yml"):
+            with open(workflow_file, encoding="utf-8") as f:
+                content = yaml.safe_load(f)
+
+            # Every workflow should have these top-level keys
+            assert "name" in content, f"Workflow {workflow_file.name} missing 'name' field"
+            # Note: YAML parser interprets 'on:' as boolean True key (PyYAML quirk)
+            assert True in content, f"Workflow {workflow_file.name} missing 'on' field (parsed as True key)"
+            assert "jobs" in content, f"Workflow {workflow_file.name} missing 'jobs' field"
+
+            # Every job should have runs-on and steps
+            for job_name, job_config in content["jobs"].items():
+                assert "runs-on" in job_config, f"Job '{job_name}' in {workflow_file.name} missing 'runs-on' field"
+                assert "steps" in job_config, f"Job '{job_name}' in {workflow_file.name} missing 'steps' field"
+                assert isinstance(job_config["steps"], list), f"Job '{job_name}' steps should be a list"

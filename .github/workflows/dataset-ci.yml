@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-    test-dataset-offline:
+  test-dataset-offline:
     name: Test Dataset Fetching (Offline Mode)
     runs-on: ubuntu-latest
 
@@ -33,7 +33,7 @@ jobs:
       - name: Test offline mode behavior
         run: pytest tests/ci/test_dataset_offline.py -v
 
-    test-dataset-online:
+  test-dataset-online:
     name: Test Dataset Fetching (Online Mode)
     runs-on: ubuntu-latest
 
@@ -53,7 +53,7 @@ jobs:
       - name: Test online dataset fetching
         run: pytest tests/ci/test_dataset_online.py -v
 
-    test-dataset-concurrency:
+  test-dataset-concurrency:
     name: Test Concurrent Dataset Fetching
     runs-on: ubuntu-latest
 
@@ -73,7 +73,7 @@ jobs:
       - name: Test concurrent fetching safety
         run: pytest tests/ci/test_dataset_concurrent.py -v
 
-    test-dataset-cli:
+  test-dataset-cli:
     name: Test Dataset CLI Commands
     runs-on: ubuntu-latest
 

@@ -35,7 +35,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libgomp1 \
-            libopenblas-dev
+            libopenblas-dev \
+            libcairo2-dev \
+            libpango1.0-dev \
+            libgdk-pixbuf2.0-dev
 
       - name: Install dependencies with constraints
         run: |
@@ -43,10 +46,15 @@ jobs:
           pip install -c constraints.txt -e ".[all,pdf_determinism]"
           pip install shap  # Required for deterministic explainer selection
 
-      - name: Verify SHAP installation
+      - name: Verify dependencies
         run: |
-          python -c "import shap; print(f'✅ SHAP {shap.__version__} available')" || \
-            (echo "❌ SHAP not available - determinism validation requires SHAP"; exit 1)
+          echo "=== Verify critical dependencies ==="
+          python -c "import shap; print(f'✅ SHAP {shap.__version__}')" || \
+            (echo "❌ SHAP not available"; exit 1)
+          python -c "import weasyprint; print(f'✅ WeasyPrint {weasyprint.__version__}')" || \
+            (echo "❌ WeasyPrint not available"; exit 1)
+          python -c "import pypdf; print(f'✅ pypdf {pypdf.__version__}')" || \
+            (echo "❌ pypdf not available"; exit 1)
 
       - name: Set deterministic environment
         run: |
@@ -99,8 +107,30 @@ jobs:
           EOF
 
           # Run audit twice (seed is set in config file)
-          python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit1.pdf
-          python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit2.pdf
+          echo "=== Running first audit ==="
+          python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit1.pdf || {
+            echo "❌ First audit failed"
+            exit 1
+          }
+
+          echo "=== Running second audit ==="
+          python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit2.pdf || {
+            echo "❌ Second audit failed"
+            exit 1
+          }
+
+          # Verify files exist
+          if [ ! -f /tmp/audit1.pdf ]; then
+            echo "❌ /tmp/audit1.pdf was not created"
+            exit 1
+          fi
+
+          if [ ! -f /tmp/audit2.pdf ]; then
+            echo "❌ /tmp/audit2.pdf was not created"
+            exit 1
+          fi
+
+          echo "✅ Both audit PDFs created successfully"
 
           # Compute hashes
           hash1=$(sha256sum /tmp/audit1.pdf | cut -d' ' -f1)
@@ -181,10 +211,24 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
+      - name: Install system dependencies (Ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libcairo2-dev \
+            libpango1.0-dev \
+            libgdk-pixbuf2.0-dev
+
       - name: Install dependencies
         run: |
           pip install -c constraints.txt -e ".[all,pdf_determinism]"
           pip install shap
+
+      - name: Verify dependencies
+        run: |
+          python3 -c "import weasyprint; print(f'✅ WeasyPrint {weasyprint.__version__}')"
+          python3 -c "import pypdf; print(f'✅ pypdf {pypdf.__version__}')"
+          python3 -c "import shap; print(f'✅ SHAP {shap.__version__}')"
 
       - name: Test DeterminismValidator
         run: |

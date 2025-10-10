@@ -50,7 +50,20 @@ for file in $(git diff --cached --name-only | grep "\.github/workflows/.*\.yml$\
         fi
     else
         # Fallback: basic YAML syntax check with python
-        if ! python -c "import yaml; yaml.safe_load(open('$file'))" >/dev/null 2>&1; then
+        if ! python3 -c "
+import yaml
+import sys
+try:
+    with open('$file', 'r') as f:
+        yaml.safe_load(f)
+    sys.exit(0)
+except yaml.YAMLError as e:
+    print(f'❌ YAML syntax error in $file:', str(e))
+    sys.exit(1)
+except Exception as e:
+    print(f'❌ Error reading $file:', str(e))
+    sys.exit(1)
+" 2>/dev/null; then
             echo "❌ YAML syntax errors in $file"
             echo ""
             echo "Install yamllint for better YAML validation:"

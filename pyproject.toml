@@ -60,7 +60,7 @@ viz = ["seaborn>=0.13"]
 
 # PDF generation dependencies (jinja2 is now in core)
 pdf = [
-    "weasyprint>=63,<64; platform_system!='Windows'",
+    "weasyprint>=60.0; platform_system!='Windows'",
     "reportlab>=4.1; platform_system=='Windows'",
 ]
 
