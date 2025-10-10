@@ -92,7 +92,7 @@ all = ["glassalpha[explain,viz,pdf]"]
 # enterprise = [...]
 
 [project.scripts]
-glassalpha = "glassalpha.cli:app"
+glassalpha = "glassalpha.cli:main"
 
 [project.entry-points."glassalpha.models"]
 # Core models (no optional dependencies)

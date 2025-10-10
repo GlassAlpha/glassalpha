@@ -39,7 +39,6 @@ jobs:
                   # Test offline mode with missing file
                   config = DataConfig(
                       dataset='german_credit',
-                      path='/tmp/nonexistent.csv',
                       fetch='if_missing',
                       offline=True
                   )
@@ -92,7 +91,7 @@ jobs:
                   pipeline = AuditPipeline(config)
 
                   # Test path resolution
-                  resolved_path = pipeline._resolve_requested_path()
+                  resolved_path = pipeline._resolve_dataset_path()
                   print(f'✅ Path resolved: {resolved_path}')
 
                   # Test dataset availability (should fetch if needed)
@@ -146,7 +145,6 @@ jobs:
                   # Setup test configuration
                   config = DataConfig(
                       dataset='german_credit',
-                      path='/tmp/ci_concurrent_test.csv',
                       fetch='always',
                       offline=False
                   )
