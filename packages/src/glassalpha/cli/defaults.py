@@ -159,7 +159,14 @@ def get_smart_defaults(
         inferred_config = infer_config_path()
         if inferred_config is None:
             raise ValueError(
-                "No configuration file found. Create one with 'glassalpha init' or specify with --config",
+                "No configuration file found.\n\n"
+                "Quick fixes:\n"
+                "  1. Create config: glassalpha init\n"
+                "  2. List datasets: glassalpha datasets list\n"
+                "  3. Use example template: glassalpha init --template quickstart\n\n"
+                "Examples:\n"
+                "  glassalpha init --template quickstart --output my-audit.yaml\n"
+                "  glassalpha audit --config my-audit.yaml --output report.html",
             )
         config = inferred_config
 

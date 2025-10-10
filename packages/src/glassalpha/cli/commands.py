@@ -971,12 +971,6 @@ def audit(  # pragma: no cover
         "--fast",
         help="Fast demo mode: reduce bootstrap samples to 100 for lightning-quick audits (~2-3s vs ~5-7s)",
     ),
-    # TODO: Implement proper sampling at data loading level
-    # sample: int | None = typer.Option(
-    #     None,
-    #     "--sample",
-    #     help="Sample N rows from dataset for faster iteration (useful for large datasets during development; minimum 100 rows)",
-    # ),
     compact_report: bool = typer.Option(
         True,
         "--compact-report/--full-report",
@@ -1033,7 +1027,7 @@ def audit(  # pragma: no cover
                 repro=repro if repro is not None else None,
             )
         except ValueError as e:
-            _output_error(f"Configuration error: {e}. Create a config with 'glassalpha init'")
+            _output_error(f"Configuration error: {e}")
             raise typer.Exit(ExitCode.USER_ERROR) from None
 
         # Extract resolved values
@@ -1059,10 +1053,13 @@ def audit(  # pragma: no cover
         if not config.exists():
             _output_error(
                 f"Configuration file does not exist: {config}\n\n"
-                f"Fix options:\n"
-                f"  1. Create a minimal config: glassalpha init --template quickstart\n"
-                f"  2. Use a built-in example: glassalpha audit --config packages/configs/minimal.yaml\n"
-                f"  3. Specify correct path: glassalpha audit --config path/to/your/config.yaml",
+                f"Quick fixes:\n"
+                f"  1. Create a config: glassalpha init\n"
+                f"  2. List datasets: glassalpha datasets list\n"
+                f"  3. Use example template: glassalpha init --template quickstart\n\n"
+                f"Examples:\n"
+                f"  glassalpha init --template quickstart --output my-audit.yaml\n"
+                f"  glassalpha audit --config my-audit.yaml --output report.html",
             )
             raise typer.Exit(ExitCode.USER_ERROR)
 
@@ -1164,34 +1161,14 @@ def audit(  # pragma: no cover
             audit_config.metrics.n_bootstrap = 100
             typer.secho("⚡ Fast mode enabled - using 100 bootstrap samples for quick demo", fg=typer.colors.CYAN)
 
-        # TODO: Implement proper sampling at data loading level
-        # # Apply sampling if requested
-        # if sample:
-        #     if sample < 100:
-        #         typer.secho("❌ Sample size must be at least 100 rows", fg=typer.colors.RED, err=True)
-        #         raise typer.Exit(ExitCode.VALIDATION_ERROR)
-        #
-        #     # For small samples, reduce bootstrap iterations to prevent hanging
-        #     if sample < 200:
-        #         if not hasattr(audit_config, "metrics") or audit_config.metrics is None:
-        #             from ..config.schema import MetricsConfig
-        #
-        #             audit_config.metrics = MetricsConfig()
-        #         audit_config.metrics.n_bootstrap = min(100, audit_config.metrics.n_bootstrap)
-        #         typer.secho(
-        #             f"⚠️  Small sample size ({sample} rows) detected - reducing bootstrap samples to {audit_config.metrics.n_bootstrap} for faster computation",
-        #             fg=typer.colors.YELLOW,
-        #         )
-        #
-        #     if not hasattr(audit_config, "data") or audit_config.data is None:
-        #         from ..config.schema import DataConfig
-        #
-        #         audit_config.data = DataConfig()
-        #     audit_config.data.sample_size = sample
-        #     typer.secho(
-        #         f"📊 Sampling {sample} rows for faster iteration (stratified by target if available)",
-        #         fg=typer.colors.CYAN,
-        #     )
+        # Show progress indication before starting pipeline
+        typer.echo()
+        typer.secho("⏱️  Running audit pipeline...", fg=typer.colors.CYAN)
+        if not fast:
+            typer.echo("   Estimated time: 5-7 seconds (use --fast for 2-3 seconds)")
+        else:
+            typer.echo("   Estimated time: 2-3 seconds")
+        typer.echo()
 
         # Validate model availability and apply fallbacks (or fail if no_fallback is set)
         audit_config, requested_model = preflight_check_model(audit_config, allow_fallback=not no_fallback)
@@ -1250,7 +1227,19 @@ def audit(  # pragma: no cover
             typer.secho(f"Warning: Model type '{model_type}' not found in registry", fg=typer.colors.YELLOW)
 
         if dry_run:
-            typer.secho("Configuration valid (dry run - no report generated)", fg=typer.colors.GREEN)
+            typer.echo()
+            typer.secho("✓ Configuration validation passed", fg=typer.colors.GREEN)
+            typer.echo()
+            typer.echo("Configuration summary:")
+            typer.echo(f"  Profile: {audit_config.audit_profile}")
+            typer.echo(f"  Model: {audit_config.model.type}")
+            typer.echo(f"  Explainer: {selected_explainer or 'auto-detect'}")
+            typer.echo(f"  Data: {getattr(audit_config.data, 'dataset', 'custom')}")
+            typer.echo()
+            typer.echo("Dry run complete - no report generated")
+            typer.echo()
+            typer.echo("Next step:")
+            typer.echo(f"  glassalpha audit --config {config} --output {output}")
             return
 
         # Determine output format with priority: config > file extension > default (HTML)
@@ -1283,8 +1272,19 @@ def audit(  # pragma: no cover
         if output_format == "pdf":
             _ensure_docs_if_pdf(str(output))
 
+        # Warn if output file already exists
+        if output.exists():
+            file_size = output.stat().st_size / 1024  # KB
+            typer.echo()
+            typer.secho(
+                "⚠️  Output file exists and will be overwritten:",
+                fg=typer.colors.YELLOW,
+            )
+            typer.echo(f"   {output} ({file_size:.1f} KB)")
+            typer.echo()
+
         # Run audit pipeline
-        typer.echo("\nRunning audit pipeline...")
+        typer.echo("Running audit pipeline...")
         audit_results = _run_audit_pipeline(
             audit_config,
             output,
