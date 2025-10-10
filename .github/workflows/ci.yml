@@ -111,6 +111,28 @@ jobs:
           echo "=== Validate wheel with twine ==="
           twine check dist/*
 
+      - name: Generate CycloneDX SBOM
+        run: |
+          echo "=== Generate Software Bill of Materials ==="
+          python -m pip install cyclonedx-bom
+          cyclonedx-py --format json --outfile dist/sbom.json
+          echo "✅ Generated SBOM: $(ls -lh dist/sbom.json)"
+
+      - name: Sign artifacts with Sigstore (keyless)
+        uses: sigstore/gh-action-sigstore-python@v2
+        with:
+          inputs: dist/*.whl dist/sbom.json
+
+      - name: Upload signed artifacts and attestations
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-artifacts-${{ github.run_id }}
+          path: |
+            dist/*.whl
+            dist/sbom.json
+            dist/*.sig
+          retention-days: 90
+
           python -m pip install --force-reinstall dist/glassalpha*.whl
 
       - name: Verify installation and dependencies
@@ -243,6 +265,51 @@ jobs:
           env PYTHONPATH="" timeout 600 python -m pytest tests/test_cli_performance.py tests/test_explainer_registry_contract.py tests/test_audit_smoke.py \
               -v --tb=short || echo "Performance tests completed or timed out"
           echo "✅ Performance tests passed"
+
+      - name: Test CLI import-time budget
+        run: |
+          echo "=== Test CLI import-time budget (<300ms) ==="
+          python3 -c "
+import subprocess
+import sys
+import json
+
+# Measure import time using -X importtime
+result = subprocess.run([
+    sys.executable, '-X', 'importtime',
+    '-c', 'import glassalpha.cli.main'
+], capture_output=True, text=True, timeout=10)
+
+if result.returncode != 0:
+    print(f'❌ CLI import failed: {result.stderr}')
+    sys.exit(1)
+
+# Parse importtime output to get total time
+lines = result.stdout.strip().split('\n')
+total_time = 0.0
+for line in lines:
+    if 'import time' in line.lower():
+        # Extract time from format like 'import time: 123456 | glassalpha.cli.main'
+        parts = line.split('|')
+        if len(parts) >= 2:
+            time_part = parts[0].strip()
+            try:
+                total_time = float(time_part.split()[-1])
+                break
+            except (ValueError, IndexError):
+                continue
+
+print(f'CLI import time: {total_time:.3f}ms')
+
+# Gate: Must be under 300ms (lazy imports working)
+IMPORT_BUDGET_MS = 300.0
+if total_time > IMPORT_BUDGET_MS:
+    print(f'❌ CLI import time {total_time:.3f}ms exceeds budget {IMPORT_BUDGET_MS}ms')
+    print('💡 Check for eager imports of heavy dependencies (xgboost, shap, etc.)')
+    sys.exit(1)
+
+print(f'✅ CLI import time {total_time:.3f}ms within budget')
+"
 
       - name: Run tests with coverage (wheel-first)
         run: |

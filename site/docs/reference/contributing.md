@@ -409,9 +409,9 @@ Brief description of changes and motivation.
 
 ### Plugin system
 
-GlassAlpha uses a registry-based plugin architecture. Follow these patterns:
+GlassAlpha uses a dual-layer plugin architecture: runtime registries for dynamic loading and entry points for static discovery.
 
-**Adding New Components:**
+#### Runtime Registration (for development and dynamic loading)
 
 ```python
 # 1. Implement the interface
@@ -422,7 +422,7 @@ class MyExplainer:
         # Implementation
         ...
 
-# 2. Register the component
+# 2. Register the component at runtime
 @ExplainerRegistry.register("my_explainer", priority=75)
 class MyExplainer:
     ...
@@ -430,6 +430,61 @@ class MyExplainer:
 # 3. Add tests
 def test_my_explainer_registration():
     assert "my_explainer" in ExplainerRegistry.get_all()
+```
+
+#### Entry Point Registration (for distribution and static discovery)
+
+For published packages, register components in `pyproject.toml`:
+
+```toml
+[project.entry-points."glassalpha.explainers"]
+my_explainer = "my_package.explainers:MyExplainer"
+
+[project.entry-points."glassalpha.models"]
+my_model = "my_package.models:MyModel"
+
+[project.entry-points."glassalpha.metrics"]
+my_metric = "my_package.metrics:MyMetric"
+```
+
+Entry points enable:
+
+- **Static discovery**: `glassalpha list` shows available components
+- **Import avoidance**: No need to import heavy dependencies on `--help`
+- **Third-party plugins**: Anyone can extend GlassAlpha without modifying core
+
+#### Available Entry Point Groups
+
+| Group                   | Purpose             | Example                                                                       |
+| ----------------------- | ------------------- | ----------------------------------------------------------------------------- |
+| `glassalpha.models`     | ML model wrappers   | `xgboost = "glassalpha.models.tabular.xgboost:XGBoostWrapper"`                |
+| `glassalpha.explainers` | Explanation methods | `treeshap = "glassalpha.explain.shap.tree:TreeSHAPExplainer"`                 |
+| `glassalpha.metrics`    | Evaluation metrics  | `accuracy = "glassalpha.metrics.performance.classification:AccuracyMetric"`   |
+| `glassalpha.profiles`   | Audit profiles      | `tabular_compliance = "glassalpha.profiles.tabular:TabularComplianceProfile"` |
+
+#### Discovery and Loading
+
+```python
+# List all available components
+from glassalpha.core.registry import get_all_registries
+
+for group_name, registry in get_all_registries().items():
+    print(f"{group_name}: {list(registry.get_all().keys())}")
+
+# Load a specific component
+from glassalpha.core.registry import load_component
+explainer = load_component("glassalpha.explainers", "treeshap")
+```
+
+#### Component Interface Requirements
+
+All plugins must implement their respective interfaces:
+
+```python
+# Models: glassalpha.core.interfaces.ModelInterface
+# Explainers: glassalpha.explain.base.ExplainerInterface
+# Metrics: glassalpha.metrics.base.MetricInterface
+# Profiles: glassalpha.profiles.base.AuditProfile
 ```
 
 ### Enterprise/OSS separation

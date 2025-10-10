@@ -192,6 +192,55 @@ Found a bug? Want to add a model type? PRs welcome! Check the [contributing guid
 
 The architecture is designed to be extensible. Adding new models, explainers, or metrics shouldn't require touching core code.
 
+## Supply Chain Security
+
+Every GlassAlpha release includes verifiable supply chain artifacts for enterprise and regulatory use:
+
+### CycloneDX Software Bill of Materials (SBOM)
+
+- Complete inventory of all dependencies and transitive dependencies
+- Machine-readable format for automated compliance checks
+- Generated with each release and signed for authenticity
+
+### Sigstore Keyless Signing
+
+- Cryptographic signatures using Sigstore (keyless, certificate-based)
+- Verifiable without managing keys or certificates
+- Links to GitHub commit provenance
+
+### Verification Commands
+
+Verify a downloaded wheel before installation:
+
+```bash
+# Download wheel and signature
+wget https://github.com/GlassAlpha/glassalpha/releases/download/v0.2.0/glassalpha-0.2.0-py3-none-any.whl
+wget https://github.com/GlassAlpha/glassalpha/releases/download/v0.2.0/sbom.json
+
+# Verify signature
+cosign verify-blob --signature glassalpha-0.2.0-py3-none-any.whl.sig glassalpha-0.2.0-py3-none-any.whl
+
+# Inspect SBOM
+cat sbom.json | jq '.components | length'  # Count dependencies
+
+# Check for vulnerabilities
+pip-audit --desc
+```
+
+For automated verification in CI/CD:
+
+```bash
+curl -s https://raw.githubusercontent.com/GlassAlpha/glassalpha/main/scripts/verify_dist.sh | bash -s glassalpha-0.2.0-py3-none-any.whl
+```
+
+### Security Scanning
+
+- **pip-audit**: Automated vulnerability scanning in CI
+- **Dependency pinning**: All dependencies locked to specific versions
+- **Supply chain monitoring**: GitHub Dependabot alerts for CVEs
+
+---
+
 ## License
 
 The core library is Apache 2.0. See [LICENSE](LICENSE) for the legal stuff.
