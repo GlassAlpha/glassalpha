@@ -262,13 +262,16 @@ def main():
 
     # Check mode
     if args.check:
-        docs_path = Path("../site/docs/reference/cli.md")
+        # Handle script being run from different directories
+        script_dir = Path(__file__).parent
+        project_root = script_dir.parent
+        docs_path = project_root / "site" / "docs" / "reference" / "cli.md"
         if check_docs_current(docs, docs_path):
             print("✓ CLI documentation is up to date")
             sys.exit(0)
         else:
             print("✗ CLI documentation is out of date", file=sys.stderr)
-            print(f"Run: python scripts/generate_cli_docs.py --output {docs_path}", file=sys.stderr)
+            print(f"Run: python scripts/generate_cli_docs.py --output site/docs/reference/cli.md", file=sys.stderr)
             sys.exit(1)
 
     # Output mode
