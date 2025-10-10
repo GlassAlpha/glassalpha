@@ -6,18 +6,18 @@ echo "🔧 Setting up Git aliases for GlassAlpha..."
 # Add git alias for safe commits
 git config alias.safe-commit '!f() {
     echo "🧹 Running pre-commit checks...";
-    cd packages && source venv/bin/activate && ruff check src/ tests/ --fix && ruff format src/ tests/ && pre-commit run --all-files &&
-    cd .. && git add . && git commit -m "$1";
+    source venv/bin/activate && ruff check src/ tests/ --fix && ruff format src/ tests/ && pre-commit run --all-files &&
+    git add . && git commit -m "$1";
 }; f'
 
 # Add alias for just linting (no commit)
 git config alias.lint '!f() {
-    cd packages && source venv/bin/activate && ruff check src/ tests/ --fix && ruff format src/ tests/ && pre-commit run --all-files;
+    source venv/bin/activate && ruff check src/ tests/ --fix && ruff format src/ tests/ && pre-commit run --all-files;
 }; f'
 
 # Add alias for quick fix
 git config alias.fix '!f() {
-    cd packages && source venv/bin/activate && ruff check src/ tests/ --fix && ruff format src/ tests/;
+    source venv/bin/activate && ruff check src/ tests/ --fix && ruff format src/ tests/;
 }; f'
 
 echo ""

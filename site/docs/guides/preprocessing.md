@@ -259,7 +259,7 @@ See `scripts/create_preprocessing_artifacts.py` for a complete example that:
 - Generates artifact + manifest with hashes
 
 ```bash
-cd packages
+# From repo root
 python scripts/create_preprocessing_artifacts.py german_credit --output-dir artifacts
 ```
 

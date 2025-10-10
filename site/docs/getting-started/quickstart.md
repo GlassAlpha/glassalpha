@@ -72,7 +72,7 @@ open reports/audit_report.html  # macOS
 ```bash
 # 1. Clone and install (90 seconds)
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages && pip install -e .
+cd glassalpha && pip install -e .
 
 # 2. Generate audit (lightning fast with --fast flag!)
 glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf --fast
@@ -246,7 +246,7 @@ Clone and setup:
 
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 ```
 
 Python 3.11, 3.12, or 3.13 supported:
@@ -297,7 +297,7 @@ Run these checks to confirm everything is working:
 - [ ] **Python version correct**: `python --version` shows 3.11+ (3.11.x, 3.12.x, or 3.13.x)
 - [ ] **Base dependencies installed**: `glassalpha list` shows available components
 - [ ] **Models available**: `glassalpha list models` shows at least `logistic_regression`
-- [ ] **Config validation works**: `glassalpha validate --config packages/configs/german_credit_simple.yaml` passes
+- [ ] **Config validation works**: `glassalpha validate --config configs/german_credit_simple.yaml` passes
 
 **All checks passed?** → Proceed to Step 2
 
@@ -313,7 +313,7 @@ Generate audit report (takes ~2-3 seconds with --fast):
 
 ```bash
 glassalpha audit \
-  --config packages/configs/german_credit_simple.yaml \
+  --config configs/german_credit_simple.yaml \
   --output my_first_audit.html \
   --fast
 ```
@@ -595,7 +595,7 @@ glassalpha list
 Validate configuration without running audit:
 
 ```bash
-glassalpha validate --config packages/configs/german_credit_simple.yaml
+glassalpha validate --config configs/german_credit_simple.yaml
 ```
 
 Manage datasets:
@@ -611,7 +611,7 @@ glassalpha datasets cache-dir   # Show where datasets are cached
 Ready to audit your own models? We've made it easy:
 
 1. **Follow the tutorial**: See [Using Custom Data](custom-data.md) for step-by-step guidance
-2. **Use our template**: The fully-commented configuration template is in `packages/configs/custom_template.yaml`
+2. **Use our template**: The fully-commented configuration template is in `configs/custom_template.yaml`
 3. **Try public datasets**: Browse [freely available data sources](data-sources.md) for testing
 
 **Need to choose a model?** The [Model Selection Guide](../reference/model-selection.md) helps you pick between LogisticRegression, XGBoost, and LightGBM with performance benchmarks.
@@ -679,7 +679,7 @@ pip list | grep glassalpha
 pip install -e .
 
 # Option 3: Use module invocation (development)
-cd glassalpha/packages
+cd glassalpha
 PYTHONPATH=src python3 -m glassalpha --help
 ```
 
@@ -734,13 +734,13 @@ glassalpha models
 
 ```bash
 # Validate config before running audit
-glassalpha validate --config packages/configs/german_credit_simple.yaml
+glassalpha validate --config configs/german_credit_simple.yaml
 
 # Check if config file exists
 ls -la configs/german_credit_simple.yaml
 
 # If file doesn't exist, ensure you're in correct directory
-cd glassalpha/packages
+cd glassalpha
 ```
 
 ### Issue: Dataset download fails

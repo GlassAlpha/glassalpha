@@ -1,6 +1,6 @@
 {
-  "python.defaultInterpreter": "./packages/venv/bin/python",
-  "python.pythonPath": "./packages/venv/bin/python",
+  "python.defaultInterpreter": "./.venv/bin/python",
+  "python.pythonPath": "./.venv/bin/python",
   "editor.formatOnSave": true,
   "editor.formatOnType": false,
   "editor.formatOnPaste": true,
@@ -27,7 +27,7 @@
   "python.linting.enabled": true,
   "python.linting.ruffEnabled": true,
   "python.linting.mypyEnabled": true,
-  "python.linting.mypyPath": "./packages/venv/bin/mypy",
+  "python.linting.mypyPath": "./.venv/bin/mypy",
   "files.associations": {
     "*.py": "python"
   },
@@ -48,13 +48,12 @@
   "editor.trimAutoWhitespace": true,
   "git.autofetch": true,
   "git.confirmSync": false,
-  "terminal.integrated.cwd": "./packages",
   "terminal.integrated.env.osx": {
-    "PATH": "${workspaceFolder}/packages/venv/bin:${env:PATH}"
+    "PATH": "${workspaceFolder}/.venv/bin:${env:PATH}"
   },
   "terminal.integrated.env.linux": {
-    "PATH": "${workspaceFolder}/packages/venv/bin:${env:PATH}"
+    "PATH": "${workspaceFolder}/.venv/bin:${env:PATH}"
   },
-  "python.analysis.extraPaths": ["./packages/src"],
+  "python.analysis.extraPaths": ["./src"],
   "python.analysis.typeCheckingMode": "strict"
 }

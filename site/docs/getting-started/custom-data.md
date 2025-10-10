@@ -12,13 +12,13 @@ Use our fully-commented template from the repository:
 
 ```bash
 # Copy the template from the repository
-cp packages/configs/custom_template.yaml my_audit_config.yaml
+cp configs/custom_template.yaml my_audit_config.yaml
 
 # Edit it with your settings
 nano my_audit_config.yaml
 ```
 
-The template (in `packages/configs/custom_template.yaml`) includes extensive comments explaining every option. Just update:
+The template (in `configs/custom_template.yaml`) includes extensive comments explaining every option. Just update:
 
 - `data.path` → your dataset path
 - `data.target_column` → your prediction target

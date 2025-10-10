@@ -30,18 +30,15 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  cd packages
                   pip install --upgrade pip
                   pip install -e ".[dev]"
 
             - name: Run determinism tests
               run: |
-                  cd packages
                   pytest tests/integration/test_determinism.py -v --tb=short
 
             - name: Validate deterministic environment
               run: |
-                  cd packages
                   python -c "
                   from glassalpha.utils.determinism import validate_deterministic_environment, deterministic
                   import sys
@@ -65,13 +62,11 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  cd packages
                   pip install --upgrade pip
                   pip install -e ".[dev]"
 
             - name: Generate reference outputs
               run: |
-                  cd packages
                   # Generate reference manifest with deterministic context
                   python -c "
                   from glassalpha.utils.determinism import deterministic
@@ -86,4 +81,4 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: reference-outputs
-                  path: packages/reference_manifest.json
+                  path: reference_manifest.json

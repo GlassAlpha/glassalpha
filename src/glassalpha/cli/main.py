@@ -61,9 +61,14 @@ def _show_first_run_tip():
 
         # Show tip
         typer.echo()
-        typer.secho("👋 Welcome to GlassAlpha!", fg=typer.colors.BRIGHT_BLUE, bold=True)
-        typer.echo("   Run 'glassalpha doctor' to check your environment and see what features are available.")
-        typer.echo("   💡 Tip: Use 'glassalpha audit --fast' for lightning-quick demos (2-3s vs 5-7s).")
+        typer.secho("Welcome to GlassAlpha", fg=typer.colors.BRIGHT_BLUE, bold=True)
+        typer.echo()
+        typer.echo("Quick start:")
+        typer.echo("  1. Check environment: glassalpha doctor")
+        typer.echo("  2. Create config: glassalpha init")
+        typer.echo("  3. Run audit: glassalpha audit --fast")
+        typer.echo()
+        typer.echo("Tip: Use --fast flag for lightning-quick demos (2-3s vs 5-7s)")
         typer.echo()
 
 

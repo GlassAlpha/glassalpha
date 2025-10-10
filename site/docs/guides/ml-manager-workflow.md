@@ -209,7 +209,7 @@ glassalpha audit \
 
 - [ML Engineer Workflow](../guides/ml-engineer-workflow.md)
 - [Compliance Readiness Checklist](../compliance/compliance-readiness-checklist.md)
-- [Example Configs](https://github.com/GlassAlpha/glassalpha/tree/main/packages/configs) - CCPA, GDPR compliance configs on GitHub
+- [Example Configs](https://github.com/GlassAlpha/glassalpha/tree/main/configs) - CCPA, GDPR compliance configs on GitHub
 
 ````
 

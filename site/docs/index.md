@@ -75,7 +75,7 @@ open audit.html  # macOS
 
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages && pip install -e .
+cd glassalpha && pip install -e .
 glassalpha audit --config configs/german_credit_simple.yaml --output audit.html --fast
 ```
 

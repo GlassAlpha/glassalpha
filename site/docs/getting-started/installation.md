@@ -71,7 +71,7 @@ Install GlassAlpha with just the essential dependencies for immediate use:
 ```bash
 # Clone and setup
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 
 # Python 3.11, 3.12, or 3.13 supported
 python3 --version   # should show 3.11.x, 3.12.x, or 3.13.x
@@ -85,7 +85,7 @@ python -m pip install --upgrade pip
 pip install -e .
 
 # Verify installation works immediately
-glassalpha validate --config packages/configs/quickstart.yaml
+glassalpha validate --config configs/quickstart.yaml
 ```
 
 This installation provides:
@@ -211,7 +211,7 @@ brew install libomp
 ```bash
 # Clone and setup
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 
 # Python 3.11, 3.12, or 3.13 supported
 python3 --version   # should show 3.11.x, 3.12.x, or 3.13.x
@@ -255,7 +255,7 @@ sudo apt install libpango1.0-dev libcairo2-dev libgtk-3-dev
 ```bash
 # Clone and setup
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 
 # Python 3.11, 3.12, or 3.13 supported
 python3 --version   # should show 3.11.x, 3.12.x, or 3.13.x
@@ -292,7 +292,7 @@ sudo yum install pango-devel cairo-devel gtk3-devel
 
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 
 python3.11 -m venv glassalpha-env
 source glassalpha-env/bin/activate
@@ -310,7 +310,7 @@ wsl --install Ubuntu
 
 # In WSL2, follow Ubuntu installation instructions
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 python3.11 -m venv glassalpha-env
 source glassalpha-env/bin/activate
 pip install -e .
@@ -324,7 +324,7 @@ pip install -e .
 
 # Clone and install
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha\packages
+cd glassalpha
 
 python -m venv glassalpha-env
 glassalpha-env\Scripts\activate

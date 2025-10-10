@@ -8,9 +8,7 @@ Generate deterministic PDF audit reports with statistical confidence intervals, 
 
 _Note: GlassAlpha is currently pre-alpha while I'm actively developing. The audits work and tests pass, so feel free to try it out—feedback welcome! First stable release coming soon._
 
-## 🚨 Installation Notice
-
-**⚠️ The Python package is located in the `packages/` subdirectory.**
+## Installation
 
 ### Option 1: Install from PyPI (easiest)
 
@@ -26,15 +24,8 @@ pip install glassalpha
 
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages  # ⚠️ MUST cd to packages/ directory
+cd glassalpha
 pip install -e ".[all]"  # Install with all optional features
-```
-
-**❌ Common mistake - DON'T do this:**
-
-```bash
-git clone https://github.com/GlassAlpha/glassalpha
-pip install -e .  # ❌ FAILS - no package in root directory
 ```
 
 Create a configuration (interactive wizard)
@@ -57,13 +48,16 @@ That's it. You now have a complete audit report with model performance, SHAP exp
 
 **Tip:** Run `glassalpha doctor` anytime to check what features are available and see installation options.
 
-**More details:** See the [full installation guide](packages/README.md#installation) and [German Credit tutorial](https://glassalpha.com/examples/german-credit-audit/) to see what's in the report.
+**More details:** See the [full installation guide](https://glassalpha.com/getting-started/installation/) and [German Credit tutorial](https://glassalpha.com/examples/german-credit-audit/) to see what's in the report.
 
-## Structure
+## Repository Structure
 
-- **`packages/`** - The actual Python package ([dev docs here](packages/README.md))
-- **`site/`** - User documentation and tutorials. The docs site is at [glassalpha.com](https://glassalpha.com/)
-- **`configs/`** - Example audit configs you can copy and modify
+- **`src/glassalpha/`** - Main Python package source code
+- **`tests/`** - Test suite
+- **`site/`** - User documentation and tutorials ([glassalpha.com](https://glassalpha.com/))
+- **`configs/`** - Example audit configurations
+- **`examples/`** - Jupyter notebooks and tutorials
+- **`scripts/`** - Development and build scripts
 
 ## What Makes GlassAlpha Different
 
@@ -178,9 +172,9 @@ Example JSON error output:
 ## Learn more
 
 - **[Documentation](https://glassalpha.com/)** - User guides, API reference, and tutorials
-- **[Developer guide](packages/README.md)** - Architecture deep-dive and contribution guide
-- **[German credit tutorial](https://glassalpha.com/examples/german-credit-audit/)** - Step-by-step walkthrough with a real dataset
-- **[About GlassAlpha](https://glassalpha.com/about/)** - Who, what & why.
+- **[Contributing Guide](https://glassalpha.com/reference/contributing/)** - How to contribute to the project
+- **[German Credit Tutorial](https://glassalpha.com/examples/german-credit-audit/)** - Step-by-step walkthrough with a real dataset
+- **[About GlassAlpha](https://glassalpha.com/about/)** - Who, what & why
 
 ## Contributing
 
@@ -196,4 +190,4 @@ The core library is Apache 2.0. See [LICENSE](LICENSE) for the legal stuff.
 
 Enterprise features/support may be added separately if there's demand for more advanced/custom functionality, but the core will always remain open and free. The name "GlassAlpha" is trademarked to keep things unambiguous. Details in [TRADEMARK.md](TRADEMARK.md).
 
-For dependency licenses and third-party components, check the [detailed licensing info](packages/README.md#license--dependencies).
+For dependency licenses and third-party components, check the [detailed licensing info](https://glassalpha.com/reference/trust-deployment/#licensing-dependencies).

@@ -27,7 +27,7 @@ reproducibility: { random_seed: 42 }
 
 **Use when**: Learning GlassAlpha, quick prototyping, demos.
 
-[See full minimal.yaml →](https://github.com/GlassAlpha/glassalpha/blob/main/packages/configs/minimal.yaml)
+[See full minimal.yaml →](https://github.com/GlassAlpha/glassalpha/blob/main/configs/minimal.yaml)
 
 ??? example "Run this config"
 `bash
@@ -71,7 +71,7 @@ reproducibility:
 
 **Use when**: Checking for bias, compliance requirements, team reviews.
 
-[See full fairness_focused.yaml →](https://github.com/GlassAlpha/glassalpha/blob/main/packages/configs/fairness_focused.yaml)
+[See full fairness_focused.yaml →](https://github.com/GlassAlpha/glassalpha/blob/main/configs/fairness_focused.yaml)
 
 ---
 
@@ -129,7 +129,7 @@ manifest:
 
 **Use when**: Regulatory submission, production deployments, audit evidence.
 
-[See full production.yaml →](https://github.com/GlassAlpha/glassalpha/blob/main/packages/configs/production.yaml)
+[See full production.yaml →](https://github.com/GlassAlpha/glassalpha/blob/main/configs/production.yaml)
 
 ---
 
@@ -148,7 +148,7 @@ Copy a template to get started:
 
 ```bash
 # Copy template to your project
-cp packages/configs/fairness_focused.yaml my_audit.yaml
+cp configs/fairness_focused.yaml my_audit.yaml
 
 # Customize and run
 glassalpha audit --config my_audit.yaml --output audit.html

@@ -39,6 +39,9 @@ GlassAlpha uses SHAP (SHapley Additive exPlanations) to determine feature contri
 
 Reason codes focus on the **most negative** contributions.
 
+!!! important "Reason codes for denied decisions only"
+Reason codes are only generated for **denied** decisions (predictions below threshold). If all SHAP contributions are positive, the decision is approved and no reason codes are generated. This is correct ECOA behavior - adverse action notices are only required for denials.
+
 ### 2. Protected Attribute Filtering
 
 Protected attributes are automatically excluded from reason codes per ECOA requirements:

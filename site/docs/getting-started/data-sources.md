@@ -81,7 +81,7 @@ wget https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test
 
 **Usage with GlassAlpha:**
 
-See our complete example configuration in `packages/configs/adult_income.yaml`
+See our complete example configuration in `configs/adult_income.yaml`
 
 ```yaml
 data:
@@ -127,7 +127,7 @@ wget https://raw.githubusercontent.com/propublica/compas-analysis/master/compas-
 
 **Usage with GlassAlpha:**
 
-See our complete example configuration in `packages/configs/compas_recidivism.yaml`
+See our complete example configuration in `configs/compas_recidivism.yaml`
 
 ```yaml
 data:
@@ -279,7 +279,7 @@ Requires Kaggle account: https://www.kaggle.com/mlg-ulb/creditcardfraud
 
 **Usage with GlassAlpha:**
 
-See our complete example configuration in `packages/configs/credit_card_fraud_template.yaml`
+See our complete example configuration in `configs/credit_card_fraud_template.yaml`
 
 ```yaml
 data:
@@ -360,7 +360,7 @@ df.to_csv('acs_income_ca_2018.csv', index=False)
 
 **Usage with GlassAlpha:**
 
-See our complete example configuration in `packages/configs/folktables_income_template.yaml`
+See our complete example configuration in `configs/folktables_income_template.yaml`
 
 ```yaml
 data:
