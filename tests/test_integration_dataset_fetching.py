@@ -37,16 +37,17 @@ class TestDatasetFetchingIntegration:
         # Create pipeline
         pipeline = AuditPipeline(config)
 
-        # Test path resolution
-        resolved_path = pipeline._resolve_dataset_path()
-        # resolved_path points to: .../glassalpha/data/german_credit_processed.csv
-        # So parent is .../glassalpha/data, which is what we want
+        # Test path resolution - should work in CI now that we create test datasets
         from glassalpha.utils.cache_dirs import resolve_data_root
 
         expected_cache = resolve_data_root()
 
+        # Should resolve to cache location and find the test dataset
+        resolved_path = pipeline._resolve_dataset_path()
+
         # Should resolve to cache location
         assert resolved_path.parent == expected_cache
+        assert resolved_path.name == "german_credit_processed.csv"
 
         # Test dataset availability
         final_path = pipeline._ensure_dataset_availability(resolved_path)

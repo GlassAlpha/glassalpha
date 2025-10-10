@@ -146,7 +146,6 @@ def _run_audit_pipeline(
 
     """
     import time
-    from datetime import datetime
 
     # Import here to avoid circular imports and startup overhead
     from ..pipeline.audit import run_audit_pipeline
@@ -269,54 +268,53 @@ def _run_audit_pipeline(
                 output_format = "html"
                 output_path = output_path.with_suffix(".html")
 
-        # Print format-specific message after fallback handling
-        if output_format == "pdf":
-            typer.echo(f"\nGenerating PDF report: {output_path}")
-            typer.echo("⏳ PDF generation in progress... (this may take 1-3 minutes)")
+            # Print format-specific message after fallback handling
+            if output_format == "pdf":
+                typer.echo(f"\nGenerating PDF report: {output_path}")
+                typer.echo("⏳ PDF generation in progress... (this may take 1-3 minutes)")
 
-            # Create PDF configuration
-            pdf_config = PDFConfig(
-                page_size="A4",
-                title="ML Model Audit Report",
-                author="GlassAlpha",
-                subject="Machine Learning Model Compliance Assessment",
-                optimize_size=True,
-            )
-
-            # Generate PDF with timeout protection
-            pdf_start = time.time()
-            # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
-            import os
-            from datetime import datetime, timezone
-
-            source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
-            if source_date_epoch:
-                report_date = datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).strftime("%Y-%m-%d")
-                generation_date = datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).strftime(
-                    "%Y-%m-%d %H:%M:%S UTC",
+                # Create PDF configuration
+                pdf_config = PDFConfig(
+                    page_size="A4",
+                    title="ML Model Audit Report",
+                    author="GlassAlpha",
+                    subject="Machine Learning Model Compliance Assessment",
+                    optimize_size=True,
                 )
-            else:
-                report_date = datetime.now().strftime("%Y-%m-%d")
-                generation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-            # Add timeout protection for PDF generation using concurrent.futures
-            import concurrent.futures
+                # Generate PDF with timeout protection - MUST be wrapped in deterministic context
+                pdf_start = time.time()
 
-            pdf_path = None
+                # Use deterministic timestamp for PDF generation
+                from glassalpha.utils.determinism import get_deterministic_timestamp
 
-            def pdf_generation_worker():
-                """Worker function for PDF generation that can run in a thread."""
-                try:
-                    pdf_path = render_audit_pdf(
-                        audit_results=audit_results,
-                        output_path=output_path,
-                        config=pdf_config,
-                        report_title=f"ML Model Audit Report - {report_date}",
-                        generation_date=generation_date,
-                    )
-                    return pdf_path
-                except Exception as e:
-                    raise e
+                seed = audit_results.execution_info.get("random_seed") if audit_results.execution_info else None
+                deterministic_ts = get_deterministic_timestamp(seed=seed)
+                report_date = deterministic_ts.strftime("%Y-%m-%d")
+                generation_date = deterministic_ts.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+                # Add timeout protection for PDF generation using concurrent.futures
+                import concurrent.futures
+
+                pdf_path = None
+
+                def pdf_generation_worker():
+                    """Worker function for PDF generation that can run in a thread."""
+                    try:
+                        # PDF generation must happen within deterministic context
+                        from ..utils.determinism import deterministic
+
+                        with deterministic(seed=seed or 42, strict=True):
+                            pdf_path = render_audit_pdf(
+                                audit_results=audit_results,
+                                output_path=output_path,
+                                config=pdf_config,
+                                report_title=f"ML Model Audit Report - {report_date}",
+                                generation_date=generation_date,
+                            )
+                        return pdf_path
+                    except Exception as e:
+                        raise e
 
             try:
                 # Run PDF generation with timeout using ThreadPoolExecutor
@@ -381,7 +379,6 @@ def _run_audit_pipeline(
             # Generate HTML
             html_start = time.time()
             # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
-            import os
 
             # Use deterministic timestamp for reproducibility
             from glassalpha.utils.determinism import get_deterministic_timestamp  # noqa: PLC0415
@@ -2025,10 +2022,7 @@ def list_components_cmd(  # pragma: no cover
                 note = ""
 
                 if comp_type == "models":
-                    if item == "xgboost" and not has_xgboost:
-                        status = "⚠️"
-                        note = " (requires: pip install 'glassalpha[explain]')"
-                    elif item == "lightgbm" and not has_lightgbm:
+                    if (item == "xgboost" and not has_xgboost) or (item == "lightgbm" and not has_lightgbm):
                         status = "⚠️"
                         note = " (requires: pip install 'glassalpha[explain]')"
                 elif comp_type == "explainers":
@@ -2548,7 +2542,9 @@ def reasons(  # pragma: no cover
                         fg=typer.colors.CYAN,
                     )
                     # Convert to numpy for compatibility
-                    X_sample = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+                    X_sample = (
+                        X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+                    )
                     explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_sample, 100))
                     shap_values = explainer.shap_values(X_sample)[0, :, 1]
                 else:

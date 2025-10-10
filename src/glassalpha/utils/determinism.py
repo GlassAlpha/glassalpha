@@ -417,3 +417,105 @@ def validate_deterministic_environment(*, strict: bool = False) -> dict[str, Any
         )
 
     return results
+
+
+def validate_audit_determinism(
+    config_path: Path | str,
+    output_path: Path | str,
+    *,
+    seed: int = 42,
+    runs: int = 3,
+    strict: bool = True,
+) -> dict[str, Any]:
+    """Validate that audit generation is deterministic across multiple runs.
+
+    This function runs the audit pipeline multiple times with the same seed
+    and validates that all outputs are byte-identical.
+
+    Args:
+        config_path: Path to audit configuration file
+        output_path: Path where audit report should be generated
+        seed: Random seed for deterministic execution
+        runs: Number of runs to perform for validation
+        strict: If True, require byte-identical outputs
+
+    Returns:
+        Validation results with success status and details
+
+    Raises:
+        AssertionError: If outputs are not deterministic in strict mode
+        RuntimeError: If audit generation fails
+
+    """
+    import subprocess
+
+    config_path = Path(config_path)
+    output_path = Path(output_path)
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+
+    # Set up deterministic environment
+    env = os.environ.copy()
+    env["SOURCE_DATE_EPOCH"] = "1577836800"  # Fixed timestamp for testing
+    env["PYTHONHASHSEED"] = str(seed)
+    env["OMP_NUM_THREADS"] = "1"
+    env["OPENBLAS_NUM_THREADS"] = "1"
+    env["MKL_NUM_THREADS"] = "1"
+
+    results = {
+        "success": True,
+        "runs": runs,
+        "hashes": [],
+        "errors": [],
+        "warnings": [],
+    }
+
+    # Run audit multiple times
+    for run_num in range(runs):
+        # Clean output file
+        if output_path.exists():
+            output_path.unlink()
+
+        try:
+            # Run audit command
+            subprocess.run(
+                ["glassalpha", "audit", "-c", str(config_path), "-o", str(output_path)],
+                env=env,
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+
+            # Verify output exists and compute hash
+            if not output_path.exists():
+                results["errors"].append(f"Output file not created in run {run_num + 1}")
+                results["success"] = False
+                continue
+
+            if output_path.stat().st_size == 0:
+                results["errors"].append(f"Output file empty in run {run_num + 1}")
+                results["success"] = False
+                continue
+
+            # Compute hash
+            file_hash = compute_file_hash(output_path)
+            results["hashes"].append(file_hash)
+
+        except subprocess.CalledProcessError as e:
+            results["errors"].append(f"Audit failed in run {run_num + 1}: {e.stderr}")
+            results["success"] = False
+        except Exception as e:
+            results["errors"].append(f"Unexpected error in run {run_num + 1}: {e}")
+            results["success"] = False
+
+    # Validate determinism
+    if results["success"] and strict:
+        unique_hashes = set(results["hashes"])
+        if len(unique_hashes) != 1:
+            results["warnings"].append(
+                f"Outputs not deterministic: {len(unique_hashes)} unique hashes from {runs} runs: {results['hashes']}",
+            )
+            results["success"] = False
+
+    return results

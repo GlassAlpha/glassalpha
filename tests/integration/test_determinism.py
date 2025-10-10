@@ -390,13 +390,23 @@ class TestCrossPlatformDeterminism:
 @pytest.mark.integration
 @pytest.mark.slow
 def test_cli_respects_source_date_epoch(tmp_path):
-    """Test CLI uses SOURCE_DATE_EPOCH for deterministic timestamps."""
+    """Test CLI uses SOURCE_DATE_EPOCH for deterministic timestamps.
+
+    This test validates that CLI outputs are byte-identical when SOURCE_DATE_EPOCH
+    is set, ensuring deterministic behavior across runs and environments.
+    """
     import os
     import subprocess
 
-    # Set fixed timestamp
+    # Set fixed timestamp for deterministic testing
     env = os.environ.copy()
     env["SOURCE_DATE_EPOCH"] = "1577836800"  # 2020-01-01 00:00:00 UTC
+
+    # Additional determinism controls
+    env["PYTHONHASHSEED"] = "42"
+    env["OMP_NUM_THREADS"] = "1"
+    env["OPENBLAS_NUM_THREADS"] = "1"
+    env["MKL_NUM_THREADS"] = "1"
 
     config = tmp_path / "config.yaml"
     output = tmp_path / "audit.html"
@@ -410,28 +420,110 @@ data:
 model: {type: logistic_regression}
 """)
 
-    # Run CLI twice - expect potential errors due to existing UTC import issue
-    # but verify that if files are generated, they are identical
-    try:
-        subprocess.run(
+    # Run CLI multiple times to verify deterministic output
+    hashes = []
+    for run_num in range(3):
+        # Ensure clean state for each run
+        if output.exists():
+            output.unlink()
+
+        # Run CLI with strict determinism controls
+        result = subprocess.run(
             ["glassalpha", "audit", "-c", str(config), "-o", str(output)],
             env=env,
             check=True,
             capture_output=True,
+            encoding="utf-8",  # Explicit UTF-8 encoding
         )
-        hash1 = compute_file_hash(output)
+
+        # Verify output was created and has content
+        assert output.exists(), f"Output file not created in run {run_num + 1}"
+        assert output.stat().st_size > 0, f"Output file empty in run {run_num + 1}"
+
+        # Compute hash
+        file_hash = compute_file_hash(output)
+        hashes.append(file_hash)
+
+        # Clean up for next run
         output.unlink()
 
-        subprocess.run(
+    # Verify all runs produced identical output
+    unique_hashes = set(hashes)
+    assert len(unique_hashes) == 1, (
+        f"CLI outputs not deterministic across runs. Hashes: {hashes}. Expected all hashes to be identical."
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+def test_cli_pdf_determinism_with_source_date_epoch(tmp_path):
+    """Test CLI PDF generation is deterministic with SOURCE_DATE_EPOCH.
+
+    This test specifically validates that PDF generation produces byte-identical
+    output when SOURCE_DATE_EPOCH is set, ensuring deterministic behavior.
+    """
+    import os
+    import subprocess
+
+    # Set fixed timestamp for deterministic testing
+    env = os.environ.copy()
+    env["SOURCE_DATE_EPOCH"] = "1577836800"  # 2020-01-01 00:00:00 UTC
+
+    # Additional determinism controls
+    env["PYTHONHASHSEED"] = "42"
+    env["OMP_NUM_THREADS"] = "1"
+    env["OPENBLAS_NUM_THREADS"] = "1"
+    env["MKL_NUM_THREADS"] = "1"
+
+    config = tmp_path / "config.yaml"
+    output = tmp_path / "audit.pdf"
+
+    # Create minimal config
+    config.write_text("""
+audit_profile: tabular_compliance
+data:
+  dataset: german_credit
+  target_column: credit_risk
+model: {type: logistic_regression}
+report:
+  output_format: pdf
+""")
+
+    # Skip if PDF dependencies not available
+    try:
+        import weasyprint
+    except ImportError:
+        pytest.skip("PDF dependencies (weasyprint) not available")
+
+    # Run CLI multiple times to verify deterministic PDF output
+    hashes = []
+    for run_num in range(2):  # Reduced runs for PDF (slower)
+        # Ensure clean state for each run
+        if output.exists():
+            output.unlink()
+
+        # Run CLI with strict determinism controls
+        result = subprocess.run(
             ["glassalpha", "audit", "-c", str(config), "-o", str(output)],
             env=env,
             check=True,
             capture_output=True,
+            encoding="utf-8",
         )
-        hash2 = compute_file_hash(output)
 
-        assert hash1 == hash2, "CLI outputs should be byte-identical with SOURCE_DATE_EPOCH"
-    except subprocess.CalledProcessError as e:
-        # If CLI fails due to existing UTC import issue, skip this test
-        # The test is still valuable as it validates the test setup
-        pytest.skip(f"CLI failed due to existing UTC import issue: {e.stderr.decode()}")
+        # Verify output was created and has content
+        assert output.exists(), f"PDF output file not created in run {run_num + 1}"
+        assert output.stat().st_size > 0, f"PDF output file empty in run {run_num + 1}"
+
+        # Compute hash
+        file_hash = compute_file_hash(output)
+        hashes.append(file_hash)
+
+        # Clean up for next run
+        output.unlink()
+
+    # Verify all runs produced identical output
+    unique_hashes = set(hashes)
+    assert len(unique_hashes) == 1, (
+        f"CLI PDF outputs not deterministic across runs. Hashes: {hashes}. Expected all hashes to be identical."
+    )

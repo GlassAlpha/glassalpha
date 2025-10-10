@@ -67,19 +67,22 @@ class TestConcurrencyFetch:
         )
 
         # Clear any path field that might be set
-        if hasattr(config, 'path'):
+        if hasattr(config, "path"):
             config.path = None
 
+        # Get requested path via pipeline's resolver (only once, before multiprocessing)
         pipeline = AuditPipeline.__new__(AuditPipeline)
         pipeline.config = type("Config", (), {"data": config})()
-
-        # Get requested path via pipeline's resolver
         requested_path = pipeline._resolve_dataset_path()
+
         results = []
 
         def fetch_worker():
             try:
-                result = pipeline._ensure_dataset_availability(requested_path)
+                # Create a fresh pipeline for each worker to avoid serialization issues
+                worker_pipeline = AuditPipeline.__new__(AuditPipeline)
+                worker_pipeline.config = type("Config", (), {"data": config})()
+                result = worker_pipeline._ensure_dataset_availability(requested_path)
                 results.append(result)
             except Exception as e:
                 results.append(e)
