@@ -32,6 +32,10 @@ logger = logging.getLogger(__name__)
 # Suppress sklearn feature name warnings during audit (they're noisy but not errors)
 warnings.filterwarnings("ignore", message=".*does not have valid feature names.*", category=UserWarning)
 
+# Suppress sklearn numerical underflow warnings during optimization (harmless)
+# These occur during logistic regression gradient computation and don't affect results
+warnings.filterwarnings("ignore", message=".*underflow encountered in divide.*", category=RuntimeWarning)
+
 
 @dataclass
 class AuditResults:

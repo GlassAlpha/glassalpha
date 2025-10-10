@@ -62,11 +62,16 @@ viz = ["seaborn>=0.13"]
 pdf = [
     "weasyprint>=63,<64; platform_system!='Windows'",
     "reportlab>=4.1; platform_system=='Windows'",
+]
+
+# PDF determinism infrastructure (separate from generation)
+# This is required whenever PDFs are generated to ensure byte-identical outputs
+pdf_determinism = [
     "pypdf>=3.0,<7.0",  # For PDF metadata normalization
 ]
 
 # Docs alias for backward compatibility
-docs = ["glassalpha[pdf]"]
+docs = ["glassalpha[pdf,pdf_determinism]"]
 
 # Development dependencies
 dev = [
@@ -79,13 +84,14 @@ dev = [
     "black>=23.0",
     "ruff>=0.6",
     "mypy>=1.11",
+    "yamllint>=1.35",  # YAML syntax validation for workflow files
     "pre-commit>=3.5",
     "build>=1.0",  # Required for wheel packaging tests
     "types-PyYAML>=6.0.12",  # Type stubs for YAML
 ]
 
 # Everything - all optional features
-all = ["glassalpha[explain,viz,pdf]"]
+all = ["glassalpha[explain,viz,pdf,pdf_determinism]"]
 
 # Enterprise dependencies (not included in OSS)
 # These would be in glassalpha-enterprise package

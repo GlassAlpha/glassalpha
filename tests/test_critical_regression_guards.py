@@ -283,6 +283,8 @@ data:
   dataset: german_credit
   target_column: credit_risk
 model: {type: logistic_regression}
+reproducibility:
+  random_seed: 42
 """)
 
             # Run CLI multiple times (this used to produce different outputs)
@@ -293,8 +295,10 @@ model: {type: logistic_regression}
                     output.unlink()
 
                 # Run CLI (this used to be non-deterministic)
+                import sys
+
                 result = subprocess.run(
-                    ["glassalpha", "audit", "-c", str(config), "-o", str(output)],
+                    [sys.executable, "-m", "glassalpha", "audit", "-c", str(config), "-o", str(output)],
                     env=env,
                     check=True,
                     capture_output=True,

@@ -118,10 +118,22 @@ jobs:
           cyclonedx-py --format json --outfile dist/sbom.json
           echo "✅ Generated SBOM: $(ls -lh dist/sbom.json)"
 
-      - name: Sign artifacts with Sigstore (keyless)
-        uses: sigstore/gh-action-sigstore-python@v2
+      - name: Install cosign
+        uses: sigstore/cosign-installer@main
         with:
-          inputs: dist/*.whl dist/sbom.json
+          cosign-release: "v2.2.4"
+
+      - name: Sign artifacts with Sigstore (keyless)
+        run: |
+          echo "=== Signing artifacts with cosign ==="
+          for file in dist/*.whl dist/sbom.json; do
+            if [ -f "$file" ]; then
+              echo "Signing $file..."
+              cosign sign-blob --yes "$file" --output-signature "${file}.sig"
+            fi
+          done
+          echo "✅ All artifacts signed"
+          ls -la dist/*.sig
 
       - name: Upload signed artifacts and attestations
         uses: actions/upload-artifact@v4

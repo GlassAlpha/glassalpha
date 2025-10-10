@@ -42,10 +42,22 @@ jobs:
                   twine check dist/*.whl dist/*.tar.gz
                   echo "✅ Distribution checks passed"
 
-            - name: Sign artifacts with Sigstore
-              uses: sigstore/gh-action-sigstore-python@v2
+            - name: Install cosign
+              uses: sigstore/cosign-installer@main
               with:
-                  inputs: dist/*.whl dist/*.tar.gz dist/sbom.json
+                  cosign-release: "v2.2.4"
+
+            - name: Sign artifacts with Sigstore
+              run: |
+                  echo "=== Signing artifacts with cosign ==="
+                  for file in dist/*.whl dist/*.tar.gz dist/sbom.json; do
+                    if [ -f "$file" ]; then
+                      echo "Signing $file..."
+                      cosign sign-blob --yes "$file" --output-signature "${file}.sig"
+                    fi
+                  done
+                  echo "✅ All artifacts signed"
+                  ls -la dist/*.sig
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v4

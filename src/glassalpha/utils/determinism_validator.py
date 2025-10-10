@@ -41,7 +41,17 @@ class DeterminismValidator:
 
     def __init__(self) -> None:
         """Initialize determinism validator."""
-        self.glassalpha_cmd = "glassalpha"
+        import shutil
+        import sys
+
+        # Use python3 -m glassalpha for consistency across environments
+        # Store as list for subprocess.run()
+        python3_path = shutil.which("python3")
+        if python3_path:
+            self.glassalpha_cmd = [python3_path, "-m", "glassalpha"]
+        else:
+            # Fallback to sys.executable if python3 not found
+            self.glassalpha_cmd = [sys.executable, "-m", "glassalpha"]
 
     def validate_audit_determinism(
         self,
@@ -83,7 +93,9 @@ class DeterminismValidator:
                 "OPENBLAS_NUM_THREADS": "1",
                 "MKL_NUM_THREADS": "1",
                 "GLASSALPHA_DETERMINISTIC": "1",
-            }
+                "TZ": "UTC",
+                "MPLBACKEND": "Agg",
+            },
         )
 
         # Run audits and collect results
@@ -137,24 +149,39 @@ class DeterminismValidator:
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
 
-            # Create output path
-            output_file = tmp_path / "audit.html"
+            # Create output path (use PDF to match CI expectations)
+            output_file = tmp_path / "audit.pdf"
+
+            # Create a temporary config with the specific seed for this run
+            run_config_path = tmp_path / "run_config.yaml"
+            import yaml
+
+            with config_path.open() as f:
+                config_data = yaml.safe_load(f)
+
+            # Add seed to reproducibility section
+            if "reproducibility" not in config_data:
+                config_data["reproducibility"] = {}
+            config_data["reproducibility"]["random_seed"] = seed
+
+            with run_config_path.open("w") as f:
+                yaml.safe_dump(config_data, f)
 
             # Run audit
             start_time = time.time()
 
             try:
+                # Build command list (glassalpha_cmd is already a list)
+                cmd = self.glassalpha_cmd + [
+                    "audit",
+                    "-c",
+                    str(run_config_path),
+                    "-o",
+                    str(output_file),
+                ]
+
                 result = subprocess.run(
-                    [
-                        self.glassalpha_cmd,
-                        "audit",
-                        "-c",
-                        str(config_path),
-                        "-o",
-                        str(output_file),
-                        "--seed",
-                        str(seed),
-                    ],
+                    cmd,
                     env=env,
                     capture_output=True,
                     text=True,

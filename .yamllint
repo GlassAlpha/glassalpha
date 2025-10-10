@@ -1,0 +1,40 @@
+extends: default
+
+rules:
+  # Allow longer lines in YAML files (GitHub Actions workflows need long run commands)
+  line-length:
+    max: 120
+
+  # GitHub Actions workflows use 2-space indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Allow empty values in some contexts (GitHub Actions matrix)
+  empty-values:
+    forbid-in-block-mappings: false
+    forbid-in-flow-mappings: false
+
+  # GitHub Actions uses specific comment style
+  comments-indentation: disable
+  comments: disable
+
+  # Allow trailing spaces in some contexts
+  empty-lines:
+    max-start: 2
+    max-end: 1
+    max: 2
+
+  # GitHub Actions workflows need specific formatting
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Allow flow style for short arrays
+  flow-list-sequences: enable
+
+  # GitHub Actions uses specific quoting style
+  quotes:
+    quote-type: double
+    required: only-when-needed

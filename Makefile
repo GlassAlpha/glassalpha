@@ -1,5 +1,5 @@
 # GlassAlpha - Wheel-first development workflow
-.PHONY: smoke build install test lint clean hooks help dev-setup check
+.PHONY: smoke build install test lint clean hooks help dev-setup check check-workflows check-sigstore
 
 # Default target
 help:
@@ -15,6 +15,8 @@ help:
 	@echo "🔍 lint       - Run linting"
 	@echo "🧹 clean      - Clean build artifacts"
 	@echo "🪝 hooks      - Install git hooks (pre-commit + pre-push)"
+	@echo "🔐 check-sigstore - Test sigstore signing process locally"
+	@echo "🔍 check-workflows - Validate GitHub Actions workflows"
 	@echo ""
 	@echo "Getting Started:"
 	@echo "1. make dev-setup      (one-time: installs deps + hooks + runs doctor)"
@@ -90,12 +92,12 @@ dev-setup:
 	@echo "✅ Development environment ready!"
 	@echo ""
 	@echo "Next steps:"
-	@echo "  - Run 'make check' before committing"
+	@echo "  - Run 'make check' before committing (includes workflow + sigstore validation)"
 	@echo "  - Run 'make test' for full test suite"
 	@echo "  - Run 'glassalpha audit --config quickstart.yaml --output test.pdf' for a quick test"
 
 # Fast pre-commit check
-check: smoke
+check: smoke check-workflows check-sigstore
 	@echo ""
 	@echo "🏥 Checking environment..."
 	@glassalpha doctor
@@ -109,3 +111,28 @@ check: smoke
 check-docs:
 	@echo "🔍 Checking CLI documentation..."
 	@python scripts/generate_cli_docs.py --check
+
+# Test sigstore signing process locally
+check-sigstore:
+	@echo "🔐 Testing sigstore signing process locally..."
+	@./scripts/test_sigstore_local.sh
+
+# Validate GitHub Actions workflows
+check-workflows:
+	@echo "🔍 Validating GitHub Actions workflows..."
+	@echo ""
+	@echo "📋 Checking workflow YAML syntax..."
+	@for file in .github/workflows/*.yml .github/workflows/*.yaml; do \
+		if [ -f "$$file" ]; then \
+			echo "   Checking $$file..."; \
+			if command -v yamllint >/dev/null 2>&1; then \
+				yamllint --config-file .yamllint "$$file" || exit 1; \
+			else \
+				python3 -c "import yaml; yaml.safe_load(open('$$file'))" || (echo "❌ YAML syntax error in $$file"; exit 1); \
+			fi; \
+		fi; \
+	done
+	@echo ""
+	@echo "🔗 Checking action versions and availability..."
+	@echo "   (This checks common actions - may need internet connection)"
+	@python3 scripts/validate_workflows.py

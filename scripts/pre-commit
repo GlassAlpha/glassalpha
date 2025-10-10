@@ -10,6 +10,7 @@ FRAGILE_PATTERNS=(
     "src/glassalpha/utils/manifest.py"        # Manifest structure
     "src/glassalpha/constants.py"             # Contract definitions
     "pyproject.toml"                          # Packaging config
+    ".github/workflows/"                      # CI workflow files (YAML syntax)
 )
 
 # Check if any fragile files are in this commit
@@ -32,7 +33,68 @@ if [ "$fragile_changed" = false ]; then
 fi
 
 echo ""
-echo "🔥 Fragile contract areas changed - running smoke test..."
+echo "🔥 Fragile contract areas changed - validating workflow files..."
+echo ""
+
+# Validate YAML syntax for workflow files
+echo "🔍 Validating workflow YAML syntax..."
+for file in $(git diff --cached --name-only | grep "\.github/workflows/.*\.yml$\|\.github/workflows/.*\.yaml$"); do
+    if command -v yamllint >/dev/null 2>&1; then
+        if ! yamllint --config-file .yamllint "$file"; then
+            echo "❌ YAML syntax errors in $file"
+            echo ""
+            echo "Install yamllint for better YAML validation:"
+            echo "  pip install yamllint>=1.35"
+            echo ""
+            exit 1
+        fi
+    else
+        # Fallback: basic YAML syntax check with python
+        if ! python -c "import yaml; yaml.safe_load(open('$file'))" >/dev/null 2>&1; then
+            echo "❌ YAML syntax errors in $file"
+            echo ""
+            echo "Install yamllint for better YAML validation:"
+            echo "  pip install yamllint>=1.35"
+            echo ""
+            exit 1
+        fi
+    fi
+done
+
+echo "✅ Workflow YAML validation passed"
+echo ""
+
+# Quick workflow action validation (when workflow files change)
+echo "🔗 Checking workflow action references..."
+workflow_files_changed=$(git diff --cached --name-only | grep -c "\.github/workflows/" || true)
+if [ "$workflow_files_changed" -gt 0 ]; then
+    echo "   📋 Workflows changed - checking common action versions..."
+    # Simple check for known problematic patterns
+    for file in $(git diff --cached --name-only | grep "\.github/workflows/.*\.yml$\|\.github/workflows/.*\.yaml$"); do
+        if [ -f "$file" ]; then
+            # Check for the specific sigstore issue we just fixed
+            if grep -q "sigstore/gh-action-sigstore-python@v2" "$file"; then
+                echo "   ❌ Found deprecated sigstore action in $file"
+                echo "      Replace 'sigstore/gh-action-sigstore-python@v2' with 'sigstore/cosign-installer@main'"
+                echo ""
+                exit 1
+            fi
+            # Check for other common issues
+            if grep -q "actions/checkout@v1\|actions/setup-python@v1\|actions/cache@v1" "$file"; then
+                echo "   ⚠️  Found potentially outdated action versions in $file"
+                echo "      Consider updating to latest major versions"
+                echo ""
+            fi
+        fi
+    done
+    echo "   ✅ No critical workflow action issues found"
+    echo ""
+else
+    echo "   ✅ No workflow files changed"
+    echo ""
+fi
+
+echo "🔥 Running smoke test..."
 echo ""
 
 # Run the smoke test
