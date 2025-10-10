@@ -1,7 +1,7 @@
 """Core architecture components for GlassAlpha.
 
 This module provides the foundational interfaces, registries, and
-feature management system that enable the plugin architecture.
+plugin architecture that enable extensibility.
 """
 
 # Import models package to trigger registration of available models
@@ -9,11 +9,6 @@ feature management system that enable the plugin architecture.
 import glassalpha.models  # noqa: F401
 
 from ..data.base import DataInterface
-from .features import (
-    FeatureNotAvailable,
-    check_feature,
-    is_enterprise,
-)
 
 # Import NoOp components to auto-register them
 from .noop_components import (
@@ -60,10 +55,6 @@ __all__ = [
     "instantiate_explainer",
     "list_components",
     "select_explainer",
-    # Feature management
-    "is_enterprise",
-    "check_feature",
-    "FeatureNotAvailable",
     # NoOp implementations
     "PassThroughModel",
     "NoOpMetric",

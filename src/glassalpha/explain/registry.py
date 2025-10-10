@@ -92,16 +92,9 @@ def _first_compatible(candidates: Iterable[str], model_type: str) -> str | None:
         if hasattr(registry_module, "ExplainerRegistry"):
             registry = registry_module.ExplainerRegistry
 
-    # Check if enterprise features are enabled
-    from glassalpha.core.features import is_enterprise as has_license  # noqa: PLC0415
-
     for c in candidates:
         # First check if available (registered and dependencies met)
         if not _available(c):
-            continue
-
-        # Skip enterprise components without license
-        if registry is not None and registry.is_enterprise(c) and not has_license():
             continue
 
         # If registry is available, check compatibility

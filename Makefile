@@ -1,5 +1,5 @@
 # GlassAlpha - Wheel-first development workflow
-.PHONY: smoke build install test lint clean hooks help dev-setup check check-workflows check-sigstore
+.PHONY: smoke build install test lint clean hooks help dev-setup check check-workflows check-sigstore check-packaging check-determinism
 
 # Default target
 help:
@@ -7,7 +7,7 @@ help:
 	@echo ""
 	@echo "🚀 dev-setup  - Complete dev environment setup (one-time)"
 	@echo "🔥 smoke      - Run wheel smoke test (validates 4 critical contracts)"
-	@echo "🔍 check      - Quick pre-commit check (smoke test + doctor)"
+	@echo "🔍 check      - Quick pre-commit check (smoke test + doctor + packaging + determinism)"
 	@echo "📦 build      - Build wheel"
 	@echo "📥 install    - Install wheel (for testing)"
 	@echo "🧪 test       - Run full test suite"
@@ -17,10 +17,11 @@ help:
 	@echo "🪝 hooks      - Install git hooks (pre-commit + pre-push)"
 	@echo "🔐 check-sigstore - Test sigstore signing process locally"
 	@echo "🔍 check-workflows - Validate GitHub Actions workflows"
+	@echo "📦 check-packaging - Validate MANIFEST.in and pyproject.toml"
 	@echo ""
 	@echo "Getting Started:"
 	@echo "1. make dev-setup      (one-time: installs deps + hooks + runs doctor)"
-	@echo "2. make check          (before commit: validates setup)"
+	@echo "2. make check          (before commit: validates setup + packaging)"
 	@echo "3. git commit          (pre-commit: smoke test if fragile areas changed)"
 	@echo "4. git push            (pre-push: always runs smoke test)"
 
@@ -38,9 +39,10 @@ install: build
 	python3 -m pip install --force-reinstall --no-deps dist/*.whl
 
 # Test suite (requires dependencies)
-# Use pytest-xdist for parallel execution and test isolation (prevents test pollution)
+# Note: Parallel execution with pytest-xdist speeds up tests but some tests
+# (subprocess-based, shared file writes) must be marked to run serially
 test:
-	pytest -n auto -q
+	python3 -m pytest -q
 
 # Test with coverage report
 coverage:
@@ -92,12 +94,12 @@ dev-setup:
 	@echo "✅ Development environment ready!"
 	@echo ""
 	@echo "Next steps:"
-	@echo "  - Run 'make check' before committing (includes workflow + sigstore validation)"
+	@echo "  - Run 'make check' before committing (includes workflow + sigstore + determinism validation)"
 	@echo "  - Run 'make test' for full test suite"
 	@echo "  - Run 'glassalpha audit --config quickstart.yaml --output test.pdf' for a quick test"
 
 # Fast pre-commit check
-check: smoke check-workflows check-sigstore
+check: smoke check-workflows check-sigstore check-packaging check-determinism
 	@echo ""
 	@echo "🏥 Checking environment..."
 	@glassalpha doctor
@@ -136,3 +138,39 @@ check-workflows:
 	@echo "🔗 Checking action versions and availability..."
 	@echo "   (This checks common actions - may need internet connection)"
 	@python3 scripts/validate_workflows.py
+
+# Validate packaging (MANIFEST.in + pyproject.toml)
+check-packaging:
+	@echo "📦 Validating packaging configuration..."
+	@echo ""
+	@echo "🔍 Checking pyproject.toml schema..."
+	@if command -v validate-pyproject >/dev/null 2>&1; then \
+		validate-pyproject pyproject.toml || exit 1; \
+	else \
+		echo "   ⚠️  validate-pyproject not installed, skipping schema validation"; \
+	fi
+	@echo ""
+	@echo "📦 Checking MANIFEST.in completeness..."
+	@if command -v check-manifest >/dev/null 2>&1; then \
+		check-manifest --verbose || exit 1; \
+	else \
+		echo "   ⚠️  check-manifest not installed, skipping manifest validation"; \
+		echo "   💡 Install with: pip install check-manifest"; \
+		echo "   📝 This validation runs automatically in CI"; \
+	fi
+
+# Validate determinism (matches CI requirements)
+check-determinism:
+	@echo "🔬 Validating determinism (CI compatibility check)..."
+	@if [ -f "./scripts/test_determinism_local.sh" ]; then \
+		if python3 -c "import shap, weasyprint" 2>/dev/null; then \
+			./scripts/test_determinism_local.sh || exit 1; \
+		else \
+			echo "   ⚠️  Optional determinism dependencies not available (shap, weasyprint)"; \
+			echo "   💡 Run 'pip install -e \".[all]\"' to enable determinism validation"; \
+			echo "   📝 Determinism validation runs automatically in CI"; \
+		fi \
+	else \
+		echo "   ⚠️  Determinism test script not found, skipping"; \
+		echo "   💡 This validation ensures local environment matches CI"; \
+	fi

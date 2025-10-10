@@ -243,7 +243,7 @@ class TestCriticalRegressions:
                     f"Column {col} not properly encoded - still has dtype {X_test_encoded[col].dtype}"
                 )
 
-    def test_cli_determinism_regression_guard(self):
+    def test_cli_determinism_regression_guard(self, tmp_path):
         """CRITICAL: CLI must produce deterministic outputs across runs.
 
         Regression guard for: AssertionError: CLI outputs not deterministic across runs
@@ -254,10 +254,10 @@ class TestCriticalRegressions:
             import shap
         except ImportError:
             pytest.skip("SHAP required for deterministic explainer selection in audit tests")
+        import gc
         import os
         import subprocess
-        import tempfile
-        from pathlib import Path
+        import sys
 
         from glassalpha.utils.determinism import compute_file_hash
 
@@ -268,16 +268,14 @@ class TestCriticalRegressions:
         env["OMP_NUM_THREADS"] = "1"
         env["OPENBLAS_NUM_THREADS"] = "1"
         env["MKL_NUM_THREADS"] = "1"
+        env["GLASSALPHA_NO_PROGRESS"] = "1"  # Disable progress bars
+        env["PYTHONDONTWRITEBYTECODE"] = "1"  # Prevent __pycache__ pollution
 
-        # Create minimal config for testing
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
+        # Use isolated temp directory from pytest fixture
+        config = tmp_path / "config.yaml"
 
-            config = tmp_path / "config.yaml"
-            output = tmp_path / "audit.html"
-
-            # Create simple config that used to cause determinism issues
-            config.write_text("""
+        # Create simple config that used to cause determinism issues
+        config.write_text("""
 audit_profile: tabular_compliance
 data:
   dataset: german_credit
@@ -287,41 +285,38 @@ reproducibility:
   random_seed: 42
 """)
 
-            # Run CLI multiple times (this used to produce different outputs)
-            hashes = []
-            for run_num in range(2):  # Reduced for speed in critical tests
-                # Ensure clean state
-                if output.exists():
-                    output.unlink()
+        # Run CLI multiple times (this used to produce different outputs)
+        hashes = []
+        for run_num in range(2):  # Reduced for speed in critical tests
+            # Use unique output file per run to avoid file locking issues
+            output = tmp_path / f"audit_run{run_num}.html"
 
-                # Run CLI (this used to be non-deterministic)
-                import sys
+            # Ensure clean state between runs
+            gc.collect()
 
-                result = subprocess.run(
-                    [sys.executable, "-m", "glassalpha", "audit", "-c", str(config), "-o", str(output)],
-                    env=env,
-                    check=True,
-                    capture_output=True,
-                    encoding="utf-8",
-                )
-
-                # Verify output created
-                assert output.exists(), f"Output not created in run {run_num + 1}"
-                assert output.stat().st_size > 0, f"Empty output in run {run_num + 1}"
-
-                # Compute hash
-                file_hash = compute_file_hash(output)
-                hashes.append(file_hash)
-
-                # Clean up for next run
-                output.unlink()
-
-            # Verify deterministic output (this used to fail)
-            assert len(set(hashes)) == 1, (
-                f"REGRESSION: CLI outputs not deterministic. Hashes: {hashes}\n"
-                f"Expected identical hashes but got {len(set(hashes))} different values.\n"
-                f"This breaks regulatory compliance requirements for reproducible audits."
+            # Run CLI (this used to be non-deterministic)
+            result = subprocess.run(
+                [sys.executable, "-m", "glassalpha", "audit", "-c", str(config), "-o", str(output)],
+                env=env,
+                check=True,
+                capture_output=True,
+                encoding="utf-8",
             )
+
+            # Verify output created
+            assert output.exists(), f"Output not created in run {run_num + 1}"
+            assert output.stat().st_size > 0, f"Empty output in run {run_num + 1}"
+
+            # Compute hash
+            file_hash = compute_file_hash(output)
+            hashes.append(file_hash)
+
+        # Verify deterministic output (this used to fail)
+        assert len(set(hashes)) == 1, (
+            f"REGRESSION: CLI outputs not deterministic. Hashes: {hashes}\n"
+            f"Expected identical hashes but got {len(set(hashes))} different values.\n"
+            f"This breaks regulatory compliance requirements for reproducible audits."
+        )
 
 
 class TestArchitecturalConstraints:

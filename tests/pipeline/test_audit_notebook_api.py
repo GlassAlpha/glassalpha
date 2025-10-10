@@ -12,6 +12,22 @@ from sklearn.linear_model import LogisticRegression
 from glassalpha.pipeline.audit import AuditPipeline
 
 
+@pytest.fixture
+def fresh_german_credit():
+    """Load fresh German Credit data for each test.
+
+    Ensures data isolation between tests to prevent state leakage.
+    Each test gets a clean copy with no shared references.
+    """
+    from glassalpha.datasets import load_german_credit
+
+    # Load data fresh (no caching)
+    df = load_german_credit()
+
+    # Return a copy to prevent mutation affecting other tests
+    return df.copy()
+
+
 def _check_shap_available() -> bool:
     """Check if SHAP is available."""
     try:
@@ -344,19 +360,17 @@ class TestFromModelInlineDisplay:
 class TestFromModelIntegration:
     """Integration tests with real datasets."""
 
-    def test_german_credit_e2e(self):
+    def test_german_credit_e2e(self, fresh_german_credit):
         """E2E test with German Credit dataset."""
         from sklearn.model_selection import train_test_split
         from sklearn.preprocessing import LabelEncoder
-
-        from glassalpha.datasets import load_german_credit
 
         # Skip if SHAP not available (required for explanations)
         if not _check_shap_available():
             pytest.skip("SHAP not available - required for explanations")
 
-        # Load data
-        df = load_german_credit()
+        # Use fresh data from fixture
+        df = fresh_german_credit
 
         # Define schema manually (German Credit specific)
         target_col = "credit_risk"

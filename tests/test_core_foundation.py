@@ -11,12 +11,9 @@ import pandas as pd
 import pytest
 
 from glassalpha.core import (
-    FeatureNotAvailable,
     ModelRegistry,
     NoOpMetric,
     PassThroughModel,
-    check_feature,
-    is_enterprise,
     list_components,
     select_explainer,
 )
@@ -96,34 +93,6 @@ def test_list_components():
     assert "passthrough" in components["models"]
 
 
-def test_enterprise_feature_flag():
-    """Test enterprise feature detection."""
-    # Without license key
-    assert not is_enterprise()
-
-    # With license key
-    with patch.dict("os.environ", {"GLASSALPHA_LICENSE_KEY": "test-key"}):
-        assert is_enterprise()
-
-
-def test_feature_gating_decorator():
-    """Test feature gating works correctly."""
-
-    @check_feature("test_feature")
-    def enterprise_only_function():
-        return "enterprise_result"
-
-    # Should raise without license
-    with pytest.raises(FeatureNotAvailable) as exc:
-        enterprise_only_function()
-    assert "test_feature" in str(exc.value)
-
-    # Should work with license
-    with patch.dict("os.environ", {"GLASSALPHA_LICENSE_KEY": "test-key"}):
-        result = enterprise_only_function()
-        assert result == "enterprise_result"
-
-
 def test_registry_priority_selection():
     """Test priority-based selection with fallback."""
     # Simplified test - just check that priority selection works
@@ -136,16 +105,3 @@ def test_registry_priority_selection():
     # Should select noop explainer for unknown model since it's in priority list
     selected = select_explainer("unknown_model", config)
     assert selected == "noop"  # NoOp is compatible with everything when explicitly requested
-
-
-def test_enterprise_component_filtering():
-    """Test enterprise components are filtered correctly."""
-    # Simplified test - enterprise filtering is handled by feature flags now
-    # This test validates the feature flag system is working
-
-    # Without license key, enterprise features should not be available
-    assert not is_enterprise()
-
-    # With license key, enterprise features should be available
-    with patch.dict("os.environ", {"GLASSALPHA_LICENSE_KEY": "test-key"}):
-        assert is_enterprise()

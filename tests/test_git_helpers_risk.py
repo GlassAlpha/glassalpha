@@ -40,14 +40,17 @@ class TestGitHelpersRisk:
 
     def test_subprocess_uses_text_mode_only(self):
         """Subprocess calls must use text=True - no decode() calls allowed."""
-        from glassalpha.utils.proc import run_text
+        # The inline _run_git function in manifest.py now handles this
+        # Test that it returns strings, not bytes
+        from glassalpha.utils.manifest import ManifestGenerator
 
-        # Test with simple command that should work
-        result = run_text("echo", "test")
+        generator = ManifestGenerator()
+        git_info = generator._collect_git_info()
 
-        if result is not None:  # Command worked
-            assert isinstance(result, str), "run_text must return string, not bytes"
-            assert result == "test", "Output should be processed correctly"
+        if git_info is not None:  # Git available
+            # All fields should be strings (not bytes)
+            assert isinstance(git_info.commit_sha, str), "commit_sha must be string"
+            assert isinstance(git_info.branch, str), "branch must be string"
 
     def test_git_status_clean_vs_dirty_detection(self):
         """Status detection must accurately distinguish clean vs dirty repos."""
@@ -57,47 +60,41 @@ class TestGitHelpersRisk:
 
     def test_git_not_available_returns_none(self):
         """When git is not available, must return None gracefully."""
-        from glassalpha.utils.proc import run_text
+        # This is now tested via _collect_git_info which handles FileNotFoundError
+        import subprocess
+        from unittest.mock import patch
 
-        # Test with command that definitely doesn't exist
-        result = run_text("definitely_not_a_real_command_12345", "--version")
-        assert result is None, "Nonexistent command should return None"
+        from glassalpha.utils.manifest import ManifestGenerator
+
+        # Test that git unavailability is handled gracefully
+        generator = ManifestGenerator()
+
+        # Mock subprocess to raise FileNotFoundError
+        with patch("subprocess.run", side_effect=FileNotFoundError):
+            git_info = generator._collect_git_info()
+            assert git_info is None, "Should return None when git not available"
 
     def test_git_info_none_when_git_unavailable(self):
         """ManifestGenerator must handle git unavailability gracefully."""
+        from unittest.mock import patch
+
         from glassalpha.utils.manifest import ManifestGenerator
 
-        # Mock the run_text to simulate git not available
         generator = ManifestGenerator()
 
-        # Patch the run_text function to return None (simulating git not found)
-        original_run_text = None
-        try:
-            from glassalpha.utils import proc
-
-            original_run_text = proc.run_text
-
-            def mock_run_text(*args):
-                return None  # Simulate git command not found
-
-            proc.run_text = mock_run_text
-
+        # Mock subprocess.run to simulate git not available
+        with patch("subprocess.run", side_effect=FileNotFoundError("git not found")):
             git_info = generator._collect_git_info()
             assert git_info is None, "Should return None when git unavailable"
-
-        finally:
-            # Restore original function
-            if original_run_text:
-                proc.run_text = original_run_text
 
     def test_no_decode_calls_in_subprocess_wrappers(self):
         """Ensure no .decode() calls exist in subprocess wrappers - prevents CI failures."""
         import inspect
 
-        from glassalpha.utils import proc
+        from glassalpha.utils.manifest import ManifestGenerator
 
-        # Get source code of the proc module
-        source = inspect.getsource(proc)
+        # Get source code of the _run_git function (inline in manifest.py now)
+        source = inspect.getsource(ManifestGenerator._collect_git_info)
 
         # Check that .decode() is not used anywhere
         assert ".decode()" not in source, "subprocess wrappers must not use .decode() - use text=True instead"

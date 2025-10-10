@@ -124,18 +124,6 @@ class DecoratorFriendlyRegistry(PluginRegistry):
             return names
         return [n for n in names if not (self._meta.get(n, {}).get("enterprise", False))]
 
-    def is_enterprise(self, name: str) -> bool:
-        """Check if a plugin is enterprise-only.
-
-        Args:
-            name: Plugin name
-
-        Returns:
-            True if plugin is enterprise-only, False otherwise
-
-        """
-        return self._meta.get(name, {}).get("enterprise", False)
-
     def get_metadata(self, name: str) -> dict[str, Any]:
         """Get metadata for a plugin.
 

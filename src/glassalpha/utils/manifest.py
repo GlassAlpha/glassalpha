@@ -538,20 +538,33 @@ class ManifestGenerator:
             Git information if available, None otherwise
 
         """
-        # Contract compliance: Use centralized subprocess helper
-        from .proc import run_text  # noqa: PLC0415
+        import subprocess  # noqa: PLC0415
 
-        # Contract compliance: Collect git info with proper commands per triage
+        def _run_git(*args: str) -> str | None:
+            """Run git command and return output or None if unavailable."""
+            try:
+                result = subprocess.run(
+                    ["git", *args],
+                    capture_output=True,
+                    check=False,
+                    text=True,
+                    encoding="utf-8",
+                )
+                return (result.stdout or "").strip()
+            except (FileNotFoundError, OSError):
+                return None
+
+        # Collect git info with proper commands
         info = {
-            "commit_sha": run_text("git", "rev-parse", "HEAD"),
-            "branch": run_text("git", "rev-parse", "--abbrev-ref", "HEAD"),
-            "porcelain_status": run_text("git", "status", "--porcelain"),
-            "remote_url": run_text("git", "config", "--get", "remote.origin.url"),
-            "last_commit_message": run_text("git", "log", "-1", "--pretty=%B"),
-            "last_commit_date": run_text("git", "log", "-1", "--pretty=%ci"),
+            "commit_sha": _run_git("rev-parse", "HEAD"),
+            "branch": _run_git("rev-parse", "--abbrev-ref", "HEAD"),
+            "porcelain_status": _run_git("status", "--porcelain"),
+            "remote_url": _run_git("config", "--get", "remote.origin.url"),
+            "last_commit_message": _run_git("log", "-1", "--pretty=%B"),
+            "last_commit_date": _run_git("log", "-1", "--pretty=%ci"),
         }
 
-        # Contract compliance: Return None only if git not available (FileNotFoundError)
+        # Return None only if git not available
         if any(v is None for v in info.values()):
             return None
 

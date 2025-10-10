@@ -423,7 +423,6 @@ def _get_relevant_env_vars() -> dict[str, str]:
         "OMP_NUM_THREADS",
         "MKL_NUM_THREADS",
         "CUDA_VISIBLE_DEVICES",
-        "GLASSALPHA_LICENSE_KEY",
         "GLASSALPHA_TELEMETRY",
     ]
 

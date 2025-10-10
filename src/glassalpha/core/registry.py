@@ -222,18 +222,6 @@ class PluginRegistry:
             return names
         return [n for n in names if not (self._meta.get(n, {}).get("enterprise", False))]
 
-    def is_enterprise(self, name: str) -> bool:
-        """Check if a plugin is enterprise-only.
-
-        Args:
-            name: Plugin name
-
-        Returns:
-            True if plugin is enterprise-only, False otherwise
-
-        """
-        return self._meta.get(name, {}).get("enterprise", False)
-
     def load(self, name: str, *args, **kwargs) -> Any:
         """Load a plugin instance.
 

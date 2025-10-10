@@ -40,7 +40,7 @@ import sys
 wheel = '$WHEEL'
 with zipfile.ZipFile(wheel, 'r') as zf:
     content = zf.read('glassalpha/pipeline/audit.py').decode('utf-8')
-    if 'logger.info(f\"Initialized audit pipeline with profile: {config.audit_profile}\")' in content:
+    if 'logger.info(f\"Initialized audit pipeline with profile: {cfg_dict.get(\'audit_profile\', \'default\')}\")' in content:
         print('    ✅ Logger uses f-string (single argument)')
     else:
         print('    ❌ Logger format wrong - will fail pytest assertion')
