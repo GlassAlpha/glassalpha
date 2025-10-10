@@ -350,15 +350,13 @@ def _run_audit_pipeline(
             # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
             import os
 
-            source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
-            if source_date_epoch:
-                report_date = datetime.fromtimestamp(int(source_date_epoch), tz=UTC).strftime("%Y-%m-%d")
-                generation_date = datetime.fromtimestamp(int(source_date_epoch), tz=UTC).strftime(
-                    "%Y-%m-%d %H:%M:%S UTC",
-                )
-            else:
-                report_date = datetime.now().strftime("%Y-%m-%d")
-                generation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+            # Use deterministic timestamp for reproducibility
+            from glassalpha.utils.determinism import get_deterministic_timestamp  # noqa: PLC0415
+
+            seed = audit_results.execution_info.get("random_seed") if audit_results.execution_info else None
+            deterministic_ts = get_deterministic_timestamp(seed=seed)
+            report_date = deterministic_ts.strftime("%Y-%m-%d")
+            generation_date = deterministic_ts.strftime("%Y-%m-%d %H:%M:%S UTC")
 
             html_content = render_audit_report(
                 audit_results=audit_results,
@@ -670,6 +668,39 @@ def _binarize_sensitive_features_for_shift(
     return binarized
 
 
+def _validate_shift_specs_against_config(
+    shift_specs: list[str],
+    protected_attributes: list[str],
+) -> None:
+    """Validate shift specs reference valid protected attributes.
+
+    Raises:
+        ValueError: If any shift attribute not in protected_attributes
+
+    """
+    from ..metrics.shift import parse_shift_spec
+
+    invalid_attrs = []
+    for spec in shift_specs:
+        try:
+            attribute, _ = parse_shift_spec(spec)
+            if attribute not in protected_attributes:
+                invalid_attrs.append(attribute)
+        except ValueError as e:
+            raise ValueError(f"Invalid shift spec '{spec}': {e}") from e
+
+    if invalid_attrs:
+        available = ", ".join(protected_attributes)
+        invalid_list = ", ".join(invalid_attrs)
+        raise ValueError(
+            f"Shift analysis failed: Attributes [{invalid_list}] not found in "
+            f"protected_attributes.\n"
+            f"Available: [{available}]\n\n"
+            f"Fix: Add missing attributes to 'protected_attributes' in your config:\n"
+            + "".join(f"  protected_attributes:\n    - {attr}\n" for attr in invalid_attrs),
+        )
+
+
 def _run_shift_analysis(
     audit_config,
     output: Path,
@@ -695,6 +726,12 @@ def _run_shift_analysis(
     from ..models import load_model_from_config
 
     try:
+        # Validate shift specs BEFORE any work
+        _validate_shift_specs_against_config(
+            shift_specs,
+            audit_config.data.protected_attributes or [],
+        )
+
         # Load dataset using same loader as audit pipeline
         typer.echo("\nLoading test data...")
         data_loader = TabularDataLoader()
@@ -838,11 +875,15 @@ def _run_shift_analysis(
             return ExitCode.VALIDATION_ERROR
         return 0
 
+    except ValueError:
+        # Re-raise validation errors with our detailed error message
+        raise
     except Exception as e:
-        typer.secho(f"\n✗ Shift analysis failed: {e}", fg=typer.colors.RED)
+        # Only catch unexpected errors
+        typer.secho(f"\n✗ Unexpected error in shift analysis: {e}", fg=typer.colors.RED)
         if "--verbose" in sys.argv or "-v" in sys.argv:
             logger.exception("Detailed shift analysis failure:")
-        return ExitCode.USER_ERROR
+        return ExitCode.SYSTEM_ERROR  # Not user error
 
 
 def audit(  # pragma: no cover
@@ -1267,10 +1308,25 @@ def audit(  # pragma: no cover
                         # It's a wrapper - extract the underlying model
                         underlying_model = model_to_save.model
 
-                    # Save model with feature metadata and preprocessing info for validation
+                    # Enhanced preprocessing info for reasons/recourse compatibility
                     preprocessing_info = None
                     if hasattr(audit_results, "execution_info") and "preprocessing" in audit_results.execution_info:
                         preprocessing_info = audit_results.execution_info["preprocessing"]
+
+                    # Extract complete preprocessing metadata for reasons/recourse
+                    complete_preprocessing_info = None
+                    if preprocessing_info:
+                        complete_preprocessing_info = {
+                            "mode": preprocessing_info.get("mode", "auto"),
+                            "artifact_path": preprocessing_info.get("artifact_path")
+                            if preprocessing_info.get("mode") == "artifact"
+                            else None,
+                            "categorical_cols": preprocessing_info.get("categorical_cols", []),
+                            "numeric_cols": preprocessing_info.get("numeric_cols", []),
+                            "feature_dtypes": preprocessing_info.get("feature_dtypes", {}),
+                            "feature_names_before": preprocessing_info.get("feature_names_before", []),
+                            "feature_names_after": preprocessing_info.get("feature_names_after", []),
+                        }
 
                     model_artifact = {
                         "model": underlying_model,
@@ -1279,7 +1335,9 @@ def audit(  # pragma: no cover
                             if hasattr(audit_results, "data_info") and audit_results.data_info
                             else None
                         ),
-                        "preprocessing": preprocessing_info,
+                        "preprocessing": complete_preprocessing_info,
+                        "target_column": audit_config.data.target_column,
+                        "protected_attributes": audit_config.data.protected_attributes,
                         "glassalpha_version": "0.2.0",
                     }
 
@@ -1296,12 +1354,17 @@ def audit(  # pragma: no cover
             typer.echo("DEMOGRAPHIC SHIFT ANALYSIS (E6.5)")
             typer.echo("=" * 60)
 
-            shift_exit_code = _run_shift_analysis(
-                audit_config=audit_config,
-                output=output,
-                shift_specs=check_shift,
-                threshold=fail_on_degradation,
-            )
+            try:
+                shift_exit_code = _run_shift_analysis(
+                    audit_config=audit_config,
+                    output=output,
+                    shift_specs=check_shift,
+                    threshold=fail_on_degradation,
+                )
+            except ValueError as e:
+                # Clear validation error - show and exit immediately
+                typer.secho(f"\n{e}", fg=typer.colors.RED)
+                raise typer.Exit(ExitCode.USER_ERROR)
 
             # If shift analysis detected violations and we should fail, exit with error
             if shift_exit_code != 0:
@@ -1672,13 +1735,28 @@ def validate(  # pragma: no cover
                 else:
                     validation_warnings.append(msg + " (Will fallback to permutation explainer)")
             else:
-                # Check model/explainer compatibility
+                # Check model/explainer compatibility for available explainers
                 model_type = audit_config.model.type
                 if "treeshap" in requested_explainers and model_type not in ["xgboost", "lightgbm", "random_forest"]:
-                    validation_warnings.append(
+                    msg = (
                         f"TreeSHAP requested but model type '{model_type}' is not a tree model. "
-                        "Consider using 'coefficients' (for linear) or 'permutation' (universal).",
+                        "Consider using 'coefficients' (for linear) or 'permutation' (universal)."
                     )
+                    if strict_validation:
+                        validation_errors.append(msg)
+                    else:
+                        validation_warnings.append(msg)
+
+                # Check other explainer compatibility issues
+                if "coefficients" in requested_explainers and model_type not in [
+                    "logistic_regression",
+                    "linear_regression",
+                ]:
+                    msg = f"Coefficients explainer requested but model type '{model_type}' doesn't have coefficients."
+                    if strict_validation:
+                        validation_errors.append(msg)
+                    else:
+                        validation_warnings.append(msg)
 
         # Check dataset and validate schema if specified
         if audit_config.data.path and audit_config.data.dataset == "custom":
@@ -2045,6 +2123,7 @@ def reasons(  # pragma: no cover
                 if preprocessing_info is None:
                     return X
                 mode = preprocessing_info.get("mode", "auto")
+
                 if mode == "artifact":
                     # Load preprocessing artifact and apply it
                     artifact_path = preprocessing_info.get("artifact_path")
@@ -2056,39 +2135,163 @@ def reasons(  # pragma: no cover
                             logger.info(f"Applying preprocessing artifact from: {artifact_path}")
 
                             # Apply preprocessing (assumes target column is not in X)
+                            # Use transform, not fit_transform to match training exactly
                             X_transformed = preprocessor.transform(X)
-                            feature_names = preprocessor.get_feature_names_out()
 
-                            # Sanitize feature names for XGBoost compatibility
-                            sanitized_feature_names = [
-                                str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
-                                for name in feature_names
-                            ]
+                            # Get expected feature names from preprocessing info or artifact
+                            expected_features = preprocessing_info.get("feature_names_after")
+                            if expected_features:
+                                # Use stored feature names for consistency
+                                sanitized_feature_names = [
+                                    str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                                    for name in expected_features
+                                ]
+                            else:
+                                # Fallback: get from artifact
+                                feature_names = preprocessor.get_feature_names_out()
+                                sanitized_feature_names = [
+                                    str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                                    for name in feature_names
+                                ]
+
+                            # Validate feature count matches expectations
+                            if len(sanitized_feature_names) != X_transformed.shape[1]:
+                                raise ValueError(
+                                    f"Feature count mismatch: expected {len(sanitized_feature_names)} "
+                                    f"features but got {X_transformed.shape[1]} from preprocessing",
+                                )
 
                             # Return as DataFrame with proper column names
                             return pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
                         except Exception as e:
                             logger.exception(f"Failed to apply preprocessing artifact: {e}")
-                            logger.warning("Falling back to auto preprocessing")
-                            return _apply_auto_preprocessing(X, preprocessing_info)
+                            raise ValueError(
+                                f"Could not apply preprocessing artifact: {e}. "
+                                "Ensure the preprocessing artifact is accessible and matches the training data.",
+                            )
                     else:
-                        logger.warning("No artifact path provided, falling back to auto preprocessing")
-                        return _apply_auto_preprocessing(X, preprocessing_info)
-                return _apply_auto_preprocessing(X, preprocessing_info)
+                        raise ValueError("Artifact mode specified but no artifact_path provided in model metadata")
+                elif mode == "auto":
+                    return _apply_auto_preprocessing_from_metadata(X, preprocessing_info)
+                else:
+                    raise ValueError(f"Unknown preprocessing mode: {mode}")
 
-            def _apply_auto_preprocessing(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
-                """Apply auto preprocessing based on stored preprocessing info."""
+            def _apply_auto_preprocessing_from_metadata(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
+                """Apply auto preprocessing using stored metadata from training."""
                 from sklearn.compose import ColumnTransformer
                 from sklearn.preprocessing import OneHotEncoder
 
                 categorical_cols = preprocessing_info.get("categorical_cols", [])
                 numeric_cols = preprocessing_info.get("numeric_cols", [])
+                feature_dtypes = preprocessing_info.get("feature_dtypes", {})
+
+                logger.debug(
+                    f"Applying auto preprocessing from metadata: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns",
+                )
+
+                # Validate that expected columns exist in input data
+                missing_cols = set(categorical_cols + numeric_cols) - set(X.columns)
+                if missing_cols:
+                    raise ValueError(
+                        f"Missing columns in test data: {missing_cols}. "
+                        f"Expected columns: {sorted(categorical_cols + numeric_cols)}. "
+                        f"Actual columns: {sorted(X.columns)}. "
+                        "Ensure test data matches training data structure.",
+                    )
+
+                if not categorical_cols and not numeric_cols:
+                    return X
+
+                transformers = []
+                if categorical_cols:
+                    transformers.append(
+                        (
+                            "categorical",
+                            OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop=None),
+                            categorical_cols,
+                        ),
+                    )
+                if numeric_cols:
+                    transformers.append(("numeric", "passthrough", numeric_cols))
+
+                preprocessor = ColumnTransformer(transformers=transformers, remainder="drop")
+
+                # Use training-time preprocessing info to recreate the same transformation
+                # We need to fit on training-like data or use stored parameters
+                # For now, fit on the test data but this may not be identical to training
+                # TODO: Store and use training preprocessor parameters for perfect reproducibility
+
+                X_transformed = preprocessor.fit_transform(X)
+                feature_names = []
+
+                # Reconstruct feature names based on training metadata
+                if categorical_cols:
+                    cat_transformer = preprocessor.named_transformers_["categorical"]
+                    if hasattr(cat_transformer, "get_feature_names_out"):
+                        # Use stored feature names if available
+                        stored_cat_features = preprocessing_info.get("feature_names_after", [])
+                        if stored_cat_features:
+                            # Filter for categorical features only
+                            feature_names.extend(
+                                [
+                                    f
+                                    for f in stored_cat_features
+                                    if any(f.startswith(c + "_") for c in categorical_cols)
+                                ],
+                            )
+                        else:
+                            cat_features = cat_transformer.get_feature_names_out(categorical_cols)
+                            feature_names.extend(cat_features)
+                    else:
+                        # Fallback: reconstruct from categories
+                        for i, col in enumerate(categorical_cols):
+                            unique_vals = cat_transformer.categories_[i]
+                            feature_names.extend([f"{col}_{val}" for val in unique_vals])
+
+                if numeric_cols:
+                    feature_names.extend(numeric_cols)
+
+                # Validate feature count matches
+                if len(feature_names) != X_transformed.shape[1]:
+                    logger.warning(
+                        f"Feature count mismatch: expected {len(feature_names)} "
+                        f"but got {X_transformed.shape[1]} from preprocessing. "
+                        "Using generic feature names.",
+                    )
+                    # Fallback to generic names
+                    feature_names = [f"feature_{i}" for i in range(X_transformed.shape[1])]
+
+                sanitized_feature_names = [
+                    str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                    for name in feature_names
+                ]
+
+                return pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
+
+            def _apply_auto_preprocessing(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
+                """Apply auto preprocessing using stored metadata from training."""
+                from sklearn.compose import ColumnTransformer
+                from sklearn.preprocessing import OneHotEncoder
+
+                categorical_cols = preprocessing_info.get("categorical_cols", [])
+                numeric_cols = preprocessing_info.get("numeric_cols", [])
+                feature_dtypes = preprocessing_info.get("feature_dtypes", {})
 
                 logger.debug(
                     f"Applying auto preprocessing: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns",
                 )
 
-                if not categorical_cols:
+                # Validate that expected columns exist in input data
+                missing_cols = set(categorical_cols + numeric_cols) - set(X.columns)
+                if missing_cols:
+                    raise ValueError(
+                        f"Missing columns in test data: {missing_cols}. "
+                        f"Expected columns: {sorted(categorical_cols + numeric_cols)}. "
+                        f"Actual columns: {sorted(X.columns)}. "
+                        "Ensure test data matches training data structure.",
+                    )
+
+                if not categorical_cols and not numeric_cols:
                     return X
 
                 transformers = []
@@ -2108,30 +2311,48 @@ def reasons(  # pragma: no cover
                 try:
                     X_transformed = preprocessor.fit_transform(X)
                     feature_names = []
+
+                    # Reconstruct feature names based on training metadata
                     if categorical_cols:
                         cat_transformer = preprocessor.named_transformers_["categorical"]
                         if hasattr(cat_transformer, "get_feature_names_out"):
-                            cat_features = cat_transformer.get_feature_names_out(categorical_cols)
+                            # Use stored feature names if available
+                            stored_cat_features = preprocessing_info.get("feature_names_after", [])
+                            if stored_cat_features:
+                                # Filter for categorical features only
+                                feature_names.extend(
+                                    [
+                                        f
+                                        for f in stored_cat_features
+                                        if any(f.startswith(c + "_") for c in categorical_cols)
+                                    ],
+                                )
+                            else:
+                                cat_features = cat_transformer.get_feature_names_out(categorical_cols)
+                                feature_names.extend(cat_features)
                         else:
-                            cat_features = []
+                            # Fallback: reconstruct from categories
                             for i, col in enumerate(categorical_cols):
                                 unique_vals = cat_transformer.categories_[i]
-                                cat_features.extend([f"{col}_{val}" for val in unique_vals])
-                        feature_names.extend(cat_features)
+                                feature_names.extend([f"{col}_{val}" for val in unique_vals])
+
                     if numeric_cols:
                         feature_names.extend(numeric_cols)
 
-                    sanitized_feature_names = []
-                    for name in feature_names:
-                        sanitized = (
-                            name.replace("<", "lt")
-                            .replace(">", "gt")
-                            .replace("[", "_")
-                            .replace("]", "_")
-                            .replace(" ", "_")
+                    # Validate feature count matches
+                    if len(feature_names) != X_transformed.shape[1]:
+                        logger.warning(
+                            f"Feature count mismatch: expected {len(feature_names)} "
+                            f"but got {X_transformed.shape[1]} from preprocessing. "
+                            "Using generic feature names.",
                         )
-                        sanitized = "_".join(filter(None, sanitized.split("_")))
-                        sanitized_feature_names.append(sanitized)
+                        # Fallback to generic names
+                        feature_names = [f"feature_{i}" for i in range(X_transformed.shape[1])]
+
+                    sanitized_feature_names = [
+                        str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                        for name in feature_names
+                    ]
 
                     X_processed = pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
                     logger.info(f"Preprocessed {len(categorical_cols)} categorical columns with OneHotEncoder")
@@ -2140,15 +2361,9 @@ def reasons(  # pragma: no cover
 
                 except Exception as e:
                     logger.exception(f"Preprocessing failed: {e}")
-                    logger.warning("Falling back to simple preprocessing")
-                    X_processed = X.copy()
-                    for col in categorical_cols:
-                        if X_processed[col].dtype == "object":
-                            unique_values = X_processed[col].unique()
-                            value_map = {val: idx for idx, val in enumerate(unique_values)}
-                            X_processed[col] = X_processed[col].map(value_map)
-                            logger.debug(f"Label encoded column '{col}': {value_map}")
-                    return X_processed
+                    raise ValueError(
+                        f"Could not apply auto preprocessing: {e}. Ensure test data matches training data structure.",
+                    )
 
             df = _apply_preprocessing_from_model_artifact(df, preprocessing_info)
 
@@ -2533,6 +2748,7 @@ def recourse(  # pragma: no cover
                 if preprocessing_info is None:
                     return X
                 mode = preprocessing_info.get("mode", "auto")
+
                 if mode == "artifact":
                     # Load preprocessing artifact and apply it
                     artifact_path = preprocessing_info.get("artifact_path")
@@ -2544,39 +2760,163 @@ def recourse(  # pragma: no cover
                             logger.info(f"Applying preprocessing artifact from: {artifact_path}")
 
                             # Apply preprocessing (assumes target column is not in X)
+                            # Use transform, not fit_transform to match training exactly
                             X_transformed = preprocessor.transform(X)
-                            feature_names = preprocessor.get_feature_names_out()
 
-                            # Sanitize feature names for XGBoost compatibility
-                            sanitized_feature_names = [
-                                str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
-                                for name in feature_names
-                            ]
+                            # Get expected feature names from preprocessing info or artifact
+                            expected_features = preprocessing_info.get("feature_names_after")
+                            if expected_features:
+                                # Use stored feature names for consistency
+                                sanitized_feature_names = [
+                                    str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                                    for name in expected_features
+                                ]
+                            else:
+                                # Fallback: get from artifact
+                                feature_names = preprocessor.get_feature_names_out()
+                                sanitized_feature_names = [
+                                    str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                                    for name in feature_names
+                                ]
+
+                            # Validate feature count matches expectations
+                            if len(sanitized_feature_names) != X_transformed.shape[1]:
+                                raise ValueError(
+                                    f"Feature count mismatch: expected {len(sanitized_feature_names)} "
+                                    f"features but got {X_transformed.shape[1]} from preprocessing",
+                                )
 
                             # Return as DataFrame with proper column names
                             return pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
                         except Exception as e:
                             logger.exception(f"Failed to apply preprocessing artifact: {e}")
-                            logger.warning("Falling back to auto preprocessing")
-                            return _apply_auto_preprocessing(X, preprocessing_info)
+                            raise ValueError(
+                                f"Could not apply preprocessing artifact: {e}. "
+                                "Ensure the preprocessing artifact is accessible and matches the training data.",
+                            )
                     else:
-                        logger.warning("No artifact path provided, falling back to auto preprocessing")
-                        return _apply_auto_preprocessing(X, preprocessing_info)
-                return _apply_auto_preprocessing(X, preprocessing_info)
+                        raise ValueError("Artifact mode specified but no artifact_path provided in model metadata")
+                elif mode == "auto":
+                    return _apply_auto_preprocessing_from_metadata(X, preprocessing_info)
+                else:
+                    raise ValueError(f"Unknown preprocessing mode: {mode}")
 
-            def _apply_auto_preprocessing(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
-                """Apply auto preprocessing based on stored preprocessing info."""
+            def _apply_auto_preprocessing_from_metadata(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
+                """Apply auto preprocessing using stored metadata from training."""
                 from sklearn.compose import ColumnTransformer
                 from sklearn.preprocessing import OneHotEncoder
 
                 categorical_cols = preprocessing_info.get("categorical_cols", [])
                 numeric_cols = preprocessing_info.get("numeric_cols", [])
+                feature_dtypes = preprocessing_info.get("feature_dtypes", {})
+
+                logger.debug(
+                    f"Applying auto preprocessing from metadata: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns",
+                )
+
+                # Validate that expected columns exist in input data
+                missing_cols = set(categorical_cols + numeric_cols) - set(X.columns)
+                if missing_cols:
+                    raise ValueError(
+                        f"Missing columns in test data: {missing_cols}. "
+                        f"Expected columns: {sorted(categorical_cols + numeric_cols)}. "
+                        f"Actual columns: {sorted(X.columns)}. "
+                        "Ensure test data matches training data structure.",
+                    )
+
+                if not categorical_cols and not numeric_cols:
+                    return X
+
+                transformers = []
+                if categorical_cols:
+                    transformers.append(
+                        (
+                            "categorical",
+                            OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop=None),
+                            categorical_cols,
+                        ),
+                    )
+                if numeric_cols:
+                    transformers.append(("numeric", "passthrough", numeric_cols))
+
+                preprocessor = ColumnTransformer(transformers=transformers, remainder="drop")
+
+                # Use training-time preprocessing info to recreate the same transformation
+                # We need to fit on training-like data or use stored parameters
+                # For now, fit on the test data but this may not be identical to training
+                # TODO: Store and use training preprocessor parameters for perfect reproducibility
+
+                X_transformed = preprocessor.fit_transform(X)
+                feature_names = []
+
+                # Reconstruct feature names based on training metadata
+                if categorical_cols:
+                    cat_transformer = preprocessor.named_transformers_["categorical"]
+                    if hasattr(cat_transformer, "get_feature_names_out"):
+                        # Use stored feature names if available
+                        stored_cat_features = preprocessing_info.get("feature_names_after", [])
+                        if stored_cat_features:
+                            # Filter for categorical features only
+                            feature_names.extend(
+                                [
+                                    f
+                                    for f in stored_cat_features
+                                    if any(f.startswith(c + "_") for c in categorical_cols)
+                                ],
+                            )
+                        else:
+                            cat_features = cat_transformer.get_feature_names_out(categorical_cols)
+                            feature_names.extend(cat_features)
+                    else:
+                        # Fallback: reconstruct from categories
+                        for i, col in enumerate(categorical_cols):
+                            unique_vals = cat_transformer.categories_[i]
+                            feature_names.extend([f"{col}_{val}" for val in unique_vals])
+
+                if numeric_cols:
+                    feature_names.extend(numeric_cols)
+
+                # Validate feature count matches
+                if len(feature_names) != X_transformed.shape[1]:
+                    logger.warning(
+                        f"Feature count mismatch: expected {len(feature_names)} "
+                        f"but got {X_transformed.shape[1]} from preprocessing. "
+                        "Using generic feature names.",
+                    )
+                    # Fallback to generic names
+                    feature_names = [f"feature_{i}" for i in range(X_transformed.shape[1])]
+
+                sanitized_feature_names = [
+                    str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                    for name in feature_names
+                ]
+
+                return pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
+
+            def _apply_auto_preprocessing(X: "pd.DataFrame", preprocessing_info: dict) -> "pd.DataFrame":
+                """Apply auto preprocessing using stored metadata from training."""
+                from sklearn.compose import ColumnTransformer
+                from sklearn.preprocessing import OneHotEncoder
+
+                categorical_cols = preprocessing_info.get("categorical_cols", [])
+                numeric_cols = preprocessing_info.get("numeric_cols", [])
+                feature_dtypes = preprocessing_info.get("feature_dtypes", {})
 
                 logger.debug(
                     f"Applying auto preprocessing: {len(categorical_cols)} categorical, {len(numeric_cols)} numeric columns",
                 )
 
-                if not categorical_cols:
+                # Validate that expected columns exist in input data
+                missing_cols = set(categorical_cols + numeric_cols) - set(X.columns)
+                if missing_cols:
+                    raise ValueError(
+                        f"Missing columns in test data: {missing_cols}. "
+                        f"Expected columns: {sorted(categorical_cols + numeric_cols)}. "
+                        f"Actual columns: {sorted(X.columns)}. "
+                        "Ensure test data matches training data structure.",
+                    )
+
+                if not categorical_cols and not numeric_cols:
                     return X
 
                 transformers = []
@@ -2596,30 +2936,48 @@ def recourse(  # pragma: no cover
                 try:
                     X_transformed = preprocessor.fit_transform(X)
                     feature_names = []
+
+                    # Reconstruct feature names based on training metadata
                     if categorical_cols:
                         cat_transformer = preprocessor.named_transformers_["categorical"]
                         if hasattr(cat_transformer, "get_feature_names_out"):
-                            cat_features = cat_transformer.get_feature_names_out(categorical_cols)
+                            # Use stored feature names if available
+                            stored_cat_features = preprocessing_info.get("feature_names_after", [])
+                            if stored_cat_features:
+                                # Filter for categorical features only
+                                feature_names.extend(
+                                    [
+                                        f
+                                        for f in stored_cat_features
+                                        if any(f.startswith(c + "_") for c in categorical_cols)
+                                    ],
+                                )
+                            else:
+                                cat_features = cat_transformer.get_feature_names_out(categorical_cols)
+                                feature_names.extend(cat_features)
                         else:
-                            cat_features = []
+                            # Fallback: reconstruct from categories
                             for i, col in enumerate(categorical_cols):
                                 unique_vals = cat_transformer.categories_[i]
-                                cat_features.extend([f"{col}_{val}" for val in unique_vals])
-                        feature_names.extend(cat_features)
+                                feature_names.extend([f"{col}_{val}" for val in unique_vals])
+
                     if numeric_cols:
                         feature_names.extend(numeric_cols)
 
-                    sanitized_feature_names = []
-                    for name in feature_names:
-                        sanitized = (
-                            name.replace("<", "lt")
-                            .replace(">", "gt")
-                            .replace("[", "_")
-                            .replace("]", "_")
-                            .replace(" ", "_")
+                    # Validate feature count matches
+                    if len(feature_names) != X_transformed.shape[1]:
+                        logger.warning(
+                            f"Feature count mismatch: expected {len(feature_names)} "
+                            f"but got {X_transformed.shape[1]} from preprocessing. "
+                            "Using generic feature names.",
                         )
-                        sanitized = "_".join(filter(None, sanitized.split("_")))
-                        sanitized_feature_names.append(sanitized)
+                        # Fallback to generic names
+                        feature_names = [f"feature_{i}" for i in range(X_transformed.shape[1])]
+
+                    sanitized_feature_names = [
+                        str(name).replace("[", "(").replace("]", ")").replace("<", "lt").replace(">", "gt")
+                        for name in feature_names
+                    ]
 
                     X_processed = pd.DataFrame(X_transformed, columns=sanitized_feature_names, index=X.index)
                     logger.info(f"Preprocessed {len(categorical_cols)} categorical columns with OneHotEncoder")
@@ -2628,15 +2986,9 @@ def recourse(  # pragma: no cover
 
                 except Exception as e:
                     logger.exception(f"Preprocessing failed: {e}")
-                    logger.warning("Falling back to simple preprocessing")
-                    X_processed = X.copy()
-                    for col in categorical_cols:
-                        if X_processed[col].dtype == "object":
-                            unique_values = X_processed[col].unique()
-                            value_map = {val: idx for idx, val in enumerate(unique_values)}
-                            X_processed[col] = X_processed[col].map(value_map)
-                            logger.debug(f"Label encoded column '{col}': {value_map}")
-                    return X_processed
+                    raise ValueError(
+                        f"Could not apply auto preprocessing: {e}. Ensure test data matches training data structure.",
+                    )
 
             df = _apply_preprocessing_from_model_artifact(df, preprocessing_info)
 

@@ -199,7 +199,10 @@ def validate_config(config: dict[str, Any] | AuditConfig) -> AuditConfig:
 
 
 def load_config(
-    config_dict: dict[str, Any], profile_name: str | None = None, strict: bool = False, strict_full: bool = False
+    config_dict: dict[str, Any],
+    profile_name: str | None = None,
+    strict: bool = False,
+    strict_full: bool = False,
 ) -> AuditConfig:
     """Load configuration from dictionary.
 
@@ -241,15 +244,21 @@ def load_config(
         if audit_config.data.dataset in known_target_columns:
             audit_config.data.target_column = known_target_columns[audit_config.data.dataset]
             logger.info(
-                f"Auto-detected target column '{audit_config.data.target_column}' for built-in dataset '{audit_config.data.dataset}'"
+                f"Auto-detected target column '{audit_config.data.target_column}' for built-in dataset '{audit_config.data.dataset}'",
             )
 
     # Apply strict mode validation if enabled
     if audit_config.strict_mode or strict or strict_full:
         from .strict import validate_strict_mode  # noqa: PLC0415
 
-        # Determine quick mode: use if built-in dataset specified AND not in full strict mode
-        quick_mode = bool(audit_config.data.dataset and audit_config.data.dataset != "custom" and not strict_full)
+        # Determine quick mode: use if built-in dataset specified AND not in full strict mode AND not explicitly disabled
+        # The CLI strict flag should override the automatic quick mode behavior
+        quick_mode = bool(
+            audit_config.data.dataset
+            and audit_config.data.dataset != "custom"
+            and not strict_full
+            and strict is not False,  # Explicit False means don't use quick mode
+        )
         validate_strict_mode(audit_config, quick_mode=quick_mode)
 
     logger.info("Configuration validated successfully")

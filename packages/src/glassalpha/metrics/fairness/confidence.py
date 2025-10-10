@@ -11,6 +11,7 @@ Key features:
 """
 
 import logging
+import signal
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -19,6 +20,15 @@ import numpy as np
 from scipy import stats
 
 logger = logging.getLogger(__name__)
+
+
+class BootstrapTimeout(Exception):
+    """Raised when bootstrap computation exceeds timeout."""
+
+
+def _timeout_handler(signum, frame):
+    """Signal handler for bootstrap timeout."""
+    raise BootstrapTimeout("Bootstrap computation exceeded 30s timeout")
 
 
 @dataclass
@@ -104,37 +114,57 @@ def compute_bootstrap_ci(
     n_samples = len(y_true)
     bootstrap_estimates = []
 
-    # Add progress bar for bootstrap iterations (respects strict mode and env vars)
-    with get_progress_bar(
-        total=n_bootstrap,
-        desc="Bootstrap fairness CIs",
-        leave=False,
-        disable=n_bootstrap < 100,
-    ) as pbar:
-        for _ in range(n_bootstrap):
-            # Stratified sampling preserves class proportions
-            if stratify:
-                # Sample indices maintaining class balance
-                indices = _stratified_resample(y_true, rng)
-            else:
-                # Simple random resample with replacement
-                indices = rng.choice(n_samples, size=n_samples, replace=True)
+    # Set 30-second timeout for bootstrap
+    old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+    signal.alarm(30)
 
-            # Resample data
-            y_true_boot = y_true[indices]
-            y_pred_boot = y_pred[indices]
-            sensitive_boot = sensitive[indices]
+    try:
+        # Add progress bar for bootstrap iterations (respects strict mode and env vars)
+        with get_progress_bar(
+            total=n_bootstrap,
+            desc="Bootstrap fairness CIs",
+            leave=False,
+            disable=n_bootstrap < 100,
+        ) as pbar:
+            for i in range(n_bootstrap):
+                # Stratified sampling preserves class proportions
+                if stratify:
+                    # Sample indices maintaining class balance
+                    indices = _stratified_resample(y_true, rng)
+                else:
+                    # Simple random resample with replacement
+                    indices = rng.choice(n_samples, size=n_samples, replace=True)
 
-            # Compute metric on bootstrap sample
-            try:
-                boot_estimate = metric_fn(y_true_boot, y_pred_boot, sensitive_boot)
-                if not np.isnan(boot_estimate):
-                    bootstrap_estimates.append(boot_estimate)
-            except Exception as e:
-                logger.debug(f"Bootstrap iteration failed: {e}")
-                continue
+                # Resample data
+                y_true_boot = y_true[indices]
+                y_pred_boot = y_pred[indices]
+                sensitive_boot = sensitive[indices]
 
-            pbar.update(1)
+                # Compute metric on bootstrap sample
+                try:
+                    boot_estimate = metric_fn(y_true_boot, y_pred_boot, sensitive_boot)
+                    if not np.isnan(boot_estimate):
+                        bootstrap_estimates.append(boot_estimate)
+                except Exception as e:
+                    logger.debug(f"Bootstrap iteration {i} failed: {e}")
+                    continue
+
+                pbar.update(1)
+
+    except BootstrapTimeout:
+        logger.warning("Bootstrap CI computation timed out after 30s, returning point estimates only")
+        return BootstrapCI(
+            point_estimate=float(point_estimate),
+            lower=np.nan,
+            upper=np.nan,
+            std_error=np.nan,
+            confidence_level=confidence_level,
+            n_bootstrap=len(bootstrap_estimates),
+            method=method,
+        )
+    finally:
+        signal.alarm(0)  # Cancel alarm
+        signal.signal(signal.SIGALRM, old_handler)  # Restore old handler
 
     if len(bootstrap_estimates) == 0:
         logger.warning("All bootstrap iterations failed")

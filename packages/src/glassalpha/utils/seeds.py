@@ -62,8 +62,12 @@ class SeedManager:
         """
         if component not in self.component_seeds:
             # Generate deterministic component seed from master seed and component name
-            component_hash = hash(component + str(self.master_seed)) % (2**31)
-            self.component_seeds[component] = abs(component_hash)
+            # Use hashlib for deterministic hashing (Python's hash() is randomized per process)
+            import hashlib
+
+            seed_string = f"{component}:{self.master_seed}"
+            component_hash = int(hashlib.sha256(seed_string.encode()).hexdigest()[:8], 16) % (2**31)
+            self.component_seeds[component] = component_hash
             logger.debug(f"Generated seed for '{component}': {self.component_seeds[component]}")
 
         return self.component_seeds[component]

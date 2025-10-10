@@ -273,7 +273,10 @@ class AuditReportRenderer:
         # Determine generation date (fixed when SOURCE_DATE_EPOCH is set)
         from glassalpha.utils.determinism import get_deterministic_timestamp
 
-        generation_timestamp = get_deterministic_timestamp()
+        # Get seed from audit results for deterministic timestamp
+        seed = audit_results.execution_info.get("random_seed") if audit_results.execution_info else None
+
+        generation_timestamp = get_deterministic_timestamp(seed=seed)
         generation_date = generation_timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
 
         # Add basic audit information

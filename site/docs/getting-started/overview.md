@@ -93,7 +93,7 @@ GlassAlpha capabilities and where to learn more:
 
 - **Single command** - `glassalpha audit` handles everything
 - **YAML configuration** - Policy-as-code for compliance requirements
-- **Fast execution** - Under 60 seconds from model to PDF
+- **Fast execution** - 2-3 seconds for demo mode, 5-60 seconds for full audits
 - **Clear errors** - Actionable messages with fix suggestions
 
 [See configuration guide →](configuration.md)

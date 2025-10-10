@@ -219,14 +219,15 @@ class AuditManifest(BaseModel):
 class ManifestGenerator:
     """Generator for comprehensive audit manifests."""
 
-    def __init__(self, audit_id: str | None = None) -> None:
+    def __init__(self, audit_id: str | None = None, seed: int | None = None) -> None:
         """Initialize manifest generator.
 
         Args:
             audit_id: Unique audit identifier (auto-generated if None)
+            seed: Random seed for deterministic audit ID generation
 
         """
-        self.audit_id = audit_id or self._generate_audit_id()
+        self.audit_id = audit_id or self._generate_audit_id(seed=seed)
 
         # Direct attributes for test compatibility
         self.status: str = "initialized"
@@ -241,16 +242,12 @@ class ManifestGenerator:
         self.datasets: dict[str, Any] = {}
         self.result_hashes: dict[str, str] = {}
 
-        # Determine creation time (fixed when SOURCE_DATE_EPOCH is set)
-        source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
-        if source_date_epoch:
-            creation_time = datetime.fromtimestamp(int(source_date_epoch), tz=UTC)
-            created_at = creation_time.isoformat()
-            self.start_time = creation_time  # Use deterministic time for start_time too
-        else:
-            creation_time = datetime.now(UTC)
-            created_at = creation_time.isoformat()
-            self.start_time = creation_time
+        # Determine creation time (use deterministic timestamp for reproducibility)
+        from glassalpha.utils.determinism import get_deterministic_timestamp
+
+        creation_time = get_deterministic_timestamp(seed=seed)
+        created_at = creation_time.isoformat()
+        self.start_time = creation_time  # Use deterministic time for start_time too
 
         # Initialize empty manifest (don't collect platform/git on init to avoid crashes)
         self.manifest = AuditManifest(
@@ -471,32 +468,38 @@ class ManifestGenerator:
 
         return self.manifest
 
-    def _generate_audit_id(self) -> str:
+    def _generate_audit_id(self, seed: int | None = None) -> str:
         """Generate unique audit ID.
 
-        When SOURCE_DATE_EPOCH is set, generates a deterministic audit ID
-        based on the fixed timestamp for reproducibility.
+        When SOURCE_DATE_EPOCH is set or a seed is provided, generates a deterministic
+        audit ID based on the fixed timestamp for reproducibility.
+
+        Args:
+            seed: Random seed for deterministic timestamp generation
 
         Returns:
             Unique audit ID string
 
         """
-        # Check if we're using SOURCE_DATE_EPOCH for determinism
-        source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
+        from glassalpha.utils.determinism import get_deterministic_timestamp
 
-        if source_date_epoch:
-            # Use fixed timestamp from SOURCE_DATE_EPOCH for determinism
-            dt = datetime.fromtimestamp(int(source_date_epoch), tz=UTC)
-            timestamp = dt.strftime("%Y%m%d_%H%M%S")
-            hash_input = f"deterministic_{source_date_epoch}"
-            audit_hash = hash_object(hash_input)[:8]
-            return f"audit_{timestamp}_{audit_hash}"
+        # Use deterministic timestamp (respects SOURCE_DATE_EPOCH and seed)
+        dt = get_deterministic_timestamp(seed=seed)
+        timestamp = dt.strftime("%Y%m%d_%H%M%S")
 
-        # Normal mode: use actual timestamp
-        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-        hash_input = f"{timestamp}_{platform.node()}_{os.getpid()}"
+        # For audit hash, use deterministic hash if we have a seed
+        if seed is not None:
+            hash_input = f"deterministic_{seed}_{timestamp}"
+        else:
+            # Check if SOURCE_DATE_EPOCH is set
+            source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
+            if source_date_epoch:
+                hash_input = f"deterministic_{source_date_epoch}"
+            else:
+                # Only in non-deterministic mode include process-specific info
+                hash_input = f"{timestamp}_{platform.node()}_{os.getpid()}"
+
         audit_hash = hash_object(hash_input)[:8]
-
         return f"audit_{timestamp}_{audit_hash}"
 
     def _collect_environment_info(self) -> EnvironmentInfo:
@@ -567,17 +570,18 @@ class ManifestGenerator:
         )
 
 
-def create_manifest(audit_id: str | None = None) -> ManifestGenerator:
+def create_manifest(audit_id: str | None = None, seed: int | None = None) -> ManifestGenerator:
     """Create a new audit manifest generator.
 
     Args:
         audit_id: Optional audit ID (auto-generated if None)
+        seed: Random seed for deterministic audit ID generation
 
     Returns:
         Manifest generator instance
 
     """
-    return ManifestGenerator(audit_id)
+    return ManifestGenerator(audit_id, seed=seed)
 
 
 def load_manifest(path: Path) -> AuditManifest:

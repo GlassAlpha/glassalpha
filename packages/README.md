@@ -59,18 +59,7 @@ cd glassalpha/packages
 pip install -e ".[dev,all]"
 ```
 
-### Docker
-
-```bash
-# Pull image
-docker pull glassalpha/glassalpha:latest
-
-# Run audit (use --fast for quick demos)
-docker run -v $(pwd):/data glassalpha/glassalpha audit --config /data/config.yaml --output /data/report.html --fast
-
-# Interactive shell
-docker run -it glassalpha/glassalpha bash
-```
+**Note**: Docker support is planned for a future release. For containerized environments, please use the development installation method above for now.
 
 ## Quick Start
 

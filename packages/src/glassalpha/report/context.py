@@ -91,6 +91,11 @@ def normalize_audit_context(audit_results: Any, *, compact: bool = False) -> dic
             else audit_results.fairness_analysis
         )
 
+        # Normalize fairness analysis metrics for template compatibility
+        # (similar to model_performance normalization)
+        if isinstance(fairness_analysis_copy, dict):
+            fairness_analysis_copy = normalize_metrics(fairness_analysis_copy)
+
         # COMPACT MODE FIX: Remove large nested structures from fairness_analysis
         # before passing to template (prevents template loop from dumping full dict)
         if compact and isinstance(fairness_analysis_copy, dict):

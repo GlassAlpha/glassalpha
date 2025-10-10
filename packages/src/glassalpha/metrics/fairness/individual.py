@@ -199,13 +199,15 @@ def compute_consistency_score(
     X_df = features[feature_cols]
 
     # Convert to numeric, handling categorical columns
-    X_numeric = pd.DataFrame()
+    numeric_cols = {}
     for col in X_df.columns:
         if pd.api.types.is_numeric_dtype(X_df[col]):
-            X_numeric[col] = X_df[col]
+            numeric_cols[col] = X_df[col]
         else:
             # Convert categorical/object to numeric codes
-            X_numeric[col] = pd.Categorical(X_df[col]).codes
+            numeric_cols[col] = pd.Categorical(X_df[col]).codes
+
+    X_numeric = pd.DataFrame(numeric_cols, index=X_df.index)
 
     X = X_numeric.values
     n_samples = len(X)
@@ -367,13 +369,15 @@ def find_matched_pairs(
         np.random.seed(seed)
 
     # Convert features to numeric if needed
-    X_numeric = pd.DataFrame()
+    numeric_cols = {}
     for col in features.columns:
         if pd.api.types.is_numeric_dtype(features[col]):
-            X_numeric[col] = features[col]
+            numeric_cols[col] = features[col]
         else:
             # Convert categorical/object to numeric codes
-            X_numeric[col] = pd.Categorical(features[col]).codes
+            numeric_cols[col] = pd.Categorical(features[col]).codes
+
+    X_numeric = pd.DataFrame(numeric_cols, index=features.index)
 
     X = X_numeric.values
     n_samples = len(X)

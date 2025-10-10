@@ -304,9 +304,9 @@ class AuditResult:
 
         # Check for existing file
         if output_path.exists() and not overwrite:
-            from ..exceptions import GlassAlphaError
+            from ..exceptions import FileExistsError as GAFileExistsError
 
-            raise GlassAlphaError(f"File already exists: {output_path}. Use overwrite=True to replace.")
+            raise GAFileExistsError(path=str(output_path))
 
         # Generate HTML content using existing _repr_html_ method
         html_content = self._repr_html_()
@@ -316,20 +316,111 @@ class AuditResult:
 
         return output_path
 
-    def to_pdf(self, path: str | Path, *, overwrite: bool = False) -> None:
+    def to_pdf(self, path: str | Path, *, overwrite: bool = False) -> Path:
         """Export to PDF with atomic write.
 
         Args:
             path: Output path for PDF file
             overwrite: If True, overwrite existing file
 
+        Returns:
+            Path to generated PDF file
+
         Raises:
             GlassAlphaError: If file exists and overwrite=False
+            ImportError: If PDF dependencies not installed (pip install glassalpha[pdf])
+
+        Example:
+            >>> result = ga.audit.from_model(model, X, y)
+            >>> result.to_pdf("audit.pdf")
 
         """
-        # Phase 3: Will implement with full export logic
-        msg = "to_pdf() will be implemented in Phase 3"
-        raise NotImplementedError(msg)
+        from pathlib import Path
+
+        output_path = Path(path)
+
+        # Check for existing file
+        if output_path.exists() and not overwrite:
+            from ..exceptions import FileExistsError as GAFileExistsError
+
+            raise GAFileExistsError(path=str(output_path))
+
+        # Convert AuditResult to AuditResults format for PDF renderer
+        from ..pipeline.audit import AuditResults
+
+        # Create AuditResults instance from AuditResult data
+        audit_results = AuditResults(
+            model_performance=dict(self.performance),
+            fairness_analysis=dict(self.fairness),
+            drift_analysis={},  # Not in AuditResult
+            stability_analysis=dict(self.stability),
+            explanations=dict(self.explanations) if self.explanations else {},
+            data_summary={
+                "n_samples": self.manifest.get("n_samples", 0),
+                "n_features": self.manifest.get("n_features", 0),
+            },
+            schema_info={},
+            model_info={
+                "model_type": self.manifest.get("model_type", "unknown"),
+                "fingerprint": self.manifest.get("model_fingerprint", "unknown"),
+            },
+            selected_components={},
+            trained_model=None,
+            execution_info={"provenance_manifest": dict(self.manifest)},
+            manifest=dict(self.manifest),
+            success=True,
+            error_message=None,
+        )
+
+        # Import PDF renderer
+        try:
+            from ..report import PDFConfig, render_audit_pdf
+        except ImportError:
+            raise ImportError(
+                "PDF generation requires additional dependencies.\n"
+                "Install with: pip install 'glassalpha[pdf]'\n"
+                "Or use HTML output: result.to_html('audit.html')",
+            ) from None
+
+        # Create PDF configuration
+        pdf_config = PDFConfig(
+            page_size="A4",
+            title="ML Model Audit Report",
+            author="GlassAlpha",
+            subject="Machine Learning Model Compliance Assessment",
+            optimize_size=True,
+        )
+
+        # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
+        import os
+        from datetime import UTC, datetime
+
+        source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
+        if source_date_epoch:
+            report_date = datetime.fromtimestamp(int(source_date_epoch), tz=UTC).strftime("%Y-%m-%d")
+            generation_date = datetime.fromtimestamp(int(source_date_epoch), tz=UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+        else:
+            report_date = datetime.now().strftime("%Y-%m-%d")
+            generation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        # Generate PDF
+        pdf_path = render_audit_pdf(
+            audit_results=audit_results,
+            output_path=output_path,
+            config=pdf_config,
+            report_title=f"ML Model Audit Report - {report_date}",
+            generation_date=generation_date,
+        )
+
+        # Generate manifest sidecar
+        from ..provenance import write_manifest_sidecar
+
+        try:
+            write_manifest_sidecar(dict(self.manifest), output_path)
+        except Exception:
+            pass  # Non-critical
+
+        return pdf_path
 
     def to_config(self) -> dict[str, Any]:
         """Generate config dict for reproduction.
@@ -374,11 +465,12 @@ class AuditResult:
 
         Raises:
             GlassAlphaError: If file exists and overwrite=False
+            ImportError: If PDF format requested but dependencies not installed
 
         Example:
             >>> result = ga.audit.from_model(model, X, y)
             >>> result.save("audit.html")  # HTML format
-            >>> result.save("audit.pdf")   # PDF format (when implemented)
+            >>> result.save("audit.pdf")   # PDF format
 
         """
         from pathlib import Path
@@ -386,8 +478,7 @@ class AuditResult:
         path = Path(path)
 
         if path.suffix.lower() == ".pdf":
-            # PDF not implemented yet
-            raise NotImplementedError("PDF export will be implemented in Phase 3")
+            return self.to_pdf(path, overwrite=overwrite)
         if path.suffix.lower() in [".html", ".htm"]:
             return self.to_html(path, overwrite=overwrite)
         raise ValueError(f"Unknown format: {path.suffix}. Use .pdf or .html extension")

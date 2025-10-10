@@ -32,11 +32,16 @@ from glassalpha.utils.seeds import set_global_seed
 logger = logging.getLogger(__name__)
 
 
-def get_deterministic_timestamp() -> datetime:
+def get_deterministic_timestamp(seed: int | None = None) -> datetime:
     """Get a deterministic timestamp for reproducible builds.
 
-    Uses SOURCE_DATE_EPOCH environment variable if set, otherwise uses current time.
-    This ensures byte-identical outputs across different execution times.
+    Priority:
+    1. SOURCE_DATE_EPOCH env var (CI/Docker builds)
+    2. Seed-derived timestamp (local reproducibility)
+    3. Current time (development only)
+
+    Args:
+        seed: Optional seed for deterministic timestamp generation
 
     Returns:
         datetime object (UTC) for use in manifests and metadata
@@ -46,15 +51,31 @@ def get_deterministic_timestamp() -> datetime:
         >>> get_deterministic_timestamp()
         datetime.datetime(2020, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
 
+        >>> get_deterministic_timestamp(seed=42)
+        datetime.datetime(2020, 1, 1, 0, 0, 42, tzinfo=datetime.timezone.utc)
+
     """
+    # Priority 1: SOURCE_DATE_EPOCH (explicit override)
     source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
     if source_date_epoch:
         try:
             timestamp = int(source_date_epoch)
             return datetime.fromtimestamp(timestamp, tz=UTC)
         except (ValueError, OSError) as e:
-            logger.warning(f"Invalid SOURCE_DATE_EPOCH '{source_date_epoch}': {e}. Using current time.")
+            logger.warning(f"Invalid SOURCE_DATE_EPOCH '{source_date_epoch}': {e}")
 
+    # Priority 2: Seed-based deterministic timestamp
+    if seed is not None:
+        # Use seed to generate deterministic timestamp
+        # Base: 2020-01-01 00:00:00 UTC (epoch)
+        base_timestamp = 1577836800  # 2020-01-01 00:00:00 UTC
+        # Add seed modulo seconds in a year for variation
+        offset = seed % (365 * 24 * 60 * 60)
+        deterministic_timestamp = base_timestamp + offset
+        return datetime.fromtimestamp(deterministic_timestamp, tz=UTC)
+
+    # Priority 3: Current time (development mode)
+    logger.debug("Using current time (non-deterministic). Set seed or SOURCE_DATE_EPOCH for reproducibility.")
     return datetime.now(UTC)
 
 

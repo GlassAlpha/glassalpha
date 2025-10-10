@@ -38,7 +38,7 @@ def test_standard_template_packaged() -> None:
     from importlib.resources import files  # noqa: PLC0415
 
     p = files("glassalpha.report.templates").joinpath("standard_audit.html")
-    assert p.is_file(), f"Missing template in installed package: {p}"  # noqa: S101
+    assert p.is_file(), f"Missing template in installed package: {p}"
 
 
 @pytest.mark.skipif(
@@ -56,7 +56,7 @@ def test_lr_roundtrip(tmp_path: Path) -> None:
 
     from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
 
-    X = pd.DataFrame({"a": [0, 1, 0, 1], "b": [1, 0, 1, 0]})  # noqa: N806
+    X = pd.DataFrame({"a": [0, 1, 0, 1], "b": [1, 0, 1, 0]})
     y = [0, 1, 0, 1]
 
     w = LogisticRegressionWrapper()
@@ -68,12 +68,12 @@ def test_lr_roundtrip(tmp_path: Path) -> None:
 
     # Load into new wrapper
     w2 = LogisticRegressionWrapper().load(path)
-    assert w2.model is not None, "Model should not be None after load()"  # noqa: S101
+    assert w2.model is not None, "Model should not be None after load()"
 
     # Renamed columns must still predict (tests _prepare_X robustness)
-    X_renamed = X.rename(columns={"a": "A", "b": "B"})  # noqa: N806
+    X_renamed = X.rename(columns={"a": "A", "b": "B"})
     predictions = w2.predict(X_renamed)
-    assert len(predictions) == len(X), "Should predict on renamed columns"  # noqa: S101
+    assert len(predictions) == len(X), "Should predict on renamed columns"
 
 
 @pytest.mark.skipif(
@@ -91,8 +91,8 @@ def test_manifest_tracks_model() -> None:
     m = ManifestGenerator()
     m.add_component("model", "lightgbm")
 
-    assert "model" in m.manifest.selected_components  # noqa: S101
-    assert m.manifest.selected_components["model"] == {  # noqa: S101
+    assert "model" in m.manifest.selected_components
+    assert m.manifest.selected_components["model"] == {
         "name": "lightgbm",
         "type": "model",
     }, "Manifest component format must match E2E test expectations"
@@ -121,20 +121,20 @@ def test_wheel_contains_all_contracts() -> None:
         files = zf.namelist()
 
         # Contract 1: Template packaged
-        assert "glassalpha/report/templates/standard_audit.html" in files, "Template not packaged in wheel"  # noqa: S101
+        assert "glassalpha/report/templates/standard_audit.html" in files, "Template not packaged in wheel"
 
         # Contract 2: Logger format
         audit_source = zf.read("glassalpha/pipeline/audit.py").decode("utf-8")
-        assert 'logger.info(f"Initialized audit pipeline with profile: {config.audit_profile}")' in audit_source, (  # noqa: S101
+        assert 'logger.info(f"Initialized audit pipeline with profile:' in audit_source, (
             "Logger not using f-string format"
         )
 
         # Contract 3: Training logic
-        assert 'if getattr(self.model, "model", None) is None:' in audit_source, "Simplified training logic missing"  # noqa: S101
-        assert "self.model.fit(X_processed, y_true" in audit_source, "Model fit call missing"  # noqa: S101
+        assert 'if getattr(self.model, "model", None) is None:' in audit_source, "Simplified training logic missing"
+        assert "self.model.fit(X_processed, y_true" in audit_source, "Model fit call missing"
 
         # Contract 4: Save/load symmetry
         sklearn_source = zf.read("glassalpha/models/tabular/sklearn.py").decode("utf-8")
-        assert "return self" in sklearn_source, "Load method doesn't return self"  # noqa: S101
-        assert "self._is_fitted = True" in sklearn_source, "Load doesn't set _is_fitted"  # noqa: S101
-        assert '"n_classes": len(getattr(self.model, "classes_"' in sklearn_source, "Save doesn't include n_classes"  # noqa: S101
+        assert "return self" in sklearn_source, "Load method doesn't return self"
+        assert "self._is_fitted = True" in sklearn_source, "Load doesn't set _is_fitted"
+        assert '"n_classes": len(getattr(self.model, "classes_"' in sklearn_source, "Save doesn't include n_classes"

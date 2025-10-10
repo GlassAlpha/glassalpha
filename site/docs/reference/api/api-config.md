@@ -27,7 +27,7 @@ config = ga.config.AuditConfig(
 ga.config.validate(config)
 
 # Run audit with config
-result = ga.audit.run(config)
+result = ga.audit.from_config(config)
 ```
 
 ---
@@ -171,7 +171,7 @@ config = ga.config.AuditConfig(
 )
 
 config.validate(strict=True)
-result = ga.audit.run(config)
+result = ga.audit.from_config(config)
 ```
 
 ---
@@ -566,7 +566,7 @@ config.validate(strict=True)
 config.to_yaml("audit_config_2025-q1.yaml")
 
 # Run audit
-result = ga.audit.run(config)
+result = ga.audit.from_config(config)
 
 # Check policy gates
 if result.policy_decision.failed():
@@ -575,8 +575,8 @@ if result.policy_decision.failed():
         print(f"  {gate}: {value}")
     exit(1)
 
-# Export evidence pack
-result.export_evidence_pack("evidence_pack_2025-q1.zip")
+# Export evidence pack (coming in v0.3.0)
+# result.export_evidence_pack("evidence_pack_2025-q1.zip")
 
 print("✅ Audit complete and compliant")
 ```

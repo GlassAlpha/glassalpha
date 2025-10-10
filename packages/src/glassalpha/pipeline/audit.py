@@ -131,8 +131,15 @@ class AuditPipeline:
         # Ensure all components are imported and registered
         self._ensure_components_loaded()
 
-        # Initialize manifest generator
-        self.manifest_generator = ManifestGenerator()
+        # Get seed from config for deterministic manifest generation
+        seed = None
+        if hasattr(config, "reproducibility") and hasattr(config.reproducibility, "random_seed"):
+            seed = config.reproducibility.random_seed
+        elif isinstance(config, dict):
+            seed = config.get("reproducibility", {}).get("random_seed")
+
+        # Initialize manifest generator with seed for deterministic audit IDs
+        self.manifest_generator = ManifestGenerator(seed=seed)
 
         # Handle both pydantic and plain object configs (contract compliance)
         if hasattr(config, "model_dump"):
@@ -394,6 +401,11 @@ class AuditPipeline:
         # Set global seed from config
         master_seed = self.config.reproducibility.random_seed if self.config.reproducibility else 42
         set_global_seed(master_seed)
+
+        # Store seed in execution_info for report generation
+        if not hasattr(self.results, "execution_info") or self.results.execution_info is None:
+            self.results.execution_info = {}
+        self.results.execution_info["random_seed"] = master_seed
 
         # Apply advanced reproduction controls if configured
         if (
@@ -1305,6 +1317,7 @@ class AuditPipeline:
             model_info=model_info,
             selected_components=selected_components,
             execution_info=execution_info,
+            seed=getattr(self.config.reproducibility, "random_seed", None),
         )
 
         # Store in results for PDF embedding
@@ -1628,62 +1641,78 @@ class AuditPipeline:
             )
 
             # E11: Compute individual fairness metrics
-            logger.debug("Computing E11: Individual fairness metrics")
-            try:
-                from ..metrics.fairness.individual import IndividualFairnessMetrics  # noqa: PLC0415
+            # Check if individual fairness is enabled in config
+            individual_fairness_enabled = True
+            if hasattr(self.config, "metrics") and hasattr(self.config.metrics, "individual_fairness"):
+                individual_fairness_config = self.config.metrics.individual_fairness
+                if individual_fairness_config is not None:
+                    individual_fairness_enabled = individual_fairness_config.enabled
 
-                # Get protected attribute names
-                protected_attrs = list(sensitive_features.columns)
+            if individual_fairness_enabled:
+                logger.debug("Computing E11: Individual fairness metrics")
+                try:
+                    from ..metrics.fairness.individual import IndividualFairnessMetrics  # noqa: PLC0415
 
-                # Use preprocessed features (X_processed) that match model's expected input
-                # Individual fairness needs the same feature space the model was trained on
-                X_with_protected = X_processed.copy()
-                for col in protected_attrs:
-                    if col not in X_with_protected.columns:
-                        X_with_protected[col] = sensitive_features[col]
+                    # Get protected attribute names
+                    protected_attrs = list(sensitive_features.columns)
 
-                # Extract predictions for individual fairness (binary class probability)
-                if y_proba is not None and len(y_proba.shape) == 2 and y_proba.shape[1] == 2:
-                    predictions = y_proba[:, 1]  # Positive class probability
-                else:
-                    # Fallback to predicted labels (convert to 0-1 scale)
-                    predictions = y_pred.astype(float)
+                    # Use preprocessed features (X_processed) that match model's expected input
+                    # Individual fairness needs the same feature space the model was trained on
+                    X_with_protected = X_processed.copy()
+                    for col in protected_attrs:
+                        if col not in X_with_protected.columns:
+                            X_with_protected[col] = sensitive_features[col]
 
-                # Get threshold from config or use default
-                threshold = 0.5
-                if hasattr(self.config, "fairness") and hasattr(self.config.fairness, "threshold"):
-                    threshold = self.config.fairness.threshold
-                elif hasattr(self.config, "model_dump"):
-                    cfg_dict = self.config.model_dump()
-                    threshold = cfg_dict.get("fairness", {}).get("threshold", 0.5)
+                    # Extract predictions for individual fairness (binary class probability)
+                    if y_proba is not None and len(y_proba.shape) == 2 and y_proba.shape[1] == 2:
+                        predictions = y_proba[:, 1]  # Positive class probability
+                    else:
+                        # Fallback to predicted labels (convert to 0-1 scale)
+                        predictions = y_pred.astype(float)
 
-                # Initialize individual fairness metrics
-                individual_metrics = IndividualFairnessMetrics(
-                    model=self.model,
-                    features=X_with_protected,  # Now using preprocessed features
-                    predictions=predictions,
-                    protected_attributes=protected_attrs,
-                    distance_metric="euclidean",  # Default to Euclidean
-                    similarity_percentile=90,
-                    prediction_diff_threshold=0.1,
-                    threshold=threshold,
-                    seed=seed,
-                )
+                    # Get configuration from metrics.individual_fairness
+                    distance_metric = "euclidean"
+                    similarity_percentile = 90
+                    prediction_diff_threshold = 0.1
+                    threshold = 0.5
 
-                # Compute metrics
-                individual_results = individual_metrics.compute()
+                    if hasattr(self.config, "metrics") and hasattr(self.config.metrics, "individual_fairness"):
+                        ifc = self.config.metrics.individual_fairness
+                        if ifc is not None:
+                            distance_metric = ifc.distance_metric
+                            similarity_percentile = ifc.similarity_percentile
+                            prediction_diff_threshold = ifc.prediction_diff_threshold
+                            threshold = ifc.threshold
 
-                # Add to fairness results
-                fairness_results["individual_fairness"] = individual_results
-                logger.info("E11: Individual fairness metrics computed successfully")
+                    # Initialize individual fairness metrics
+                    individual_metrics = IndividualFairnessMetrics(
+                        model=self.model,
+                        features=X_with_protected,  # Now using preprocessed features
+                        predictions=predictions,
+                        protected_attributes=protected_attrs,
+                        distance_metric=distance_metric,
+                        similarity_percentile=similarity_percentile,
+                        prediction_diff_threshold=prediction_diff_threshold,
+                        threshold=threshold,
+                        seed=seed,
+                    )
 
-            except Exception as e:  # noqa: BLE001
-                logger.warning(f"E11: Failed to compute individual fairness metrics: {e}")
-                # Don't fail entire fairness analysis if individual fairness fails
-                fairness_results["individual_fairness"] = {
-                    "error": str(e),
-                    "status": "failed",
-                }
+                    # Compute metrics
+                    individual_results = individual_metrics.compute()
+
+                    # Add to fairness results
+                    fairness_results["individual_fairness"] = individual_results
+                    logger.info("E11: Individual fairness metrics computed successfully")
+
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(f"E11: Failed to compute individual fairness metrics: {e}")
+                    # Don't fail entire fairness analysis if individual fairness fails
+                    fairness_results["individual_fairness"] = {
+                        "error": str(e),
+                        "status": "failed",
+                    }
+            else:
+                logger.debug("E11: Individual fairness metrics disabled by configuration")
 
             # E12: Add dataset bias results to fairness analysis
             if hasattr(self, "_dataset_bias_results"):
@@ -1830,8 +1859,11 @@ class AuditPipeline:
 
         # Record end time for provenance
         from datetime import datetime  # noqa: PLC0415
+        from glassalpha.utils.determinism import get_deterministic_timestamp  # noqa: PLC0415
 
-        self._end_time = datetime.now(UTC).isoformat()
+        # Use deterministic timestamp for reproducibility
+        seed = self.results.execution_info.get("random_seed") if self.results.execution_info else None
+        self._end_time = get_deterministic_timestamp(seed=seed).isoformat()
 
         # Generate comprehensive provenance manifest
         self._generate_provenance_manifest()
@@ -2056,6 +2088,26 @@ class AuditPipeline:
                 logger.error(f"Sparsity validation failed: {e}")
                 raise
 
+        # Capture feature names before and after preprocessing for reasons/recourse
+        feature_names_before = list(X.columns)
+
+        # Convert to DataFrame if needed
+        if not isinstance(X_transformed, pd.DataFrame):
+            # Get feature names from artifact
+            feature_names = None
+            if hasattr(artifact, "get_feature_names_out"):
+                try:
+                    feature_names = artifact.get_feature_names_out()
+                except Exception:  # noqa: S110, BLE001
+                    pass
+
+            if feature_names is None:
+                feature_names = [f"feature_{i}" for i in range(X_transformed.shape[1])]
+
+            X_transformed = pd.DataFrame(X_transformed, columns=feature_names, index=X.index)
+
+        feature_names_after = list(X_transformed.columns)
+
         # Store preprocessing info in results
         self.results.execution_info["preprocessing"] = {
             "mode": "artifact",
@@ -2063,6 +2115,9 @@ class AuditPipeline:
             "file_hash": actual_file_hash,
             "params_hash": actual_params_hash,
             "manifest": manifest,
+            "feature_names_before": feature_names_before,
+            "feature_names_after": feature_names_after,
+            "feature_dtypes": {col: str(X[col].dtype) for col in X.columns},
         }
 
         # Add to manifest
@@ -2115,11 +2170,18 @@ class AuditPipeline:
         categorical_cols = list(X.select_dtypes(include=["object"]).columns)
         numeric_cols = list(X.select_dtypes(exclude=["object"]).columns)
 
+        # Capture feature names after preprocessing for reasons/recourse compatibility
+        feature_names_before = list(X.columns)
+        feature_names_after = list(X_processed.columns)
+
         self.results.execution_info["preprocessing"] = {
             "mode": "auto",
             "warning": "not_compliant",
             "categorical_cols": categorical_cols,
             "numeric_cols": numeric_cols,
+            "feature_names_before": feature_names_before,
+            "feature_names_after": feature_names_after,
+            "feature_dtypes": {col: str(X[col].dtype) for col in X.columns},
         }
 
         return X_processed

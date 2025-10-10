@@ -249,10 +249,40 @@ class PerturbationConfig(BaseModel):
         return v
 
 
+class IndividualFairnessConfig(BaseModel):
+    """Individual fairness configuration (E11)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = Field(True, description="Whether to compute individual fairness metrics")
+    distance_metric: str = Field(
+        "euclidean",
+        description="Distance metric for similarity computation",
+    )
+    similarity_percentile: float = Field(
+        90,
+        description="Percentile threshold for 'similar' individuals",
+        ge=50,
+        le=99,
+    )
+    prediction_diff_threshold: float = Field(
+        0.1,
+        description="Minimum prediction difference to flag in matched pairs",
+        ge=0.01,
+        le=1.0,
+    )
+    threshold: float = Field(
+        0.5,
+        description="Decision threshold for counterfactual flip test",
+        ge=0.0,
+        le=1.0,
+    )
+
+
 class MetricsConfig(BaseModel):
     """Metrics configuration."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
 
     performance: list[str] | MetricCategory = Field(
         default_factory=lambda: MetricCategory(metrics=["accuracy", "precision", "recall", "f1", "auc_roc"]),
@@ -284,6 +314,10 @@ class MetricsConfig(BaseModel):
     performance_mode: bool = Field(
         False,
         description="Performance mode: reduce fairness metrics for faster audits (default: False)",
+    )
+    individual_fairness: IndividualFairnessConfig | None = Field(
+        None,
+        description="Individual fairness configuration (E11)",
     )
 
     @field_validator("performance", "fairness", "drift")

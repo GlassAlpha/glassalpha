@@ -12,7 +12,7 @@ result = ga.audit.from_model(model, X_test, y_test, random_seed=42)
 
 # Method 2: Configuration-based (CLI equivalent)
 config = ga.config.load("audit.yaml")
-result = ga.audit.run(config)
+result = ga.audit.from_config(config)
 
 # Method 3: Pipeline (advanced customization)
 pipeline = ga.AuditPipeline(config)
@@ -54,11 +54,11 @@ def run(config: AuditConfig | str | Path) -> AuditResult
 import glassalpha as ga
 
 # From config file
-result = ga.audit.run("audit.yaml")
+result = ga.audit.from_config("audit.yaml")
 
 # From config object
 config = ga.config.AuditConfig(...)
-result = ga.audit.run(config)
+result = ga.audit.from_config(config)
 
 # Export results
 result.to_pdf("report.pdf")
@@ -291,7 +291,7 @@ for name, model_path in models.items():
     config.output.pdf_path = f"reports/audit_{name}.pdf"
 
     # Run audit
-    results[name] = ga.audit.run(config)
+    results[name] = ga.audit.from_config(config)
 
 # Compare models
 for name, result in results.items():
@@ -311,7 +311,7 @@ import glassalpha as ga
 
 def run_single_audit(config_path: str) -> dict:
     """Run single audit and return metrics"""
-    result = ga.audit.run(config_path)
+    result = ga.audit.from_config(config_path)
     return {
         "config": config_path,
         "accuracy": result.performance['accuracy'],
@@ -428,20 +428,20 @@ def run_with_fallback(config_path: str) -> ga.AuditResult:
     """Run audit with automatic fallback on failure"""
     try:
         # Try full audit
-        result = ga.audit.run(config_path)
+        result = ga.audit.from_config(config_path)
         return result
     except ga.ExplainerError:
         # Fallback: disable explanations
         print("⚠️ Explainer failed, retrying without explanations")
         config = ga.config.load(config_path)
         config.explainer = None
-        return ga.audit.run(config)
+        return ga.audit.from_config(config)
     except ga.FairnessError:
         # Fallback: disable fairness
         print("⚠️ Fairness failed, retrying without fairness analysis")
         config = ga.config.load(config_path)
         config.fairness = None
-        return ga.audit.run(config)
+        return ga.audit.from_config(config)
 
 result = run_with_fallback("audit.yaml")
 ```
@@ -463,7 +463,7 @@ with mlflow.start_run():
 
     # Run audit
     config = ga.config.AuditConfig(...)
-    result = ga.audit.run(config)
+    result = ga.audit.from_config(config)
 
     # Log metrics
     mlflow.log_metrics({
@@ -493,7 +493,7 @@ import glassalpha as ga
 def run_audit(**context):
     """Airflow task to run audit"""
     config_path = context["dag_run"].conf.get("config", "audit.yaml")
-    result = ga.audit.run(config_path)
+    result = ga.audit.from_config(config_path)
 
     # Push metrics to XCom
     context["task_instance"].xcom_push(key="accuracy", value=result.performance['accuracy'])
@@ -529,7 +529,7 @@ def create_audit_pipeline():
     """Kedro pipeline for ML auditing"""
     return Pipeline([
         node(
-            func=lambda model_path, config_path: ga.audit.run(config_path),
+            func=lambda model_path, config_path: ga.audit.from_config(config_path),
             inputs=["trained_model", "audit_config"],
             outputs="audit_result",
             name="run_audit"
@@ -595,8 +595,8 @@ def test_audit_reproducibility():
     """Verify byte-identical audit results with same seed"""
     config = ga.config.load("tests/fixtures/audit.yaml")
 
-    result1 = ga.audit.run(config)
-    result2 = ga.audit.run(config)
+    result1 = ga.audit.from_config(config)
+    result2 = ga.audit.from_config(config)
 
     # Check determinism
     assert result1.performance.accuracy == result2.performance.accuracy
@@ -642,7 +642,7 @@ from functools import lru_cache
 @lru_cache(maxsize=10)
 def run_cached_audit(config_hash: str, config_path: str) -> ga.AuditResult:
     """Run audit with caching based on config hash"""
-    return ga.audit.run(config_path)
+    return ga.audit.from_config(config_path)
 
 # Compute config hash
 import hashlib

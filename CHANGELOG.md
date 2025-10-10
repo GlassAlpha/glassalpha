@@ -9,7 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **QW3: User-Facing Progress Bars** (P0 Feature - Notebook UX Completion)
+- **API Completeness for Launch**
+  - Implemented `AuditResult.to_pdf()` method for PDF export from notebook results
+  - PDF generation converts lightweight AuditResult to pipeline format for rendering
+  - `result.save("audit.pdf")` now works (delegates to `to_pdf()`)
+  - Automatic manifest sidecar generation for reproducibility
+
+### Fixed
+
+- API documentation alignment with v0.2.0 implementation
+  - Updated docs to show dict-based metric access (current) vs future rich objects (v0.3.0)
+  - Marked policy gates as coming in v0.3.0 (planned feature E1)
+  - Marked evidence pack export as coming in v0.3.0 (planned feature E3)
+  - Marked plot methods as coming in v0.3.0 (planned feature QW4)
+- Resolved `NotImplementedError` for `to_pdf()` method
+
+### Added (Previous)
+
+- **User-Facing Progress Bars** (P0 Feature - Notebook UX Completion)
 
   - CLI `audit` command shows progress bar during execution
   - `from_model()` API shows progress bar in notebooks (auto-detects Jupyter vs terminal)

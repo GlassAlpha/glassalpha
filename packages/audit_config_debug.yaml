@@ -1,0 +1,49 @@
+# Debug config to isolate hanging component in bootstrap CI computation
+# Based on audit_config.yaml but with individual fairness disabled
+
+audit_profile: tabular_compliance
+
+# Data: Use built-in dataset for quick testing
+data:
+  dataset: german_credit # Built-in dataset (no file needed)
+  target_column: credit_risk
+  protected_attributes:
+    - age_group
+
+# Model: Simple and fast
+model:
+  type: logistic_regression
+  save_path: models/quickstart_model.pkl # Auto-save for reasons/recourse commands
+  params:
+    random_state: 42
+    max_iter: 1000
+
+# Explainers: Quick methods
+explainers:
+  strategy: first_compatible
+  priority:
+    - coefficients # Instant for linear models
+    - permutation # Universal fallback
+
+# Metrics: Essential only - DISABLED individual fairness for debugging
+metrics:
+  performance:
+    - accuracy
+    - f1_weighted
+  fairness:
+    - demographic_parity
+    - equal_opportunity
+
+# Reproducibility: Basic
+reproducibility:
+  random_seed: 42
+  deterministic: true
+
+# Report: HTML for speed
+report:
+  output_format: html
+  title: "Debug Audit Report"
+
+# Manifest: Enabled
+manifest:
+  enabled: true

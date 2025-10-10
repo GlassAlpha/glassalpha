@@ -49,6 +49,12 @@ def sample_result():
             "n_features": 10,
             "protected_attributes_categories": {"gender": ["F", "M", "Unknown"]},
             "random_seed": 42,
+            "execution": {
+                "status": "completed",
+                "start_time": "2025-01-01T10:00:00Z",
+                "end_time": "2025-01-01T10:00:30Z",
+                "duration_seconds": 30.0,
+            },
         },
         performance={"accuracy": 0.847, "f1": 0.856},
         fairness={"demographic_parity_max_diff": 0.023},
@@ -522,12 +528,26 @@ class TestAuditResultMethods:
         with pytest.raises(NotImplementedError):
             sample_result.to_json("output.json")
 
-    def test_to_pdf_not_implemented_yet(self, sample_result):
-        """to_pdf() raises NotImplementedError (Phase 3)."""
-        with pytest.raises(NotImplementedError):
-            sample_result.to_pdf("output.pdf")
+    def test_to_pdf_requires_pdf_deps(self, sample_result, tmp_path):
+        """to_pdf() works when PDF deps available, raises ImportError otherwise."""
+        output = tmp_path / "audit.pdf"
 
-    def test_save_pdf_not_implemented_yet(self, sample_result):
-        """save() with .pdf extension raises NotImplementedError (Phase 3)."""
-        with pytest.raises(NotImplementedError, match="PDF export will be implemented in Phase 3"):
-            sample_result.save("output.pdf")
+        # Will either succeed or raise ImportError (not NotImplementedError)
+        try:
+            sample_result.to_pdf(output)
+            assert output.exists(), "PDF should be created"
+        except ImportError as e:
+            # Expected if PDF dependencies not installed
+            assert "glassalpha[pdf]" in str(e)
+
+    def test_save_pdf_requires_pdf_deps(self, sample_result, tmp_path):
+        """save() with .pdf extension works when PDF deps available."""
+        output = tmp_path / "audit.pdf"
+
+        # Will either succeed or raise ImportError (not NotImplementedError)
+        try:
+            sample_result.save(output)
+            assert output.exists(), "PDF should be created"
+        except ImportError as e:
+            # Expected if PDF dependencies not installed
+            assert "glassalpha[pdf]" in str(e)

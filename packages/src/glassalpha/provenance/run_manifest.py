@@ -30,6 +30,7 @@ def generate_run_manifest(
     model_info: dict[str, Any] | None = None,
     selected_components: dict[str, Any] | None = None,
     execution_info: dict[str, Any] | None = None,
+    seed: int | None = None,
 ) -> dict[str, Any]:
     """Generate comprehensive run manifest for audit reproducibility.
 
@@ -57,7 +58,7 @@ def generate_run_manifest(
 
     manifest = {
         "manifest_version": "1.0",
-        "generated_at": get_deterministic_timestamp().isoformat(),
+        "generated_at": get_deterministic_timestamp(seed=seed).isoformat(),
         "glassalpha_version": _get_glassalpha_version(),
     }
 

@@ -38,14 +38,14 @@ result = ga.audit.from_model(
 # Display inline (Jupyter)
 result
 
-# Explore metrics
+# Explore metrics (dict-based access in v0.2.0)
 result.performance['accuracy']
-result.fairness.demographic_parity_difference
-result.calibration.expected_calibration_error
+result.fairness['demographic_parity_max_diff']  # Dict access for now
+result.calibration['expected_calibration_error']
 
-# Plot results
-result.calibration.plot()
-result.fairness.plot_group_metrics()
+# Plots coming in v0.3.0
+# result.calibration.plot()
+# result.fairness.plot_group_metrics()
 
 # Export PDF
 result.to_pdf("audit.pdf")
@@ -66,15 +66,15 @@ import glassalpha as ga
 config = ga.config.load("audit.yaml", strict=True)
 
 # Run audit
-result = ga.audit.run(config)
+result = ga.audit.from_config(config)
 
-# Check policy gates
-if result.policy_decision.failed():
-    print("Policy gates failed")
-    exit(1)
+# Check policy gates (coming in v0.3.0)
+# if result.policy_decision.failed():
+#     print("Policy gates failed")
+#     exit(1)
 
-# Export evidence pack
-result.export_evidence_pack("evidence.zip")
+# Export evidence pack (coming in v0.3.0)
+# result.export_evidence_pack("evidence.zip")
 ```
 
 **YAML Configuration:**
@@ -215,13 +215,14 @@ import glassalpha as ga
 import sys
 
 config = ga.config.load("audit.yaml", strict=True)
-result = ga.audit.run(config)
+result = ga.audit.from_config(config)
 
-if result.policy_decision.failed():
-    print("❌ Policy gates failed:")
-    for gate, value in result.policy_decision.violations.items():
-        print(f"  {gate}: {value}")
-    sys.exit(1)
+# Policy gates coming in v0.3.0
+# if result.policy_decision.failed():
+#     print("❌ Policy gates failed:")
+#     for gate, value in result.policy_decision.violations.items():
+#         print(f"  {gate}: {value}")
+#     sys.exit(1)
 
 print("✅ All policy gates passed")
 result.to_pdf("audit_report.pdf")
@@ -271,12 +272,12 @@ glassalpha audit --config audit.yaml --output report.pdf
 import glassalpha as ga
 
 # Method 1: Config file
-result = ga.audit.run("audit.yaml")
+result = ga.audit.from_config("audit.yaml")
 result.to_pdf("report.pdf")
 
 # Method 2: Programmatic config
 config = ga.config.AuditConfig(...)
-result = ga.audit.run(config)
+result = ga.audit.from_config(config)
 result.to_pdf("report.pdf")
 ```
 
