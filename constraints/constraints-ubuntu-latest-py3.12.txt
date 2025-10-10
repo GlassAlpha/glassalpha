@@ -29,7 +29,7 @@ mypy-extensions==1.1.0
 cfgv==3.4.0
 identify==2.6.15
 nodeenv==1.9.1
-virtualenv==20.34.0
+virtualenv==20.35.1
 typing_extensions==4.15.0
 typing-inspection==0.4.2
 joblib==1.5.2
