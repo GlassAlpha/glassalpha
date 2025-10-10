@@ -133,6 +133,9 @@ jobs:
             dist/*.sig
           retention-days: 90
 
+      - name: Install built wheel
+        run: |
+          echo "=== Install wheel from dist/ ==="
           python -m pip install --force-reinstall dist/glassalpha*.whl
 
       - name: Verify installation and dependencies

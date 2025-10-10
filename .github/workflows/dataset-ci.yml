@@ -47,11 +47,12 @@ jobs:
                   pipeline.config = type('Config', (), {'data': config})()
 
                   try:
-                      pipeline._ensure_dataset_availability(config.path)
+                      # _resolve_dataset_path checks offline mode before returning path
+                      resolved_path = pipeline._resolve_dataset_path()
                       print('❌ Should have failed in offline mode')
                       sys.exit(1)
                   except FileNotFoundError as e:
-                      if 'offline is true' in str(e):
+                      if 'offline' in str(e).lower():
                           print('✅ Offline mode correctly prevents fetching')
                       else:
                           print(f'❌ Wrong error message: {e}')
@@ -136,7 +137,6 @@ jobs:
                   python -c "
                   import sys
                   import threading
-                  import time
                   sys.path.insert(0, 'src')
 
                   from glassalpha.config.schema import DataConfig
@@ -157,10 +157,14 @@ jobs:
 
                   def fetch_worker():
                       try:
-                          result = pipeline._ensure_dataset_availability(config.path)
+                          # Resolve path first (needs to happen per-thread to be safe)
+                          resolved_path = pipeline._resolve_dataset_path()
+                          # Then ensure availability
+                          result = pipeline._ensure_dataset_availability(resolved_path)
                           results.append(result)
                       except Exception as e:
-                          errors.append(e)
+                          import traceback
+                          errors.append((e, traceback.format_exc()))
 
                   # Start multiple threads
                   threads = []
@@ -174,7 +178,12 @@ jobs:
                       thread.join()
 
                   # Verify results
-                  assert len(errors) == 0, f'Errors occurred: {errors}'
+                  if len(errors) > 0:
+                      print('Errors occurred:')
+                      for err, tb in errors:
+                          print(f'  {err}')
+                          print(tb)
+                  assert len(errors) == 0, f'Errors occurred: {[e for e, _ in errors]}'
                   assert len(results) == 3, f'Expected 3 results, got {len(results)}'
 
                   # All should point to the same file
@@ -210,31 +219,42 @@ jobs:
                   python -c "
                   import sys
                   import subprocess
-                  sys.path.insert(0, 'src')
+
+                  # Use 'glassalpha' entry point directly (avoids -m import side effects)
+                  glassalpha_cmd = 'glassalpha'
 
                   # Test datasets list command
                   result = subprocess.run([
-                      sys.executable, '-m', 'glassalpha.cli.main', 'datasets', 'list'
+                      glassalpha_cmd, 'datasets', 'list'
                   ], capture_output=True, text=True)
 
+                  if result.returncode != 0:
+                      print(f'STDOUT: {result.stdout}')
+                      print(f'STDERR: {result.stderr}')
                   assert result.returncode == 0, f'Command failed: {result.stderr}'
                   assert 'german_credit' in result.stdout
                   print('✅ datasets list command works')
 
                   # Test datasets cache-dir command
                   result = subprocess.run([
-                      sys.executable, '-m', 'glassalpha.cli.main', 'datasets', 'cache-dir'
+                      glassalpha_cmd, 'datasets', 'cache-dir'
                   ], capture_output=True, text=True)
 
+                  if result.returncode != 0:
+                      print(f'STDOUT: {result.stdout}')
+                      print(f'STDERR: {result.stderr}')
                   assert result.returncode == 0, f'Command failed: {result.stderr}'
                   assert 'glassalpha' in result.stdout
                   print('✅ datasets cache-dir command works')
 
                   # Test datasets info command
                   result = subprocess.run([
-                      sys.executable, '-m', 'glassalpha.cli.main', 'datasets', 'info', 'german_credit'
+                      glassalpha_cmd, 'datasets', 'info', 'german_credit'
                   ], capture_output=True, text=True)
 
+                  if result.returncode != 0:
+                      print(f'STDOUT: {result.stdout}')
+                      print(f'STDERR: {result.stderr}')
                   assert result.returncode == 0, f'Command failed: {result.stderr}'
                   assert 'german_credit' in result.stdout
                   print('✅ datasets info command works')
