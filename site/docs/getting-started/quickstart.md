@@ -72,7 +72,7 @@ open reports/audit_report.html  # macOS
 ```bash
 # 1. Clone and install (90 seconds)
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages && pip install -e .
+cd glassalpha && pip install -e .
 
 # 2. Generate audit (lightning fast with --fast flag!)
 glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf --fast
@@ -246,7 +246,7 @@ Clone and setup:
 
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 ```
 
 Python 3.11, 3.12, or 3.13 supported:
@@ -679,7 +679,7 @@ pip list | grep glassalpha
 pip install -e .
 
 # Option 3: Use module invocation (development)
-cd glassalpha/packages
+cd glassalpha
 PYTHONPATH=src python3 -m glassalpha --help
 ```
 
@@ -740,7 +740,7 @@ glassalpha validate --config packages/configs/german_credit_simple.yaml
 ls -la configs/german_credit_simple.yaml
 
 # If file doesn't exist, ensure you're in correct directory
-cd glassalpha/packages
+cd glassalpha
 ```
 
 ### Issue: Dataset download fails

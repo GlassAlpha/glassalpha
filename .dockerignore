@@ -1,60 +1,58 @@
-# Python
+# Git
+.git
+.github
+.gitignore
+
+# Documentation site
+site/
+
+# Examples (not needed in Docker image)
+examples/
+
+# Virtual environments
+venv/
+venv*/
+.venv/
+.venv*/
+env/
+ENV/
+
+# Python artifacts
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
 *.egg-info/
+.eggs/
 dist/
 build/
 *.egg
 
-# Virtual environments
-venv/
-env/
-ENV/
-.venv
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-
-# Git
-.git/
-.gitignore
-.gitattributes
-
-# CI/CD
-.github/
-.circleci/
-.travis.yml
-
-# Documentation site build
-site/site/
-
-# Test artifacts
+# Testing
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+htmlcov_critical/
+.tox/
+.nox/
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Development
+packages/dev/
+dev/
+temp-*
+.ai-scratch/
+
+# Logs and temp files
 *.log
-
-# Development files
-*.md
-!packages/README.md
-!packages/MANIFEST.in
-LICENSE
-NOTICE
-SECURITY.md
-TRADEMARK.md
-
-# Configs and examples (users mount their own)
-configs/
-examples/
-
-# Temporary files
-*.tmp
+*.manifest.json
 *.bak
-~*

@@ -4,14 +4,14 @@ on:
     push:
         branches: [main, develop]
         paths:
-            - "packages/src/glassalpha/cli/**"
-            - "packages/scripts/generate_cli_docs.py"
+            - "src/glassalpha/cli/**"
+            - "scripts/generate_cli_docs.py"
             - "site/docs/reference/cli.md"
     pull_request:
         branches: [main, develop]
         paths:
-            - "packages/src/glassalpha/cli/**"
-            - "packages/scripts/generate_cli_docs.py"
+            - "src/glassalpha/cli/**"
+            - "scripts/generate_cli_docs.py"
             - "site/docs/reference/cli.md"
 
 permissions:
@@ -33,21 +33,18 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  cd packages
                   pip install --upgrade pip
                   pip install -e "."
 
             - name: Check CLI docs are up to date
               run: |
-                  cd packages
                   python scripts/generate_cli_docs.py --check
 
             - name: Generate updated docs (if check failed)
               if: failure()
               run: |
-                  cd packages
-                  python scripts/generate_cli_docs.py --output ../site/docs/reference/cli.md
+                  python scripts/generate_cli_docs.py --output site/docs/reference/cli.md
                   echo "❌ CLI documentation is out of date"
-                  echo "Run: python packages/scripts/generate_cli_docs.py --output site/docs/reference/cli.md"
+                  echo "Run: python scripts/generate_cli_docs.py --output site/docs/reference/cli.md"
                   echo "Then commit the updated cli.md file"
                   exit 1

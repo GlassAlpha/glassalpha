@@ -25,7 +25,7 @@ GlassAlpha follows an **audit-first** approach, prioritizing regulatory complian
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/glassalpha.git
-cd glassalpha/packages
+cd glassalpha
 ```
 
 2. **Create and activate virtual environment:**

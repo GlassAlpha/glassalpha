@@ -37,7 +37,7 @@ This indicates GlassAlpha isn't properly installed or the CLI entry point isn't 
 1. **Install the package** (recommended for users):
 
    ```bash
-   cd glassalpha/packages
+   cd glassalpha
    pip install -e .
 
    # Verify installation
@@ -47,7 +47,7 @@ This indicates GlassAlpha isn't properly installed or the CLI entry point isn't 
 2. **Use module invocation** (development/troubleshooting):
 
    ```bash
-   cd glassalpha/packages
+   cd glassalpha
    PYTHONPATH=src python3 -m glassalpha --version
    PYTHONPATH=src python3 -m glassalpha audit --config configs/german_credit_simple.yaml --output test.pdf --dry-run
    ```

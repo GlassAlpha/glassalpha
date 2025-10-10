@@ -41,7 +41,7 @@ RUN useradd -m -u 1000 glassalpha && \
 WORKDIR /app
 
 # Copy package files
-COPY --chown=glassalpha:glassalpha packages/ /app/
+COPY --chown=glassalpha:glassalpha . /app/
 
 # Install GlassAlpha with all optional dependencies
 # Use --no-cache-dir to keep image size down

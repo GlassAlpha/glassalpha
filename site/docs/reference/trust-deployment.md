@@ -109,7 +109,7 @@ GlassAlpha addresses key regulatory requirements:
 
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 pip install -e .
 ```
 

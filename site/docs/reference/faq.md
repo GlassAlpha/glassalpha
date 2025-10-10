@@ -70,7 +70,7 @@ Clone and setup:
 
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha/packages
+cd glassalpha
 ```
 
 Python 3.11, 3.12, or 3.13 supported:
