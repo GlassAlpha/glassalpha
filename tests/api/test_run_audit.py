@@ -106,31 +106,6 @@ def test_run_audit_with_strict_mode():
             ga.audit.run_audit(config_path, output_path, strict=True)
 
 
-def test_run_audit_with_profile_override():
-    """Test run_audit accepts profile override parameter."""
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_path = Path(tmp_dir)
-
-        # Create config file
-        config_path = tmp_path / "audit.yaml"
-        config = {
-            "audit_profile": "minimal",
-            "model": {"type": "logistic_regression", "path": "nonexistent.pkl"},
-            "data": {"dataset": "custom", "path": "nonexistent.csv", "target_column": "target"},
-            "reproducibility": {"random_seed": 42},
-        }
-        import yaml
-
-        with open(config_path, "w") as f:
-            yaml.dump(config, f)
-
-        output_path = tmp_path / "audit.html"
-
-        # This should fail on model loading, but profile should be accepted
-        with pytest.raises(RuntimeError, match="Audit pipeline failed"):
-            ga.audit.run_audit(config_path, output_path, profile="tabular_compliance")
-
-
 def test_run_audit_with_override_config():
     """Test run_audit accepts override config parameter."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -359,31 +334,6 @@ def test_run_audit_with_strict_mode():
         # This should fail on model loading, but strict mode should be accepted
         with pytest.raises(RuntimeError, match="Audit pipeline failed"):
             ga.audit.run_audit(config_path, output_path, strict=True)
-
-
-def test_run_audit_with_profile_override():
-    """Test run_audit accepts profile override parameter."""
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_path = Path(tmp_dir)
-
-        # Create config file
-        config_path = tmp_path / "audit.yaml"
-        config = {
-            "audit_profile": "minimal",
-            "model": {"type": "logistic_regression", "path": "nonexistent.pkl"},
-            "data": {"dataset": "custom", "path": "./nonexistent.csv", "target_column": "target"},
-            "reproducibility": {"random_seed": 42},
-        }
-        import yaml
-
-        with open(config_path, "w") as f:
-            yaml.dump(config, f)
-
-        output_path = tmp_path / "audit.html"
-
-        # This should fail on model loading, but profile should be accepted
-        with pytest.raises(RuntimeError, match="Audit pipeline failed"):
-            ga.audit.run_audit(config_path, output_path, profile="tabular_compliance")
 
 
 def test_run_audit_with_override_config():

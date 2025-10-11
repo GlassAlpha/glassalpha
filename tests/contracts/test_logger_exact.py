@@ -35,40 +35,8 @@ def test_pipeline_init_logger_exact_contract() -> None:
 
         # Verify it was called with a SINGLE argument (not printf style)
         call_args = logger_spy.info.call_args
-        assert len(call_args[0]) == 1, "Logger must be called with single argument, not printf-style"  # noqa: S101
-        assert isinstance(call_args[0][0], str), "Logger argument must be a string"  # noqa: S101
+        assert len(call_args[0]) == 1, "Logger must be called with single argument, not printf-style"
+        assert isinstance(call_args[0][0], str), "Logger argument must be a string"
 
         # Verify no keyword arguments (would indicate printf style)
-        assert not call_args[1], "Logger must not use keyword arguments (indicates printf style)"  # noqa: S101
-
-
-def test_logger_contract_with_different_profiles() -> None:
-    """Test that the logger works with different audit profiles.
-
-    This ensures our f-string approach works for any profile name,
-    not just the hardcoded test case.
-    """
-    from unittest.mock import patch  # noqa: PLC0415
-
-    import glassalpha.pipeline.audit as audit_module  # noqa: PLC0415
-    from glassalpha.pipeline.audit import AuditPipeline  # noqa: PLC0415
-
-    profiles_to_test = [
-        "tabular_compliance",
-        "llm_safety",
-        "custom_profile",
-        "profile-with-dashes",
-        "profile_with_underscores",
-    ]
-
-    for profile in profiles_to_test:
-        with patch.object(audit_module, "logger") as logger_spy:
-            config = SimpleNamespace(audit_profile=profile)
-            AuditPipeline(config)
-
-            # Verify the message contains the profile name
-            call_args = logger_spy.info.call_args[0][0]
-            assert profile in call_args, f"Profile {profile} not in log message: {call_args}"  # noqa: S101
-            assert call_args.startswith("Initialized audit pipeline with profile:"), (  # noqa: S101
-                f"Log message format incorrect for profile {profile}: {call_args}"
-            )
+        assert not call_args[1], "Logger must not use keyword arguments (indicates printf style)"

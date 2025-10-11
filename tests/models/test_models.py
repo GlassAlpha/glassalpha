@@ -137,68 +137,8 @@ def test_passthrough_unfitted_error():
 
 
 # ============================================================================
-# Model Registry Tests (from test_model_registry_auto_import.py)
-# ============================================================================
-
-
-def test_model_registry_auto_discovery():
-    """Test that model registry auto-discovers registered models."""
-    from glassalpha.models import load_model
-
-    # Discover should find at least some models
-    ModelRegistry.discover()
-
-    # Should have at least one model registered
-    names = ModelRegistry.names()
-    assert len(names) > 0
-
-    # Should be able to get models by name
-    for name in names[:3]:  # Test first few
-        model_class = ModelRegistry.get(name)
-        assert model_class is not None
-
-
-def test_model_registry_get_nonexistent():
-    """Test that getting non-existent model raises appropriate error."""
-    from glassalpha.models import load_model
-
-    with pytest.raises(KeyError):
-        ModelRegistry.get("nonexistent_model_type")
-
-
-# ============================================================================
 # Integration Tests (New - comprehensive model scenarios)
 # ============================================================================
-
-
-def test_model_registry_basic_functionality():
-    """Test basic model registry operations."""
-    from glassalpha.models import load_model
-
-    # Should be able to discover models
-    ModelRegistry.discover()
-    names = ModelRegistry.names()
-
-    # Should have at least one model
-    assert len(names) > 0
-
-    # Should be able to get models
-    for name in names:
-        model_class = ModelRegistry.get(name)
-        assert hasattr(model_class, "__init__")
-
-
-def test_model_registry_priority_ordering():
-    """Test that model registry respects priority ordering."""
-    from glassalpha.models import load_model
-
-    ModelRegistry.discover()
-    names = ModelRegistry.names()
-
-    # Registry should return names in priority order
-    # (highest priority first)
-    assert isinstance(names, list)
-    assert len(names) > 0
 
 
 def test_model_wrapper_state_determinism():

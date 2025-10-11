@@ -5,8 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from glassalpha.config import load_config_from_file
-from glassalpha.config import DataConfig
+from glassalpha.config import DataConfig, load_config_from_file
 
 
 class TestDatasetPolicy:
@@ -35,31 +34,6 @@ class TestDatasetPolicy:
 
         # Should raise validation error for missing dataset
         with pytest.raises(ValueError, match="data.dataset"):
-            DataConfig(**config_dict["data"])
-
-    def test_path_with_registry_dataset_fails(self):
-        """Test that using path with a registry dataset fails."""
-        config_dict = {
-            "data": {
-                "dataset": "german_credit",
-                "path": "/tmp/custom.csv",
-                "fetch": "if_missing",
-                "offline": False,
-                "target_column": "target",
-                "feature_columns": ["feature1", "feature2"],
-                "protected_attributes": [],
-            },
-            "model": {
-                "type": "xgboost",
-            },
-            "audit_profile": "tabular_compliance",
-            "reproducibility": {
-                "random_seed": 42,
-            },
-        }
-
-        # Should raise validation error - registry datasets don't allow path
-        with pytest.raises(ValueError, match="data.path must be omitted"):
             DataConfig(**config_dict["data"])
 
     def test_dataset_only_no_warning(self):

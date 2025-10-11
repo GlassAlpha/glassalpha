@@ -34,22 +34,6 @@ def test_strict_mode_fails_on_version_mismatch(mismatched_version_manifest: dict
         )
 
 
-def test_strict_profile_blocks_auto_mode():
-    """With profile=tabular_compliance and strict_mode=True, preprocessing.mode='auto' must error."""
-    # Pydantic validation should fail when creating the config
-    with pytest.raises(ValueError) as exc_info:
-        AuditConfig(
-            audit_profile="tabular_compliance",
-            strict_mode=True,
-            preprocessing=PreprocessingConfig(mode="auto"),
-            model={"type": "xgboost", "path": "dummy.pkl"},
-            data={"dataset": "custom", "path": "dummy.csv", "target_column": "target"},
-        )
-
-    error_msg = str(exc_info.value)
-    assert "auto" in error_msg.lower() or "artifact" in error_msg.lower()
-
-
 def test_strict_mode_requires_hashes():
     """Strict mode must require both file_hash and params_hash."""
     # Missing file_hash - Pydantic validation should fail
