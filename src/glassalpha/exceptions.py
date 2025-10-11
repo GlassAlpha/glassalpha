@@ -305,3 +305,173 @@ class FileExistsError(GlassAlphaError):
             message=f"File already exists: {path}",
             fix="Use overwrite=True to replace existing file, or choose a different path",
         )
+
+
+# Configuration errors (5xxx)
+
+
+class ConfigError(GlassAlphaError):
+    """GAE5001: Configuration validation error."""
+
+    def __init__(self, message: str, fix: str | None = None) -> None:
+        """Initialize with validation error message.
+
+        Args:
+            message: Description of configuration error
+            fix: Optional fix suggestion (auto-generated if not provided)
+
+        """
+        if fix is None:
+            fix = "Check configuration file for missing or invalid fields. See docs for schema."
+
+        super().__init__(
+            code="GAE5001",
+            message=message,
+            fix=fix,
+            docs="https://glassalpha.com/getting-started/configuration",
+        )
+
+
+# Component errors (3xxx)
+
+
+class ModelError(GlassAlphaError):
+    """GAE3001: Model loading or compatibility error."""
+
+    def __init__(self, message: str, fix: str | None = None) -> None:
+        """Initialize with model error message.
+
+        Args:
+            message: Description of model error
+            fix: Optional fix suggestion
+
+        """
+        if fix is None:
+            fix = "Verify model type and path are correct. Check model was trained with supported library."
+
+        super().__init__(
+            code="GAE3001",
+            message=message,
+            fix=fix,
+            docs="https://glassalpha.com/guides/models",
+        )
+
+
+class ExplainerError(GlassAlphaError):
+    """GAE3002: Explainer unavailable or incompatible."""
+
+    def __init__(self, message: str, fix: str | None = None) -> None:
+        """Initialize with explainer error message.
+
+        Args:
+            message: Description of explainer error
+            fix: Optional fix suggestion
+
+        """
+        if fix is None:
+            fix = "Check explainer compatibility with model type. Install required dependencies (shap, lime, etc.)."
+
+        super().__init__(
+            code="GAE3002",
+            message=message,
+            fix=fix,
+            docs="https://glassalpha.com/guides/explainability",
+        )
+
+
+class MetricError(GlassAlphaError):
+    """GAE3003: Metric computation error."""
+
+    def __init__(self, message: str, fix: str | None = None) -> None:
+        """Initialize with metric error message.
+
+        Args:
+            message: Description of metric error
+            fix: Optional fix suggestion
+
+        """
+        if fix is None:
+            fix = "Check metric requirements (e.g., probabilities, binary classification, sufficient samples)."
+
+        super().__init__(
+            code="GAE3003",
+            message=message,
+            fix=fix,
+            docs="https://glassalpha.com/reference/metrics",
+        )
+
+
+# Runtime errors (6xxx)
+
+
+class DeterminismError(GlassAlphaError):
+    """GAE6001: Determinism validation failed."""
+
+    def __init__(self, message: str, fix: str | None = None) -> None:
+        """Initialize with determinism error message.
+
+        Args:
+            message: Description of determinism failure
+            fix: Optional fix suggestion
+
+        """
+        if fix is None:
+            fix = "Set explicit random seed, use deterministic=True, and pin dependency versions."
+
+        super().__init__(
+            code="GAE6001",
+            message=message,
+            fix=fix,
+            docs="https://glassalpha.com/guides/determinism",
+        )
+
+
+class BootstrapError(GlassAlphaError):
+    """GAE6002: Bootstrap computation error."""
+
+    def __init__(self, message: str, fix: str | None = None) -> None:
+        """Initialize with bootstrap error message.
+
+        Args:
+            message: Description of bootstrap error
+            fix: Optional fix suggestion
+
+        """
+        if fix is None:
+            fix = "Reduce n_bootstrap or increase timeout. Check for infinite loops in metric computation."
+
+        super().__init__(
+            code="GAE6002",
+            message=message,
+            fix=fix,
+            docs="https://glassalpha.com/guides/confidence-intervals",
+        )
+
+
+# Legacy exception aliases for backwards compatibility (remove in v1.0)
+
+
+class ModelLoadError(ModelError):
+    """Deprecated: Use ModelError instead."""
+
+    def __init__(self, message: str = "Model loading failed") -> None:
+        """Initialize with message.
+
+        Args:
+            message: Error message
+
+        """
+        super().__init__(message)
+
+
+class ExplainerUnavailableError(ExplainerError):
+    """Deprecated: Use ExplainerError instead."""
+
+    def __init__(self, message: str = "Requested explainer is not available") -> None:
+        """Initialize with message.
+
+        Args:
+            message: Error message
+
+        """
+        super().__init__(message)

@@ -16,7 +16,7 @@ import pytest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
-from glassalpha.config.loader import load_config_from_file
+from glassalpha.config import load_config_from_file
 from glassalpha.pipeline.audit import AuditPipeline
 from glassalpha.utils.determinism import (
     compute_file_hash,

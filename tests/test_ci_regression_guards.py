@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from glassalpha.config.schema import AuditConfig
+from glassalpha.config import AuditConfig
 from glassalpha.metrics.core import compute_classification_metrics
 from glassalpha.models.calibration import maybe_calibrate
 from glassalpha.provenance.run_manifest import generate_run_manifest
@@ -155,7 +155,7 @@ class TestArchitecturalGuards:
     @pytest.mark.skip(reason="Security module not yet implemented")
     def test_security_features_always_enabled(self):
         """CRITICAL: Security features must be enabled by default."""
-        from glassalpha.config.schema import SecurityConfig
+        from glassalpha.config import SecurityConfig
 
         # Test default security config
         config = SecurityConfig()

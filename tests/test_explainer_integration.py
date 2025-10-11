@@ -69,7 +69,7 @@ pytestmark = [
     pytest.mark.skipif(not SHAP_EXPLAINERS_AVAILABLE, reason="SHAP explainers not available - CI compatibility issues"),
 ]
 
-from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper
+from glassalpha.models.sklearn import LogisticRegressionWrapper
 
 
 @pytest.fixture

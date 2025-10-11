@@ -336,7 +336,7 @@ reproducibility:
     def test_cli_shift_analysis_creates_json_sidecar(self, german_credit_config, tmp_path):
         """Test that CLI creates shift analysis JSON sidecar."""
         from glassalpha.cli.commands import _run_shift_analysis
-        from glassalpha.config.loader import load_config_from_file
+        from glassalpha.config import load_config_from_file
 
         # Load config
         config = load_config_from_file(german_credit_config)
@@ -372,7 +372,7 @@ reproducibility:
     def test_cli_multiple_shifts(self, german_credit_config, tmp_path):
         """Test CLI with multiple shift specifications."""
         from glassalpha.cli.commands import _run_shift_analysis
-        from glassalpha.config.loader import load_config_from_file
+        from glassalpha.config import load_config_from_file
 
         config = load_config_from_file(german_credit_config)
         output = tmp_path / "audit.pdf"
@@ -401,7 +401,7 @@ reproducibility:
     def test_cli_threshold_enforcement(self, german_credit_config, tmp_path):
         """Test that CLI respects degradation threshold."""
         from glassalpha.cli.commands import _run_shift_analysis
-        from glassalpha.config.loader import load_config_from_file
+        from glassalpha.config import load_config_from_file
 
         config = load_config_from_file(german_credit_config)
         output = tmp_path / "audit.pdf"

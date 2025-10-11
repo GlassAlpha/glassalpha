@@ -9,7 +9,7 @@ GlassAlpha provides three API levels depending on your use case:
 | API Level                              | When to Use                                           | Key Features                                |
 | -------------------------------------- | ----------------------------------------------------- | ------------------------------------------- |
 | **[Audit API](api-audit.md)**          | Notebooks, quick exploration, interactive development | `from_model()`, `AuditResult`, plot methods |
-| **[Configuration API](api-config.md)** | Production pipelines, CI/CD, reproducible audits      | Config objects, validation, profiles        |
+| **[Configuration API](api-config.md)** | Production pipelines, CI/CD, reproducible audits      | Config objects, validation, model selection |
 | **[Pipeline API](api-pipeline.md)**    | Custom extensions, advanced control, hooks            | `AuditPipeline`, extensibility hooks        |
 
 ---
@@ -346,7 +346,7 @@ Programmatic configuration and validation for production pipelines.
 - `AuditConfig` - Main configuration object
 - `ModelConfig`, `DataConfig`, `FairnessConfig`, etc. - Sub-configurations
 - Validation functions - Schema and strict mode validation
-- Profiles - Preset configurations by use case
+- Model Selection - Direct configuration of models, explainers, metrics
 
 **Use for:**
 

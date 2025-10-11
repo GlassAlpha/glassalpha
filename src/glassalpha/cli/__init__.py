@@ -1,20 +1,12 @@
 """Command-line interface for GlassAlpha.
 
-This module provides the Typer-based CLI with command groups
-for extensibility and clean organization.
+Simplified to 3 core commands: audit, quickstart, doctor
 """
 
-from .commands import audit, docs, list_components_cmd, reasons, recourse, validate
 from .main import app
 
 __all__ = [
     "app",
-    "audit",
-    "docs",
-    "list_components_cmd",
-    "reasons",
-    "recourse",
-    "validate",
 ]
 
 

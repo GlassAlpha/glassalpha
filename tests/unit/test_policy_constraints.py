@@ -9,9 +9,9 @@ import pytest
 from glassalpha.explain.policy import (
     PolicyConstraints,
     compute_feature_cost,
-    merge_protected_and_immutable,
+    # merge_protected_and_immutable,  # Not implemented in stub
     validate_feature_bounds,
-    validate_immutables,
+    # validate_immutables,  # Not implemented in stub
     validate_monotonic_constraints,
 )
 

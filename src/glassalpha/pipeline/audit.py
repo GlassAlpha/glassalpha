@@ -21,9 +21,7 @@ import pandas as pd
 from glassalpha.config import AuditConfig
 
 # Constants import removed - using f-string directly for logger format
-from glassalpha.core.registry import ModelRegistry
 from glassalpha.data import TabularDataLoader, TabularDataSchema
-from glassalpha.metrics.registry import MetricRegistry
 from glassalpha.utils import ManifestGenerator, get_component_seed, set_global_seed
 from glassalpha.utils.preprocessing import preprocess_auto
 
@@ -695,9 +693,12 @@ class AuditPipeline:
         model_type = self.config.model.type
         model_path = getattr(self.config.model, "path", None)
 
-        # Get model class from registry (auto-imports if needed)
-        model_class = ModelRegistry.get(model_type)
-        if not model_class:
+        # Load model using explicit dispatch
+        from glassalpha.models import load_model
+
+        try:
+            model_class = load_model(model_type)
+        except ValueError:
             msg = f"Unknown model type: {model_type}"
             raise ValueError(msg)
 
@@ -783,18 +784,21 @@ class AuditPipeline:
         """
         logger.info("Selecting explainer based on model capabilities")
 
-        # Import the explainer registry to ensure it's available
-        from glassalpha.explain.registry import ExplainerRegistry  # noqa: PLC0415
+        # Select explainer using explicit dispatch
+        from glassalpha.explain import select_explainer
 
         # Use pre-selected explainer if provided, otherwise select based on config
         if self.selected_explainer:
-            explainer_name = self.selected_explainer
+            explainer_instance = self.selected_explainer
+            selected_name = type(explainer_instance).__name__
         else:
-            explainer_name = ExplainerRegistry.find_compatible(self.model, self.config.model_dump())
+            explainer_instance = select_explainer(
+                model_type=self.config.model.type,
+                config=self.config.model_dump(),
+            )
+            selected_name = type(explainer_instance).__name__
 
-        # Get the explainer class
-        explainer_class = ExplainerRegistry.get(explainer_name)
-        selected_name = explainer_name
+        explainer_class = explainer_instance
 
         logger.info(f"Selected explainer: {selected_name}")
 

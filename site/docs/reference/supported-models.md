@@ -171,9 +171,9 @@ GlassAlpha supports custom model implementations through the model interface pro
 
 ```python
 from glassalpha.models.base import ModelInterface
-from glassalpha.models.registry import ModelRegistry
+from glassalpha.models import load_model
 
-@ModelRegistry.register("custom_model")
+# Add to models/__init__.py load_model() function
 class CustomModel(ModelInterface):
     """Custom model implementation"""
 

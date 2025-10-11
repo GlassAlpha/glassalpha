@@ -14,7 +14,7 @@ class TestExplainerSelectionRisk:
 
     def test_xgboost_selects_treeshap_by_default(self):
         """XGBoost must select TreeSHAP by default when available - customer expectation."""
-        from glassalpha.explain.registry import ExplainerRegistry
+        from glassalpha.explain import select_explainer # ExplainerRegistry
 
         explainer_name = ExplainerRegistry.find_compatible("xgboost")
         assert explainer_name is not None, "XGBoost must have compatible explainer"
@@ -27,7 +27,7 @@ class TestExplainerSelectionRisk:
 
     def test_logistic_regression_selects_coef(self):
         """LogisticRegression should select coefficients explainer (fastest, no dependencies)."""
-        from glassalpha.explain.registry import ExplainerRegistry
+        from glassalpha.explain import select_explainer # ExplainerRegistry
 
         explainer_name = ExplainerRegistry.find_compatible("logistic_regression")
         assert explainer_name is not None, "LogisticRegression must have compatible explainer"
@@ -39,7 +39,7 @@ class TestExplainerSelectionRisk:
 
     def test_lightgbm_priority_selection(self):
         """LightGBM should prefer TreeSHAP when available."""
-        from glassalpha.explain.registry import ExplainerRegistry
+        from glassalpha.explain import select_explainer # ExplainerRegistry
 
         explainer_name = ExplainerRegistry.find_compatible("lightgbm")
         assert explainer_name is not None, "LightGBM must have compatible explainer"
@@ -52,7 +52,7 @@ class TestExplainerSelectionRisk:
 
     def test_unsupported_model_uses_fallback_logic(self):
         """Unsupported models should use fallback logic rather than failing immediately."""
-        from glassalpha.explain.registry import ExplainerRegistry
+        from glassalpha.explain import select_explainer # ExplainerRegistry
 
         # New logic may not fail immediately for unknown models - uses fallback
         try:
@@ -65,7 +65,7 @@ class TestExplainerSelectionRisk:
 
     def test_mock_model_object_compatibility(self):
         """Model objects with get_model_info should work correctly."""
-        from glassalpha.explain.registry import ExplainerRegistry
+        from glassalpha.explain import select_explainer # ExplainerRegistry
 
         class MockModel:
             def get_model_info(self):
@@ -82,7 +82,7 @@ class TestExplainerSelectionRisk:
 
     def test_none_model_info_uses_fallback_logic(self):
         """Objects without valid model info should use fallback logic."""
-        from glassalpha.explain.registry import ExplainerRegistry
+        from glassalpha.explain import select_explainer # ExplainerRegistry
 
         class BadMock:
             def get_model_info(self):
@@ -100,7 +100,7 @@ class TestExplainerSelectionRisk:
 
     def test_explainer_registry_deterministic_selection(self):
         """Same input must always select same explainer - reproducibility critical."""
-        from glassalpha.explain.registry import ExplainerRegistry
+        from glassalpha.explain import select_explainer # ExplainerRegistry
 
         # Test multiple times to ensure deterministic
         selections = []
@@ -114,7 +114,7 @@ class TestExplainerSelectionRisk:
 
     def test_new_explainer_selection_logic(self):
         """Test the new capability-aware explainer selection."""
-        from glassalpha.explain.registry import _available, select_explainer
+        from glassalpha.explain import select_explainer # _available, select_explainer
 
         # Test module availability checking
         assert _available("coefficients") is True  # No dependencies
@@ -143,7 +143,7 @@ class TestExplainerSelectionRisk:
 
     def test_explicit_priority_works_when_shap_available(self):
         """Test explicit priority works correctly when SHAP is available."""
-        from glassalpha.explain.registry import select_explainer, _available
+        from glassalpha.explain import select_explainer # select_explainer, _available
         
         # Skip this test if SHAP is not available
         if not _available("kernelshap"):
@@ -158,7 +158,7 @@ class TestExplainerSelectionRisk:
 
     def test_explicit_priority_fails_with_nonexistent_explainer(self):
         """Test explicit priority fails with helpful message for non-existent explainers."""
-        from glassalpha.explain.registry import select_explainer
+        from glassalpha.explain import select_explainer # select_explainer
 
         # Should fail for non-existent explainer
         with pytest.raises(RuntimeError, match="No explainer from .*nonexistent_explainer.* is available"):
@@ -166,7 +166,7 @@ class TestExplainerSelectionRisk:
 
     def test_explainer_selection_logging(self, caplog):
         """Test that explainer selection provides informative logging."""
-        from glassalpha.explain.registry import ExplainerRegistry
+        from glassalpha.explain import select_explainer # ExplainerRegistry
 
         with caplog.at_level("INFO"):
             # Test with a model that should select coef

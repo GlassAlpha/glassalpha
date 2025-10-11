@@ -33,32 +33,26 @@ This is the main command for GlassAlpha. It loads a configuration file,
 runs the audit pipeline, and generates a deterministic audit report.
 
 Smart Defaults:
-    If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
-    If no --output is provided, uses {config_name}.html
-    Strict mode auto-enables for prod*/production* configs
-    Repro mode auto-enables in CI environments and for test* configs
+If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
+If no --output is provided, uses {config_name}.html
+Strict mode auto-enables for prod*/production* configs
+Repro mode auto-enables in CI environments
 
-Examples:
-    # Minimal usage (uses smart defaults)
-    glassalpha audit
+Configuration:
+Runtime options (fast mode, compact report, fallback behavior) are configured
+in the config file under 'runtime:' section. See documentation for details.
+
+Examples: # Minimal usage (uses smart defaults)
+glassalpha audit
 
     # Explicit paths
     glassalpha audit --config audit.yaml --output report.html
 
-    # See what defaults would be used
-    glassalpha audit --show-defaults
-
-    # Check output paths before running audit
-    glassalpha audit --check-output
-
     # Strict mode for regulatory compliance
     glassalpha audit --config production.yaml  # Auto-enables strict!
 
-    # Override specific settings
-    glassalpha audit -c base.yaml --override custom.yaml
-
-    # Fail if components unavailable (no fallbacks)
-    glassalpha audit --no-fallback
+    # Validate configuration without running audit
+    glassalpha audit --dry-run
 
     # Stress test for demographic shifts (E6.5)
     glassalpha audit --check-shift gender:+0.1
@@ -70,20 +64,11 @@ Examples:
 
 - `--config, -c`: Path to audit configuration YAML file (auto-detects glassalpha.yaml, audit.yaml, config.yaml)
 - `--output, -o`: Path for output report (defaults to {config_name}.html)
-- `--strict, -s`: Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs). Allows built-in datasets.
-- `--strict-full`: Enable full strict mode for maximum regulatory compliance. Requires explicit data schemas and model paths. Disallows built-in datasets. (default: `False`)
-- `--repro`: Enable deterministic reproduction mode (auto-enabled in CI and for test* configs)
-- `--profile, -p`: Override audit profile
-- `--override`: Additional config file to override settings
+- `--strict, -s`: Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs)
 - `--dry-run`: Validate configuration without generating report (default: `False`)
-- `--no-fallback`: Fail if requested components are unavailable (no automatic fallbacks) (default: `False`)
-- `--show-defaults`: Show inferred defaults and exit (useful for debugging) (default: `False`)
-- `--check-output`: Check output paths are writable and exit (pre-flight validation) (default: `False`)
+- `--verbose, -v`: Enable verbose logging (default: `False`)
 - `--check-shift`: Test model robustness under demographic shifts (e.g., 'gender:+0.1'). Can specify multiple. (default: `[]`)
 - `--fail-on-degradation`: Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).
-- `--save-model`: Save the trained model to the specified path (e.g., model.pkl). Required for reasons/recourse commands.
-- `--fast`: Fast demo mode: reduce bootstrap samples to 100 for lightning-quick audits (~2-3s vs ~5-7s) (default: `False`)
-- `--compact-report`: Generate compact report (<1MB, default) by excluding individual fairness matched pairs from HTML. Use --full-report for complete data (may be 50-100MB). Full data always saved in manifest.json. (default: `True`)
 
 ### `glassalpha datasets`
 
@@ -95,7 +80,7 @@ Show the directory where datasets are cached.
 
 ### `glassalpha datasets fetch`
 
-Fetch and cache a dataset from the registry.
+Fetch and cache a built-in dataset.
 
 **Arguments:**
 
@@ -150,7 +135,7 @@ List available components
 
 **Arguments:**
 
-- `component_type` (text, optional): Component type to list (models, explainers, metrics, profiles)
+- `component_type` (text, optional): Component type to list (models, explainers, metrics)
 
 **Options:**
 
@@ -173,9 +158,8 @@ This command computes the file hash (SHA256) of a preprocessing artifact.
 Optionally, it can also compute the params hash (canonical hash of learned
 parameters) by loading and introspecting the artifact.
 
-Examples:
-    # Just file hash (fast, no loading)
-    glassalpha prep hash artifacts/preprocessor.joblib
+Examples: # Just file hash (fast, no loading)
+glassalpha prep hash artifacts/preprocessor.joblib
 
     # File and params hash (slower, loads artifact)
     glassalpha prep hash artifacts/preprocessor.joblib --params
@@ -196,9 +180,8 @@ This command loads the artifact, extracts all learned parameters,
 and displays a human-readable summary. Optionally saves the full
 manifest to a JSON file.
 
-Examples:
-    # Quick inspection
-    glassalpha prep inspect artifacts/preprocessor.joblib
+Examples: # Quick inspection
+glassalpha prep inspect artifacts/preprocessor.joblib
 
     # Detailed inspection
     glassalpha prep inspect artifacts/preprocessor.joblib --verbose
@@ -222,9 +205,8 @@ Validate a preprocessing artifact.
 This command performs comprehensive validation of a preprocessing artifact,
 including hash verification, class allowlisting, and version compatibility.
 
-Examples:
-    # Basic validation (classes + versions)
-    glassalpha prep validate artifacts/preprocessor.joblib
+Examples: # Basic validation (classes + versions)
+glassalpha prep validate artifacts/preprocessor.joblib
 
     # Validate with expected hashes
     glassalpha prep validate artifacts/preprocessor.joblib \
@@ -292,15 +274,14 @@ Validate a configuration file.
 This command checks if a configuration file is valid without
 running the audit pipeline.
 
-Examples:
-    # Basic validation (positional argument)
-    glassalpha validate config.yaml
+Examples: # Basic validation (positional argument)
+glassalpha validate config.yaml
 
     # Basic validation (option syntax)
     glassalpha validate --config audit.yaml
 
-    # Validate for specific profile
-    glassalpha validate -c audit.yaml --profile tabular_compliance
+    # Validate configuration
+    glassalpha validate -c audit.yaml
 
     # Check strict mode compliance
     glassalpha validate -c audit.yaml --strict
@@ -318,9 +299,7 @@ Examples:
 **Options:**
 
 - `--config, -c`: Path to configuration file to validate (alternative to positional arg)
-- `--profile, -p`: Validate against specific profile
-- `--strict`: Validate for strict mode compliance (allows built-in datasets) (default: `False`)
-- `--strict-full`: Validate for full strict mode compliance (requires explicit schemas, disallows built-in datasets) (default: `False`)
+- `--strict`: Validate for strict mode compliance (default: `False`)
 - `--strict-validation`: Enforce runtime availability checks (recommended for production) (default: `False`)
 - `--check-data`: Load and validate actual dataset (checks if target column exists, file is readable) (default: `False`)
 
@@ -348,5 +327,5 @@ GlassAlpha uses standard exit codes:
 
 ---
 
-*This documentation is automatically generated from the CLI code.*
-*Last updated: See git history for this file.*
+_This documentation is automatically generated from the CLI code._
+_Last updated: See git history for this file._

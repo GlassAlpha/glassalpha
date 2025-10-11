@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper, SklearnGenericWrapper
+from glassalpha.models.sklearn import LogisticRegressionWrapper, SklearnGenericWrapper
 
 
 def _create_test_data_multiclass():

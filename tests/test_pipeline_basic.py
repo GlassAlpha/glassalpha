@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.config.schema import (
+from glassalpha.config import (
     AuditConfig,
     DataConfig,
     ExplainerConfig,

@@ -34,8 +34,8 @@ except ImportError:
 # Skip all tests if sklearn not available
 pytestmark = pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="sklearn not available - CI compatibility issues")
 
-from glassalpha.core import ModelRegistry
-from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper, SklearnGenericWrapper
+from glassalpha.models import load_model
+from glassalpha.models.sklearn import LogisticRegressionWrapper, SklearnGenericWrapper
 
 
 @pytest.fixture

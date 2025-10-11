@@ -75,17 +75,16 @@ Understanding the codebase structure helps target contributions effectively:
 ```
 glassalpha/
 ├── src/glassalpha/           # Main package
-│   ├── core/                # Interfaces and registries
 │   ├── models/              # Model wrappers (XGBoost, LightGBM, etc.)
 │   ├── explain/             # Explainers (TreeSHAP, KernelSHAP)
 │   ├── metrics/             # Performance, fairness, drift metrics
 │   ├── data/                # Data loading and processing
-│   ├── pipeline/            # Audit pipeline orchestration
-│   ├── report/              # PDF generation and templates
 │   ├── config/              # Configuration management
 │   ├── cli/                 # Command-line interface
-│   ├── profiles/            # Audit profiles
-│   └── utils/               # Utilities (seeds, hashing, etc.)
+│   ├── report/              # PDF generation and templates
+│   ├── preprocessing/       # Artifact verification (compliance-critical)
+│   ├── utils/               # Utilities (seeds, hashing, determinism)
+│   └── exceptions.py        # Custom exceptions
 ├── tests/                   # Test suite
 ├── configs/                 # Example configurations
 ├── dev/                     # Development resources (internal)
@@ -94,10 +93,9 @@ glassalpha/
 
 **Key Extension Points:**
 
-- Add new models by implementing `ModelInterface`
-- Add new explainers by implementing `ExplainerInterface`
-- Add new metrics by implementing `MetricInterface`
-- Add new audit profiles for specific compliance needs
+- Add new models by implementing explicit dispatch in `models/__init__.py`
+- Add new explainers by implementing explicit dispatch in `explain/__init__.py`
+- Add new metrics by implementing explicit dispatch in `metrics/__init__.py`
 
 ## Code quality standards
 
@@ -282,24 +280,14 @@ git checkout -b fix/issue-description
 **Code example pattern:**
 
 ```python
-@ModelRegistry.register("new_model")
-class NewModelWrapper:
-    """Wrapper for NewML library following GlassAlpha patterns."""
+def load_new_model(model_type: str, **kwargs):
+    """Add new model to explicit dispatch in models/__init__.py."""
+    if model_type == "new_model":
+        from .new_model import NewModelWrapper
+        return NewModelWrapper(**kwargs)
 
-    capabilities = {
-        "supports_shap": True,
-        "data_modality": "tabular"
-    }
-    version = "1.0.0"
-
-    def __init__(self, **kwargs):
-        """Initialize with deterministic defaults."""
-        self._set_deterministic_params(kwargs)
-
-    def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Generate predictions with type safety."""
-        # Implementation
-        ...
+    # Keep existing models...
+    raise ValueError(f"Unknown model_type: {model_type}")
 ```
 
 ### 4. Testing your changes
@@ -407,104 +395,85 @@ Brief description of changes and motivation.
 
 ## Architecture guidelines
 
-### Plugin system
+### Explicit dispatch pattern
 
-GlassAlpha uses a dual-layer plugin architecture: runtime registries for dynamic loading and entry points for static discovery.
+GlassAlpha uses explicit dispatch for AI maintainability. All extension points use clear if/elif chains with error messages.
 
-#### Runtime Registration (for development and dynamic loading)
+#### Adding New Models
+
+Add to `src/glassalpha/models/__init__.py`:
 
 ```python
-# 1. Implement the interface
-class MyExplainer:
-    capabilities = {"model_types": ["xgboost"]}
+def load_model(model_type: str, **kwargs):
+    """Load model with clear error messages."""
+    if model_type == "xgboost":
+        from .tree_models import XGBoostWrapper
+        return XGBoostWrapper(**kwargs)
+    elif model_type == "lightgbm":
+        from .tree_models import LightGBMWrapper
+        return LightGBMWrapper(**kwargs)
+    elif model_type == "new_model":  # Add your model here
+        from .new_model import NewModelWrapper
+        return NewModelWrapper(**kwargs)
+    else:
+        raise ValueError(f"Unknown model_type: {model_type}")
 
-    def explain(self, model, X, y=None):
+    # Also update model detection
+    def detect_model_type(model_path: str) -> str:
         # Implementation
         ...
-
-# 2. Register the component at runtime
-@ExplainerRegistry.register("my_explainer", priority=75)
-class MyExplainer:
-    ...
-
-# 3. Add tests
-def test_my_explainer_registration():
-    assert "my_explainer" in ExplainerRegistry.get_all()
 ```
 
-#### Entry Point Registration (for distribution and static discovery)
+#### Adding New Explainers
 
-For published packages, register components in `pyproject.toml`:
-
-```toml
-[project.entry-points."glassalpha.explainers"]
-my_explainer = "my_package.explainers:MyExplainer"
-
-[project.entry-points."glassalpha.models"]
-my_model = "my_package.models:MyModel"
-
-[project.entry-points."glassalpha.metrics"]
-my_metric = "my_package.metrics:MyMetric"
-```
-
-Entry points enable:
-
-- **Static discovery**: `glassalpha list` shows available components
-- **Import avoidance**: No need to import heavy dependencies on `--help`
-- **Third-party plugins**: Anyone can extend GlassAlpha without modifying core
-
-#### Available Entry Point Groups
-
-| Group                   | Purpose             | Example                                                                       |
-| ----------------------- | ------------------- | ----------------------------------------------------------------------------- |
-| `glassalpha.models`     | ML model wrappers   | `xgboost = "glassalpha.models.tabular.xgboost:XGBoostWrapper"`                |
-| `glassalpha.explainers` | Explanation methods | `treeshap = "glassalpha.explain.shap.tree:TreeSHAPExplainer"`                 |
-| `glassalpha.metrics`    | Evaluation metrics  | `accuracy = "glassalpha.metrics.performance.classification:AccuracyMetric"`   |
-| `glassalpha.profiles`   | Audit profiles      | `tabular_compliance = "glassalpha.profiles.tabular:TabularComplianceProfile"` |
-
-#### Discovery and Loading
+Add to `src/glassalpha/explain/__init__.py`:
 
 ```python
-# List all available components
-from glassalpha.core.registry import get_all_registries
+def select_explainer(model_type: str, config):
+    """Select explainer with fallback chain."""
+    if model_type == "xgboost":
+        try:
+            from .shap import TreeSHAPExplainer
+            return TreeSHAPExplainer()
+        except ImportError:
+            pass
 
-for group_name, registry in get_all_registries().items():
-    print(f"{group_name}: {list(registry.get_all().keys())}")
+    # Fallback to KernelSHAP for any model
+    try:
+        from .shap import KernelSHAPExplainer
+        return KernelSHAPExplainer()
+    except ImportError:
+        raise ImportError("No explainers available")
 
-# Load a specific component
-from glassalpha.core.registry import load_component
-explainer = load_component("glassalpha.explainers", "treeshap")
+    raise ValueError(f"No compatible explainer for {model_type}")
 ```
 
-#### Component Interface Requirements
+#### Adding New Metrics
 
-All plugins must implement their respective interfaces:
+Add to `src/glassalpha/metrics/__init__.py`:
 
 ```python
-# Models: glassalpha.core.interfaces.ModelInterface
-# Explainers: glassalpha.explain.base.ExplainerInterface
-# Metrics: glassalpha.metrics.base.MetricInterface
-# Profiles: glassalpha.profiles.base.AuditProfile
+def compute_metrics(model_type: str, y_true, y_pred, **kwargs):
+    """Compute metrics with deterministic output."""
+    if model_type in ["xgboost", "lightgbm"]:
+        # Tree model metrics
+        return compute_tree_metrics(y_true, y_pred, **kwargs)
+    elif model_type == "sklearn":
+        # Linear model metrics
+        return compute_linear_metrics(y_true, y_pred, **kwargs)
+    else:
+        raise ValueError(f"Unsupported model_type: {model_type}")
 ```
 
-### Enterprise/OSS separation
+### AI-maintainable principles
 
-Maintain clear boundaries between open source and enterprise features:
+GlassAlpha follows AI-maintainable code principles from `.cursor/rules/architecture.mdc`:
 
-```python
-# OSS implementation - always available
-@ModelRegistry.register("basic_model")
-class BasicModel:
-    ...
-
-# Enterprise feature - gated behind license check
-@check_feature("advanced_models")
-def create_advanced_model():
-    if not is_enterprise():
-        raise FeatureNotAvailable("Requires enterprise license")
-    # Enterprise implementation
-    ...
-```
+1. **Explicit over dynamic** - Clear if/elif chains instead of registries
+2. **Flat over nested** - Max 3 directory levels
+3. **Consolidated over scattered** - Similar code together in one file
+4. **Simple data flow** - Direct function calls, minimal indirection
+5. **Clear boundaries** - Compliance-critical code isolated
 
 ### Deterministic design
 

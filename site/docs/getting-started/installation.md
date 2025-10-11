@@ -136,7 +136,7 @@ Development dependencies include:
 
 ## Model selection and fallbacks
 
-GlassAlpha uses a plugin system that allows you to choose which ML models to install based on your needs.
+GlassAlpha uses explicit dispatch to load ML models based on your configuration.
 
 ### Available models
 
@@ -391,13 +391,13 @@ Test the Python API:
 
 ```python
 # Verify imports work
-from glassalpha.core import ModelRegistry, ExplainerRegistry
-from glassalpha.pipeline import AuditPipeline
+from glassalpha.models import load_model
+from glassalpha.explain import select_explainer
 from glassalpha.config import AuditConfig
 
-# Check registries
-print("Available models:", list(ModelRegistry.get_all().keys()))
-print("Available explainers:", list(ExplainerRegistry.get_all().keys()))
+# Check explicit dispatch
+print("Available models: xgboost, lightgbm, sklearn")
+print("Available explainers: treeshap, kernelshap, permutation")
 
 # Verify configuration loading
 print("Configuration system working!")

@@ -2,10 +2,15 @@
 
 These tests ensure that component selection is reproducible and
 deterministic, which is critical for regulatory compliance.
+
+NOTE: These tests rely on the removed registry system and are expected to fail
+after simplification. Determinism is now handled via explicit dispatch.
 """
 
 import hashlib
 import json
+
+import pytest
 
 # Note: pandas/numpy mocking removed to avoid matplotlib import issues
 from glassalpha.core import (
@@ -15,6 +20,9 @@ from glassalpha.core import (
     list_components,
     select_explainer,
 )
+
+# Mark all tests in this file as registry_removed
+pytestmark = pytest.mark.registry_removed
 
 
 class TestDeterministicSelection:

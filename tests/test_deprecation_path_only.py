@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from glassalpha.config.loader import load_config_from_file
-from glassalpha.config.schema import DataConfig
+from glassalpha.config import load_config_from_file
+from glassalpha.config import DataConfig
 
 
 class TestDatasetPolicy:

@@ -16,7 +16,7 @@ from pathlib import Path
 
 import typer
 
-from .defaults import get_smart_defaults
+# Defaults module removed - simplified CLI
 from .exit_codes import ExitCode
 
 logger = logging.getLogger(__name__)
@@ -111,17 +111,7 @@ def _bootstrap_components() -> None:
     except ImportError as e:
         logger.warning(f"Failed to import basic metrics: {e}")
 
-    # Call discover() to ensure entry points are also registered
-    from ..core.registry import ModelRegistry
-    from ..explain.registry import ExplainerRegistry
-    from ..metrics.registry import MetricRegistry
-    from ..profiles.registry import ProfileRegistry
-
-    ModelRegistry.discover()
-    ExplainerRegistry.discover()
-    MetricRegistry.discover()
-    ProfileRegistry.discover()
-
+    # Registry system removed - using explicit dispatch
     logger.debug("Component bootstrap completed")
 
 
@@ -924,7 +914,6 @@ def audit(  # pragma: no cover
         "--config",
         "-c",
         help="Path to audit configuration YAML file (auto-detects glassalpha.yaml, audit.yaml, config.yaml)",
-        # Remove exists=True to handle file checking manually for better error messages
         file_okay=True,
         dir_okay=False,
     ),
@@ -938,17 +927,7 @@ def audit(  # pragma: no cover
         None,
         "--strict",
         "-s",
-        help="Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs). Allows built-in datasets.",
-    ),
-    strict_full: bool = typer.Option(
-        False,
-        "--strict-full",
-        help="Enable full strict mode for maximum regulatory compliance. Requires explicit data schemas and model paths. Disallows built-in datasets.",
-    ),
-    repro: bool | None = typer.Option(
-        None,
-        "--repro",
-        help="Enable deterministic reproduction mode (auto-enabled in CI and for test* configs)",
+        help="Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs)",
     ),
     profile: str | None = typer.Option(
         None,
@@ -956,31 +935,16 @@ def audit(  # pragma: no cover
         "-p",
         help="Override audit profile",
     ),
-    override_config: Path | None = typer.Option(
-        None,
-        "--override",
-        help="Additional config file to override settings",
-        file_okay=True,
-    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
         help="Validate configuration without generating report",
     ),
-    no_fallback: bool = typer.Option(
+    verbose: bool = typer.Option(
         False,
-        "--no-fallback",
-        help="Fail if requested components are unavailable (no automatic fallbacks)",
-    ),
-    show_defaults: bool = typer.Option(
-        False,
-        "--show-defaults",
-        help="Show inferred defaults and exit (useful for debugging)",
-    ),
-    check_output: bool = typer.Option(
-        False,
-        "--check-output",
-        help="Check output paths are writable and exit (pre-flight validation)",
+        "--verbose",
+        "-v",
+        help="Enable verbose logging",
     ),
     check_shift: list[str] = typer.Option(
         [],
@@ -992,21 +956,6 @@ def audit(  # pragma: no cover
         "--fail-on-degradation",
         help="Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).",
     ),
-    save_model: Path | None = typer.Option(
-        None,
-        "--save-model",
-        help="Save the trained model to the specified path (e.g., model.pkl). Required for reasons/recourse commands.",
-    ),
-    fast: bool = typer.Option(
-        False,
-        "--fast",
-        help="Fast demo mode: reduce bootstrap samples to 100 for lightning-quick audits (~2-3s vs ~5-7s)",
-    ),
-    compact_report: bool = typer.Option(
-        True,
-        "--compact-report/--full-report",
-        help="Generate compact report (<1MB, default) by excluding individual fairness matched pairs from HTML. Use --full-report for complete data (may be 50-100MB). Full data always saved in manifest.json.",
-    ),
 ):
     """Generate a compliance audit report (HTML/PDF) with optional shift testing.
 
@@ -1017,7 +966,11 @@ def audit(  # pragma: no cover
         If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
         If no --output is provided, uses {config_name}.html
         Strict mode auto-enables for prod*/production* configs
-        Repro mode auto-enables in CI environments and for test* configs
+        Repro mode auto-enables in CI environments
+
+    Configuration:
+        Runtime options (fast mode, compact report, fallback behavior) are configured
+        in the config file under 'runtime:' section. See documentation for details.
 
     Examples:
         # Minimal usage (uses smart defaults)
@@ -1026,20 +979,11 @@ def audit(  # pragma: no cover
         # Explicit paths
         glassalpha audit --config audit.yaml --output report.html
 
-        # See what defaults would be used
-        glassalpha audit --show-defaults
-
-        # Check output paths before running audit
-        glassalpha audit --check-output
-
         # Strict mode for regulatory compliance
         glassalpha audit --config production.yaml  # Auto-enables strict!
 
-        # Override specific settings
-        glassalpha audit -c base.yaml --override custom.yaml
-
-        # Fail if components unavailable (no fallbacks)
-        glassalpha audit --no-fallback
+        # Validate configuration without running audit
+        glassalpha audit --dry-run
 
         # Stress test for demographic shifts (E6.5)
         glassalpha audit --check-shift gender:+0.1
@@ -1058,7 +1002,6 @@ def audit(  # pragma: no cover
                 config=config,
                 output=output,
                 strict=strict if strict is not None else None,
-                repro=repro if repro is not None else None,
             )
         except ValueError as e:
             _output_error(f"Configuration error: {e}")
@@ -1068,20 +1011,9 @@ def audit(  # pragma: no cover
         config = defaults["config"]
         output = defaults["output"]
         strict = defaults["strict"]
-        repro = defaults["repro"]
 
-        # Handle strict_full override - this takes precedence over regular strict mode
-        if strict_full:
-            strict = True  # Enable strict mode
-
-        # Show defaults if requested
-        if show_defaults:
-            typer.echo("Inferred defaults:")
-            typer.echo(f"  config: {config}")
-            typer.echo(f"  output: {output}")
-            typer.echo(f"  strict: {strict}")
-            typer.echo(f"  repro:  {repro}")
-            return
+        # Auto-detect CI environment for repro mode
+        repro = is_ci_environment()
 
         # Check file existence early with specific error message
         if not config.exists():
@@ -1094,14 +1026,6 @@ def audit(  # pragma: no cover
                 f"Examples:\n"
                 f"  glassalpha init --template quickstart --output my-audit.yaml\n"
                 f"  glassalpha audit --config my-audit.yaml --output report.html",
-            )
-            raise typer.Exit(ExitCode.USER_ERROR)
-
-        # Check override config if provided
-        if override_config and not override_config.exists():
-            _output_error(
-                f"Override configuration file does not exist: {override_config}\n\n"
-                f"Fix: Check file path and spelling, or remove --override flag",
             )
             raise typer.Exit(ExitCode.USER_ERROR)
 
@@ -1125,23 +1049,6 @@ def audit(  # pragma: no cover
             )
             raise typer.Exit(ExitCode.SYSTEM_ERROR)
 
-        # Check output paths and exit if requested
-        if check_output:
-            typer.secho("✓ Output path validation:", fg=typer.colors.GREEN, bold=True)
-            typer.echo(f"  Output file:      {output}")
-            typer.echo(f"  Output directory: {output_dir}")
-            typer.echo(f"  Manifest sidecar: {manifest_path}")
-            typer.echo()
-            typer.secho("✓ All output paths are writable", fg=typer.colors.GREEN)
-
-            # Show what would be created
-            if output.exists():
-                typer.echo(f"  Note: {output.name} will be overwritten")
-            if manifest_path.exists():
-                typer.echo(f"  Note: {manifest_path.name} will be overwritten")
-
-            return
-
         # Import here to avoid circular imports
         from ..config import load_config_from_file
         from ..core import list_components
@@ -1161,19 +1068,15 @@ def audit(  # pragma: no cover
             typer.echo(f"Loading configuration from: {config} (auto-detected)")
         else:
             typer.echo(f"Loading configuration from: {config}")
-        if override_config:
-            typer.echo(f"Applying overrides from: {override_config}")
 
         audit_config = load_config_from_file(
             config,
-            override_path=override_config,
             profile_name=profile,
             strict=strict,
-            strict_full=strict_full,
         )
 
         # Apply fast mode if requested (reduces bootstrap samples for quick demos)
-        if fast:
+        if audit_config.runtime.fast_mode:
             if not hasattr(audit_config, "metrics") or audit_config.metrics is None:
                 from ..config.schema import MetricsConfig
 
@@ -1201,20 +1104,23 @@ def audit(  # pragma: no cover
         # Show progress indication before starting pipeline
         typer.echo()
         typer.secho("⏱️  Running audit pipeline...", fg=typer.colors.CYAN)
-        if not fast:
-            typer.echo("   Estimated time: 5-7 seconds (use --fast for 2-3 seconds)")
+        if not audit_config.runtime.fast_mode:
+            typer.echo("   Estimated time: 5-7 seconds (set runtime.fast_mode=true for 2-3 seconds)")
         else:
             typer.echo("   Estimated time: 2-3 seconds")
         typer.echo()
 
         # Validate model availability and apply fallbacks (or fail if no_fallback is set)
-        audit_config, requested_model = preflight_check_model(audit_config, allow_fallback=not no_fallback)
+        audit_config, requested_model = preflight_check_model(
+            audit_config,
+            allow_fallback=not audit_config.runtime.no_fallback,
+        )
 
-        # Determine explainer selection early for consistent display
-        from ..explain.registry import ExplainerRegistry
+        # Determine explainer selection early for consistent display (explicit dispatch)
+        from glassalpha.explain import select_explainer
 
-        selected_explainer = ExplainerRegistry.find_compatible(audit_config.model.type, audit_config.model_dump())
-        typer.echo(f"Explainer: {selected_explainer}")
+        selected_explainer = select_explainer(model_type=audit_config.model.type, config=audit_config.model_dump())
+        typer.echo(f"Explainer: {type(selected_explainer).__name__}")
 
         # Apply repro mode if requested
         if repro:
@@ -1342,18 +1248,19 @@ def audit(  # pragma: no cover
                 audit_config,
                 output,
                 selected_explainer,
-                compact=compact_report,
+                compact=audit_config.runtime.compact_report,
                 requested_model=requested_model,
             )
 
-        # Save model if requested
-        if save_model and audit_results:
+        # Save model if requested (from config)
+        save_model_path = audit_config.model.save_path if hasattr(audit_config.model, "save_path") else None
+        if save_model_path and audit_results:
             try:
                 import joblib
 
                 model_to_save = audit_results.trained_model
                 if model_to_save is not None:
-                    save_model.parent.mkdir(parents=True, exist_ok=True)
+                    save_model_path.parent.mkdir(parents=True, exist_ok=True)
 
                     # Extract the underlying sklearn model from the wrapper for compatibility
                     underlying_model = model_to_save
@@ -1394,8 +1301,8 @@ def audit(  # pragma: no cover
                         "glassalpha_version": "0.2.0",
                     }
 
-                    joblib.dump(model_artifact, save_model)
-                    typer.secho(f"✓ Model saved to: {save_model}", fg=typer.colors.GREEN)
+                    joblib.dump(model_artifact, save_model_path)
+                    typer.secho(f"✓ Model saved to: {save_model_path}", fg=typer.colors.GREEN)
                 else:
                     typer.secho("⚠️  No model available to save", fg=typer.colors.YELLOW)
             except Exception as e:
@@ -1438,11 +1345,10 @@ def audit(  # pragma: no cover
         # Users should see "File not found", not internal stack traces
         raise typer.Exit(ExitCode.USER_ERROR) from None
     except ValueError as e:
-        # Check if this is a StrictModeError (which inherits from ValueError)
-        # StrictModeError should return VALIDATION_ERROR for CI integration
-        from ..config.strict import StrictModeError
-
-        if isinstance(e, StrictModeError):
+        # Check if this is a strict mode validation error (from Pydantic validator)
+        # Strict mode validation errors should return VALIDATION_ERROR for CI integration
+        error_msg = str(e)
+        if "Strict mode validation failed:" in error_msg:
             typer.secho(f"Strict mode validation failed: {e}", fg=typer.colors.RED, err=True)
             raise typer.Exit(ExitCode.VALIDATION_ERROR) from None
 
@@ -1634,12 +1540,7 @@ def validate(  # pragma: no cover
     strict: bool = typer.Option(
         False,
         "--strict",
-        help="Validate for strict mode compliance (allows built-in datasets)",
-    ),
-    strict_full: bool = typer.Option(
-        False,
-        "--strict-full",
-        help="Validate for full strict mode compliance (requires explicit schemas, disallows built-in datasets)",
+        help="Validate for strict mode compliance",
     ),
     strict_validation: bool = typer.Option(
         False,
@@ -1679,8 +1580,6 @@ def validate(  # pragma: no cover
     """
     try:
         from ..config import load_config_from_file
-        from ..core.registry import ModelRegistry  # Already correct location
-        from ..explain.registry import ExplainerRegistry
 
         # Use positional arg if provided, otherwise fall back to --config
         config_to_validate = config_path or config
@@ -1706,16 +1605,13 @@ def validate(  # pragma: no cover
             config_to_validate,
             profile_name=profile,
             strict=strict,
-            strict_full=strict_full,
         )
 
         typer.echo(f"Profile: {audit_config.audit_profile}")
         typer.echo(f"Model type: {audit_config.model.type}")
         strict_mode_desc = "not checked"
-        if strict_full:
-            strict_mode_desc = "full strict mode valid"
-        elif strict:
-            strict_mode_desc = "strict mode valid (quick mode allowed)"
+        if strict:
+            strict_mode_desc = "strict mode valid"
         typer.echo(f"Strict mode: {strict_mode_desc}")
 
         # Semantic validation
@@ -1949,7 +1845,7 @@ def validate(  # pragma: no cover
         raise typer.Exit(ExitCode.USER_ERROR) from None
     except ValueError as e:
         # All ValueErrors in validation context are validation failures
-        # (including StrictModeError which inherits from ValueError)
+        # (including strict mode validation from Pydantic validators)
         typer.secho(f"Validation failed: {e}", fg=typer.colors.RED, err=True)
         # Intentional: User-friendly validation errors
         raise typer.Exit(ExitCode.VALIDATION_ERROR) from None

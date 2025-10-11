@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.explain.policy import PolicyConstraints
+# from glassalpha.explain.policy import PolicyConstraints
 from glassalpha.explain.recourse import (
     RecourseRecommendation,
     RecourseResult,

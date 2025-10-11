@@ -20,7 +20,7 @@ class TestSaveLoadRoundtrip:
         try:
             import xgboost as xgb  # noqa: PLC0415
 
-            from glassalpha.models.tabular.xgboost import XGBoostWrapper  # noqa: PLC0415
+            from glassalpha.models.xgboost import XGBoostWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("XGBoost not available")
 
@@ -89,7 +89,7 @@ class TestSaveLoadRoundtrip:
         try:
             import sklearn  # noqa: PLC0415
 
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("sklearn not available")
 
@@ -158,7 +158,7 @@ class TestSaveLoadRoundtrip:
         try:
             import lightgbm  # noqa: PLC0415
 
-            from glassalpha.models.tabular.lightgbm import LightGBMWrapper  # noqa: PLC0415
+            from glassalpha.models.lightgbm import LightGBMWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("LightGBM not available")
 
@@ -225,7 +225,7 @@ class TestSaveLoadRoundtrip:
     def test_wrapper_load_returns_self(self) -> None:
         """Test that load() methods return self for method chaining."""
         try:
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("sklearn not available")
 
@@ -257,7 +257,7 @@ class TestSaveLoadRoundtrip:
     def test_save_creates_parent_directories(self) -> None:
         """Test that save() creates parent directories if needed."""
         try:
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("sklearn not available")
 
@@ -280,7 +280,7 @@ class TestSaveLoadRoundtrip:
     def test_load_nonexistent_file_raises_error(self) -> None:
         """Test that loading nonexistent file raises proper error."""
         try:
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("sklearn not available")
 
@@ -301,7 +301,7 @@ class TestSaveLoadRoundtrip:
         """Test that empty/default wrapper states are handled properly."""
         if wrapper_name == "LogisticRegressionWrapper":
             try:
-                from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper as WrapperClass  # noqa: PLC0415
+                from glassalpha.models.sklearn import LogisticRegressionWrapper as WrapperClass  # noqa: PLC0415
             except ImportError:
                 pytest.skip("sklearn not available")
         else:

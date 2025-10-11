@@ -227,9 +227,9 @@ GlassAlpha supports models saved with:
 Implement the `ModelInterface` protocol:
 
 ```python
-from glassalpha.core import ModelRegistry
+from glassalpha.models import load_model
 
-@ModelRegistry.register("my_model")
+# Add to models/__init__.py load_model() function
 class MyModel:
     capabilities = {"supports_shap": True}
     version = "1.0.0"

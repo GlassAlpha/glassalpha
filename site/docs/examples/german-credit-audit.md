@@ -69,7 +69,7 @@ Create a configuration file for the German Credit audit:
 
 ```yaml
 # german_credit.yaml
-audit_profile: tabular_compliance
+# Profile removed - use direct model/explainer/metric configuration
 
 # Reproducibility for consistent results
 reproducibility:

@@ -42,7 +42,7 @@ Load and validate audit configuration from YAML file.
 def load(
     config_path: str | Path,
     strict: bool = False,
-    profile: str | None = None
+    model: dict | None = None
 ) -> AuditConfig
 ```
 
@@ -52,7 +52,7 @@ def load(
 | ------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `config_path` | `str` or `Path` | **Required**. Path to YAML configuration file                                                                                                                 |
 | `strict`      | `bool`          | **Optional**. Enable strict validation mode (default: `False`). When `True`, enforces regulatory requirements: explicit seeds, schema validation, no defaults |
-| `profile`     | `str`           | **Optional**. Audit profile to apply (default: `"tabular_compliance"`). See [Profiles](#profiles) section                                                     |
+| `model`       | `dict`          | **Optional**. Override model configuration from config file (e.g., `{"type": "xgboost"}`)                                                                     |
 
 ### Returns
 
@@ -67,8 +67,8 @@ config = ga.config.load("audit.yaml")
 # Strict mode (for regulatory submission)
 config = ga.config.load("audit.yaml", strict=True)
 
-# Load with specific profile
-config = ga.config.load("audit.yaml", profile="financial_services")
+# Load with model override
+config = ga.config.load("audit.yaml", model={"type": "lightgbm"})
 ```
 
 ### Raises
@@ -364,67 +364,41 @@ output_config = ga.config.OutputConfig(
 
 ---
 
-## Profiles
+## Configuration Structure
 
-Audit profiles define preset configurations for specific use cases.
+GlassAlpha uses direct configuration without profiles. Specify model, explainer, and metric settings explicitly in your YAML config file.
 
-### `glassalpha.config.get_profile()`
+### Basic Configuration Structure
 
-Get predefined profile configuration.
+```yaml
+model:
+  type: xgboost # or "lightgbm", "sklearn"
+  params:
+    objective: binary:logistic
+    n_estimators: 100
 
-```python
-def get_profile(profile_name: str) -> dict
+explainers:
+  strategy: first_compatible # or "all", "priority"
+  priority: [treeshap, kernelshap]
+
+metrics:
+  performance:
+    metrics: [accuracy, precision, recall, f1, auc_roc]
+  fairness:
+    protected_attributes: [gender, race, age]
+    metrics: [demographic_parity, equal_opportunity]
+
+reproducibility:
+  random_seed: 42
 ```
 
-### Available profiles
+### Model Types
 
-| Profile              | Description                               | Use Case                                    |
-| -------------------- | ----------------------------------------- | ------------------------------------------- |
-| `tabular_compliance` | **Default**. Standard tabular ML audit    | General purpose classification models       |
-| `financial_services` | Banking/credit compliance (SR 11-7, ECOA) | Credit scoring, loan approval models        |
-| `insurance`          | Insurance risk compliance (NAIC)          | Underwriting, claims models                 |
-| `healthcare`         | Healthcare ML compliance                  | Treatment recommendation, diagnosis support |
-| `fair_lending`       | Fair lending focus (ECOA, FCRA)           | Mortgage, auto loan models                  |
-
-### Example
-
-```python
-# Load with profile
-config = ga.config.load("audit.yaml", profile="financial_services")
-
-# Or get profile dictionary
-profile_dict = ga.config.get_profile("financial_services")
-print(profile_dict)
-```
-
-### Custom profiles
-
-Create custom profiles by extending base profiles:
-
-```python
-# Get base profile
-base = ga.config.get_profile("tabular_compliance")
-
-# Customize
-custom_profile = {
-    **base,
-    "fairness": {
-        **base["fairness"],
-        "tolerance": 0.03,  # Stricter tolerance
-        "min_group_size": 100
-    },
-    "policy": {
-        "gates": {
-            "min_accuracy": 0.80,
-            "max_bias": 0.05
-        }
-    }
-}
-
-# Save as YAML
-with open("custom_profile.yaml", "w") as f:
-    yaml.dump(custom_profile, f)
-```
+| Model Type | Description                   | Use Case                           |
+| ---------- | ----------------------------- | ---------------------------------- |
+| `xgboost`  | XGBoost with TreeSHAP support | Production ML systems, tree models |
+| `lightgbm` | LightGBM integration          | Large datasets, performance        |
+| `sklearn`  | Scikit-learn models           | Baseline, linear models            |
 
 ---
 

@@ -5,12 +5,12 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from glassalpha.config.loader import load_config_from_file
+from glassalpha.config import load_config_from_file
 
 # Make tests CWD-independent by using absolute paths based on this file's location
 HERE = Path(__file__).resolve().parent
 CONFIG_DIR = HERE.parent / "configs"
-from glassalpha.config.schema import DataConfig
+from glassalpha.config import DataConfig
 from glassalpha.datasets.registry import REGISTRY
 from glassalpha.pipeline.audit import AuditPipeline
 

@@ -8,7 +8,7 @@ Tests verify that:
 
 import pytest
 
-from glassalpha.core.registry import ModelRegistry
+from glassalpha.models import load_model
 
 
 class TestModelRegistryAutoImport:

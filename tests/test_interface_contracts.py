@@ -6,8 +6,8 @@ its declared interface, preventing runtime errors and ensuring API consistency.
 
 import pytest
 
-from glassalpha.core.registry import ModelRegistry
-from glassalpha.explain.registry import ExplainerRegistry
+from glassalpha.models import load_model
+from glassalpha.explain import select_explainer # ExplainerRegistry
 from glassalpha.metrics.registry import MetricRegistry
 
 

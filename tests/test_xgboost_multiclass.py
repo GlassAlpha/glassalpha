@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.models.tabular.xgboost import XGBoostWrapper
+from glassalpha.models.xgboost import XGBoostWrapper
 
 # Tests re-enabled - API appears compatible
 

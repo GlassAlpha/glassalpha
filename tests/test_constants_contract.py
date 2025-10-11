@@ -60,7 +60,7 @@ def test_import_contract_critical_modules():
     from glassalpha.models._features import align_features
 
     # Import base wrapper and feature alignment (covered by contract tests)
-    from glassalpha.models.tabular.base import BaseTabularWrapper, _ensure_fitted
+    from glassalpha.models.base import BaseTabularWrapper, _ensure_fitted
 
     # Test _ensure_fitted functionality
     class MockModel:

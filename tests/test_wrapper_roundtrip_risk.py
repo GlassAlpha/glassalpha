@@ -23,7 +23,7 @@ class TestWrapperRoundtripRisk:
 
     def test_xgboost_fit_save_load_predict_roundtrip(self):
         """XGBoost fit → save → load → predict must work with all metadata intact."""
-        from glassalpha.models.tabular.xgboost import XGBoostWrapper
+        from glassalpha.models.xgboost import XGBoostWrapper
 
         # Create training data
         rng = np.random.default_rng(42)
@@ -80,7 +80,7 @@ class TestWrapperRoundtripRisk:
     def test_lightgbm_feature_names_preservation(self):
         """LightGBM feature names must survive save/load for SHAP compatibility."""
         pytest.importorskip("lightgbm")  # Skip if LightGBM not available
-        from glassalpha.models.tabular.lightgbm import LightGBMWrapper
+        from glassalpha.models.lightgbm import LightGBMWrapper
 
         # Training data with specific column names
         X_train = pd.DataFrame(
@@ -117,7 +117,7 @@ class TestWrapperRoundtripRisk:
 
     def test_sklearn_logistic_regression_roundtrip(self):
         """Sklearn LogisticRegression must preserve random_state and coefficients."""
-        from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper
+        from glassalpha.models.sklearn import LogisticRegressionWrapper
 
         # Create linearly separable data for stable coefficients
         rng = np.random.default_rng(789)
@@ -154,7 +154,7 @@ class TestWrapperRoundtripRisk:
 
     def test_save_creates_parent_directories(self):
         """Save must create parent directories - prevents customer file errors."""
-        from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper
+        from glassalpha.models.sklearn import LogisticRegressionWrapper
 
         X_train = pd.DataFrame({"x": [1, 2, 3, 4]})
         y_train = [0, 0, 1, 1]
@@ -177,7 +177,7 @@ class TestWrapperRoundtripRisk:
 
     def test_unfitted_save_raises_exact_error_message(self):
         """Unfitted model save must raise exact error message for consistency."""
-        from glassalpha.models.tabular.xgboost import XGBoostWrapper
+        from glassalpha.models.xgboost import XGBoostWrapper
 
         wrapper = XGBoostWrapper()
         # Don't fit the model

@@ -5,7 +5,100 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] - v0.2.1 Pre-PyPI Simplification
+
+**Major architectural simplification** before PyPI launch. All breaking changes documented below.
+
+### Architecture Simplification (Breaking)
+
+- **Replaced Dynamic Registries with Explicit Dispatch**
+
+  - Removed `src/glassalpha/core/registry.py` (187 lines) - dynamic plugin system
+  - Removed `src/glassalpha/profiles/` (97 lines) - profile abstraction layer
+  - Removed `src/glassalpha/core/interfaces.py` (156 lines) - interface declarations
+  - Implemented explicit dispatch in `models/__init__.py`, `explain/__init__.py`, `metrics/__init__.py`
+  - **Migration**: Update imports to use `load_model()`, `select_explainer()`, `compute_metrics()` directly
+
+- **Flattened Directory Structure**
+
+  - Consolidated `models/tree_models.py` (XGBoost + LightGBM in one file)
+  - Consolidated `explain/shap.py` (TreeSHAP + KernelSHAP together)
+  - Consolidated `metrics/fairness.py` (all fairness metrics in one file)
+  - Removed `src/glassalpha/core/` directory (replaced with direct imports)
+
+- **Simplified Configuration System**
+
+  - Removed profile-based configuration (`audit_profile` parameter)
+  - Simplified YAML config to direct model/explainer/metric specification
+  - Removed `src/glassalpha/config/strict.py` validation layer
+  - **Migration**: Specify `model.type`, `explainers.strategy`, `metrics.*` directly in config
+
+- **Consolidated Similar Code**
+
+  - Tree models (XGBoost, LightGBM) share 90% logic → single file
+  - SHAP explainers (TreeSHAP, KernelSHAP) share patterns → single file
+  - Fairness metrics share computation patterns → single file
+  - **Result**: AI can trace patterns across similar functionality in one place
+
+- **Clear Error Messages for Extension Points**
+  - `ValueError(f"Unknown model_type: {model_type}")` instead of registry lookup failures
+  - `ImportError` with specific installation instructions for optional dependencies
+  - **Result**: Users get actionable error messages, AI finds extension points with Ctrl+F
+
+### Changed
+
+- **CLI Simplification (Breaking)**
+
+  - Reduced `audit` command parameters from 16 to 8 (50% reduction)
+  - Moved runtime options to config file: `fast_mode`, `compact_report`, `no_fallback`
+  - Moved `model.save_path` to config (was `--save-model` flag)
+  - Auto-detect CI environment for reproduction mode (no manual flag needed)
+  - Deleted debug flags: `--show-defaults`, `--check-output`, `--override`
+  - **Migration**: Move CLI flags to config file `runtime:` section
+
+- **Strict Mode Consolidation (Breaking)**
+
+  - Consolidated 3 modes (`strict`, `strict_full`, `quick_mode`) into single `--strict` flag
+  - New semantics: `--strict` requires artifact preprocessing and explicit schemas
+  - Default mode allows built-in datasets with implicit schemas
+  - **Migration**: Replace `--strict-full` with `--strict` in scripts
+
+- **Configuration Validation (Breaking)**
+
+  - Moved all validation from `strict.py` to Pydantic validators in `schema.py`
+  - Deleted `src/glassalpha/config/strict.py` (279 lines removed)
+  - Validation now automatic on config construction
+  - **Migration**: Remove `validate_strict_mode()` calls - Pydantic handles it
+
+- **Exception Hierarchy (Breaking)**
+
+  - Standardized all exceptions under `GlassAlphaError` base class
+  - Added error codes: `ConfigError` (GAE5001), `ModelError` (GAE3001), `ExplainerError` (GAE3002), `MetricError` (GAE3003), `DeterminismError` (GAE6001), `BootstrapError` (GAE6002)
+  - All exceptions now include: code, message, fix suggestion, docs link
+  - `StrictModeError` removed (now raises `ValueError` from Pydantic)
+  - **Migration**: Catch `ValueError` instead of `StrictModeError` for config errors
+
+- **Utils Package Organization**
+  - Comprehensive `__init__.py` with 13 commonly-used utilities exported
+  - Documented module responsibilities (12 modules)
+  - Cleaner imports: `from glassalpha.utils import hash_dataframe, set_global_seed`
+  - **Migration**: Import common utilities from package level, not submodules
+
+### Removed
+
+- Deleted `src/glassalpha/config/strict.py` (279 lines) - validation now in Pydantic
+- Deleted `src/glassalpha/profiles/base.py` (97 lines) - unused abstraction layer
+- Removed `quick_mode` parameter from validation
+- Removed `strict_full` flag (consolidated to `strict`)
+- Removed `StrictModeError` exception (use `ValueError`)
+- Removed 8 CLI parameters (moved to config or deleted)
+
+### Performance
+
+- ~850 lines of code removed across codebase
+- 50% reduction in CLI parameters (16 → 8)
+- Simpler architecture: single validation path, consistent exceptions
+- Better maintainability: less abstraction overhead
 
 ### Added
 

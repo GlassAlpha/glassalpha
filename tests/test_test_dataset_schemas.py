@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from glassalpha.config.loader import load_config_from_file
+from glassalpha.config import load_config_from_file
 from glassalpha.utils.cache_dirs import resolve_data_root
 
 

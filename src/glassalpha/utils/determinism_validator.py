@@ -13,11 +13,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from glassalpha.exceptions import DeterminismError
+
 logger = logging.getLogger(__name__)
-
-
-class DeterminismError(Exception):
-    """Raised when determinism validation fails."""
 
 
 @dataclass

@@ -10,8 +10,6 @@ from typing import Any
 
 import pandas as pd
 
-from ..core.registry import ModelRegistry
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,10 +32,12 @@ def train_from_config(cfg: Any, X: pd.DataFrame, y: Any) -> Any:
     # Get model type from config
     model_type = cfg.model.type
 
-    # Get model class from registry (auto-imports if needed)
+    # Load model using explicit dispatch
+    from glassalpha.models import load_model
+
     try:
-        model_class = ModelRegistry.get(model_type)
-    except KeyError as e:
+        model_class = load_model(model_type)
+    except ValueError as e:
         msg = f"Unknown model type: {model_type}"
         raise ValueError(msg) from e
 

@@ -49,7 +49,7 @@ class TestGoldenReportSnapshots:
     def test_report_renderer_basic_smoke_test(self):
         """Report renderer must be importable and create basic HTML."""
         try:
-            from glassalpha.config.schema import AuditConfig
+            from glassalpha.config import AuditConfig
             from glassalpha.pipeline.audit import AuditResults
             from glassalpha.report.renderer import AuditReportRenderer
         except ImportError as e:

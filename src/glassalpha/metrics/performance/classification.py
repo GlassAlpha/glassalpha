@@ -37,12 +37,10 @@ except ImportError:
     roc_auc_score = _sklearn_unavailable
 
 from ..base import BaseMetric
-from ..registry import MetricRegistry
 
 logger = logging.getLogger(__name__)
 
 
-@MetricRegistry.register("accuracy", priority=100)
 class AccuracyMetric(BaseMetric):
     """Accuracy metric for classification tasks.
 
@@ -96,7 +94,6 @@ class AccuracyMetric(BaseMetric):
         return ["accuracy", "n_samples"]
 
 
-@MetricRegistry.register("precision", priority=90)
 class PrecisionMetric(BaseMetric):
     """Precision metric for classification tasks.
 
@@ -168,7 +165,6 @@ class PrecisionMetric(BaseMetric):
         return ["precision", "n_samples", "n_classes", "average"]
 
 
-@MetricRegistry.register("recall", priority=89)
 class RecallMetric(BaseMetric):
     """Recall (sensitivity) metric for classification tasks.
 
@@ -239,7 +235,6 @@ class RecallMetric(BaseMetric):
         return ["recall", "n_samples", "n_classes", "average"]
 
 
-@MetricRegistry.register("f1", priority=88)
 class F1Metric(BaseMetric):
     """F1-score metric for classification tasks.
 
@@ -310,7 +305,6 @@ class F1Metric(BaseMetric):
         return ["f1", "n_samples", "n_classes", "average"]
 
 
-@MetricRegistry.register("auc_roc", priority=87)
 class AUCROCMetric(BaseMetric):
     """AUC-ROC metric for classification tasks.
 
@@ -398,7 +392,6 @@ class AUCROCMetric(BaseMetric):
         return ["auc_roc", "n_samples", "n_classes", "multiclass"]
 
 
-@MetricRegistry.register("classification_report", priority=85)
 class ClassificationReportMetric(BaseMetric):
     """Comprehensive classification report metric.
 

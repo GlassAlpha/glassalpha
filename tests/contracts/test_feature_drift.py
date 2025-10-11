@@ -145,7 +145,7 @@ class TestFeatureDriftContract:
         This is the main regression test for the original problem:
         "ValueError: The feature names should match those that were passed during fit"
         """
-        from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+        from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
 
         # Skip if sklearn not available
         try:
@@ -201,7 +201,7 @@ class TestFeatureDriftContract:
         """Test that all wrappers properly handle feature drift."""
         # Import wrapper class by name
         if wrapper_class_name == "LogisticRegressionWrapper":
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper as WrapperClass  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper as WrapperClass  # noqa: PLC0415
         else:
             pytest.skip(f"Wrapper {wrapper_class_name} not implemented in test")
 

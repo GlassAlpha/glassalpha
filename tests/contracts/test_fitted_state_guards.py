@@ -17,7 +17,7 @@ class TestFittedStateGuards:
 
     def test_xgboost_wrapper_unfitted_guards(self) -> None:
         """Test XGBoost wrapper raises correct errors when unfitted."""
-        from glassalpha.models.tabular.xgboost import XGBoostWrapper  # noqa: PLC0415
+        from glassalpha.models.xgboost import XGBoostWrapper  # noqa: PLC0415
 
         wrapper = XGBoostWrapper()
 
@@ -34,7 +34,7 @@ class TestFittedStateGuards:
     def test_lightgbm_wrapper_unfitted_guards(self) -> None:
         """Test LightGBM wrapper raises correct errors when unfitted."""
         try:
-            from glassalpha.models.tabular.lightgbm import LightGBMWrapper  # noqa: PLC0415
+            from glassalpha.models.lightgbm import LightGBMWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("LightGBM not available")
 
@@ -49,7 +49,7 @@ class TestFittedStateGuards:
     def test_sklearn_wrapper_unfitted_guards(self) -> None:
         """Test sklearn wrappers raise correct errors when unfitted."""
         try:
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("sklearn not available")
 
@@ -69,7 +69,7 @@ class TestFittedStateGuards:
         try:
             import pandas as pd  # noqa: PLC0415
 
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("Dependencies not available")
 
@@ -99,7 +99,7 @@ class TestFittedStateGuards:
 
             import pandas as pd  # noqa: PLC0415
 
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
         except ImportError:
             pytest.skip("Dependencies not available")
 
@@ -137,21 +137,21 @@ class TestFittedStateGuards:
 
         # Collect available wrappers
         try:
-            from glassalpha.models.tabular.xgboost import XGBoostWrapper  # noqa: PLC0415
+            from glassalpha.models.xgboost import XGBoostWrapper  # noqa: PLC0415
 
             wrappers_to_test.append(("XGBoost", XGBoostWrapper))
         except ImportError:
             pass
 
         try:
-            from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
 
             wrappers_to_test.append(("LogisticRegression", LogisticRegressionWrapper))
         except ImportError:
             pass
 
         try:
-            from glassalpha.models.tabular.lightgbm import LightGBMWrapper  # noqa: PLC0415
+            from glassalpha.models.lightgbm import LightGBMWrapper  # noqa: PLC0415
 
             wrappers_to_test.append(("LightGBM", LightGBMWrapper))
         except ImportError:

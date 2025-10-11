@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 
 from ..base import BaseMetric
-from ..registry import MetricRegistry
+
+# Registry removed - using explicit dispatch
 
 logger = logging.getLogger(__name__)
 
 
-@MetricRegistry.register("demographic_parity", priority=100)
 class DemographicParityMetric(BaseMetric):
     """Demographic Parity (Statistical Parity) metric.
 
@@ -162,7 +162,6 @@ class DemographicParityMetric(BaseMetric):
         return ["demographic_parity", "n_samples", "tolerance", "n_sensitive_attributes"]
 
 
-@MetricRegistry.register("equal_opportunity", priority=99)
 class EqualOpportunityMetric(BaseMetric):
     """Equal Opportunity metric.
 
@@ -317,7 +316,6 @@ class EqualOpportunityMetric(BaseMetric):
         return ["equal_opportunity", "n_samples", "tolerance", "n_sensitive_attributes"]
 
 
-@MetricRegistry.register("equalized_odds", priority=98)
 class EqualizedOddsMetric(BaseMetric):
     """Equalized Odds metric.
 
@@ -459,7 +457,6 @@ class EqualizedOddsMetric(BaseMetric):
         return ["equalized_odds", "n_samples", "tolerance", "n_sensitive_attributes"]
 
 
-@MetricRegistry.register("predictive_parity", priority=97)
 class PredictiveParityMetric(BaseMetric):
     """Predictive Parity (Calibration) metric.
 

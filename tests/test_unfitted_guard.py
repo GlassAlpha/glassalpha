@@ -11,7 +11,7 @@ def test_sklearn_wrapper_unfitted_guard() -> None:
     """Test that sklearn wrapper raises exact error message when unfitted."""
     try:
         from glassalpha.constants import NO_MODEL_MSG  # noqa: PLC0415
-        from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+        from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
     except ImportError:
         pytest.skip("sklearn wrapper or constants not available")
 
@@ -32,7 +32,7 @@ def test_xgboost_wrapper_unfitted_guard() -> None:
     """Test that XGBoost wrapper raises exact error message when unfitted."""
     try:
         from glassalpha.constants import NO_MODEL_MSG  # noqa: PLC0415
-        from glassalpha.models.tabular.xgboost import XGBoostWrapper  # noqa: PLC0415
+        from glassalpha.models.xgboost import XGBoostWrapper  # noqa: PLC0415
     except ImportError:
         pytest.skip("XGBoost wrapper or constants not available")
 
@@ -58,7 +58,7 @@ def test_lightgbm_wrapper_unfitted_guard() -> None:
     """Test that LightGBM wrapper raises exact error message when unfitted."""
     try:
         from glassalpha.constants import NO_MODEL_MSG  # noqa: PLC0415
-        from glassalpha.models.tabular.lightgbm import LightGBMWrapper  # noqa: PLC0415
+        from glassalpha.models.lightgbm import LightGBMWrapper  # noqa: PLC0415
     except ImportError:
         pytest.skip("LightGBM wrapper or constants not available")
 
@@ -83,21 +83,21 @@ def test_base_wrapper_guard_consistency() -> None:
     wrapper_classes = []
 
     try:
-        from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+        from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
 
         wrapper_classes.append(("LogisticRegression", LogisticRegressionWrapper))
     except ImportError:
         pass
 
     try:
-        from glassalpha.models.tabular.xgboost import XGBoostWrapper  # noqa: PLC0415
+        from glassalpha.models.xgboost import XGBoostWrapper  # noqa: PLC0415
 
         wrapper_classes.append(("XGBoost", XGBoostWrapper))
     except ImportError:
         pass
 
     try:
-        from glassalpha.models.tabular.lightgbm import LightGBMWrapper  # noqa: PLC0415
+        from glassalpha.models.lightgbm import LightGBMWrapper  # noqa: PLC0415
 
         wrapper_classes.append(("LightGBM", LightGBMWrapper))
     except ImportError:
@@ -123,7 +123,7 @@ def test_constant_import_from_base_module() -> None:
     """Test that base module can import the constant without errors."""
     # This is the specific regression test for the import-time failure
     try:
-        from glassalpha.models.tabular.base import _ensure_fitted  # noqa: PLC0415
+        from glassalpha.models.base import _ensure_fitted  # noqa: PLC0415
 
         # If this import succeeds, the constant import is working
         assert True  # noqa: S101

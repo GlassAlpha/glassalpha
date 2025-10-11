@@ -11,8 +11,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .registry import MetricRegistry
-
 logger = logging.getLogger(__name__)
 
 
@@ -116,7 +114,6 @@ class BaseMetric:
         return False
 
 
-@MetricRegistry.register("noop_metric", priority=-100)
 class NoOpMetric(BaseMetric):
     """NoOp metric for testing and fallback purposes.
 

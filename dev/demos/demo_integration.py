@@ -31,7 +31,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 from glassalpha.config import load_config
-from glassalpha.config.strict import StrictModeError
+
+# StrictModeError removed - now using ValueError from Pydantic validators
 from glassalpha.core import (
     is_enterprise,
     list_components,
@@ -105,7 +106,7 @@ def main():
     try:
         config = load_config(incomplete_config, strict=True)
         print("   ✗ Should have failed strict validation!")
-    except StrictModeError as e:
+    except ValueError as e:
         print("   ✓ Strict mode correctly rejected incomplete config")
         error_lines = str(e).split("\n")[:3]
         for line in error_lines:

@@ -100,40 +100,7 @@ all = ["glassalpha[explain,viz,pdf,pdf_determinism]"]
 [project.scripts]
 glassalpha = "glassalpha.cli:main"
 
-[project.entry-points."glassalpha.models"]
-# Core models (no optional dependencies)
-passthrough = "glassalpha.core.noop_components:PassThroughModel"
-logistic_regression = "glassalpha.models.tabular.sklearn:LogisticRegressionWrapper"
-sklearn_generic = "glassalpha.models.tabular.sklearn:SklearnGenericWrapper"
-# Tree models (require optional dependencies)
-xgboost = "glassalpha.models.tabular.xgboost:XGBoostWrapper"
-lightgbm = "glassalpha.models.tabular.lightgbm:LightGBMWrapper"
-
-[project.entry-points."glassalpha.explainers"]
-# Core explainers (no optional dependencies)
-noop = "glassalpha.explain.noop:NoOpExplainer"
-coefficients = "glassalpha.explain.coefficients:CoefficientsExplainer"
-permutation = "glassalpha.explain.permutation:PermutationExplainer"
-# SHAP explainers (require optional dependencies)
-treeshap = "glassalpha.explain.shap.tree:TreeSHAPExplainer"
-kernelshap = "glassalpha.explain.shap.kernel:KernelSHAPExplainer"
-
-[project.entry-points."glassalpha.metrics"]
-# Core metrics
-noop = "glassalpha.metrics.base:NoOpMetric"
-# Performance metrics
-accuracy = "glassalpha.metrics.performance.classification:AccuracyMetric"
-precision = "glassalpha.metrics.performance.classification:PrecisionMetric"
-recall = "glassalpha.metrics.performance.classification:RecallMetric"
-f1 = "glassalpha.metrics.performance.classification:F1Metric"
-auc_roc = "glassalpha.metrics.performance.classification:AUCROCMetric"
-# Fairness metrics
-demographic_parity = "glassalpha.metrics.fairness.bias_detection:DemographicParityMetric"
-equal_opportunity = "glassalpha.metrics.fairness.bias_detection:EqualOpportunityMetric"
-equalized_odds = "glassalpha.metrics.fairness.bias_detection:EqualizedOddsMetric"
-
-[project.entry-points."glassalpha.profiles"]
-tabular_compliance = "glassalpha.profiles.tabular:TabularComplianceProfile"
+# Entry points removed - using explicit dispatch for AI maintainability
 
 [build-system]
 requires = ["setuptools>=70.0.0", "wheel>=0.43.0", "build>=1.2.1"]

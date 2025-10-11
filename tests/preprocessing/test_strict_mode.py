@@ -5,8 +5,7 @@ from pathlib import Path
 import pytest
 
 # Import required modules
-from glassalpha.config.schema import AuditConfig, PreprocessingConfig
-from glassalpha.config.strict import validate_strict_mode
+from glassalpha.config import AuditConfig, PreprocessingConfig
 from glassalpha.preprocessing.validation import assert_runtime_versions
 
 
@@ -36,54 +35,49 @@ def test_strict_mode_fails_on_version_mismatch(mismatched_version_manifest: dict
 
 
 def test_strict_profile_blocks_auto_mode():
-    """With profile=tabular_compliance, preprocessing.mode='auto' must error before running."""
-    # Create config with auto mode
-    config = AuditConfig(
-        audit_profile="tabular_compliance",
-        preprocessing=PreprocessingConfig(mode="auto"),
-        model={"type": "xgboost", "path": "dummy.pkl"},
-        data={"dataset": "custom", "path": "dummy.csv"},
-    )
-
-    # Strict validation should fail
-    with pytest.raises((ValueError, RuntimeError)) as exc_info:
-        validate_strict_mode(config)
+    """With profile=tabular_compliance and strict_mode=True, preprocessing.mode='auto' must error."""
+    # Pydantic validation should fail when creating the config
+    with pytest.raises(ValueError) as exc_info:
+        AuditConfig(
+            audit_profile="tabular_compliance",
+            strict_mode=True,
+            preprocessing=PreprocessingConfig(mode="auto"),
+            model={"type": "xgboost", "path": "dummy.pkl"},
+            data={"dataset": "custom", "path": "dummy.csv", "target_column": "target"},
+        )
 
     error_msg = str(exc_info.value)
     assert "auto" in error_msg.lower() or "artifact" in error_msg.lower()
-    assert "strict" in error_msg.lower() or "compliance" in error_msg.lower()
 
 
 def test_strict_mode_requires_hashes():
     """Strict mode must require both file_hash and params_hash."""
-    # Missing file_hash
-    config = AuditConfig(
-        audit_profile="tabular_compliance",
-        preprocessing=PreprocessingConfig(
-            mode="artifact",
-            artifact_path=Path("dummy.pkl"),
-            expected_params_hash="sha256:abc123",
-            # expected_file_hash missing
-        ),
-        model={"type": "xgboost", "path": "dummy.pkl"},
-        data={"dataset": "custom", "path": "dummy.csv"},
-    )
+    # Missing file_hash - Pydantic validation should fail
+    with pytest.raises(ValueError, match="expected_file_hash must be specified"):
+        AuditConfig(
+            audit_profile="tabular_compliance",
+            strict_mode=True,
+            preprocessing=PreprocessingConfig(
+                mode="artifact",
+                artifact_path=Path("dummy.pkl"),
+                expected_params_hash="sha256:abc123",
+                # expected_file_hash missing
+            ),
+            model={"type": "xgboost", "path": "dummy.pkl"},
+            data={"dataset": "custom", "path": "dummy.csv", "target_column": "target"},
+        )
 
-    with pytest.raises((ValueError, RuntimeError)):
-        validate_strict_mode(config)
-
-    # Missing params_hash
-    config2 = AuditConfig(
-        audit_profile="tabular_compliance",
-        preprocessing=PreprocessingConfig(
-            mode="artifact",
-            artifact_path=Path("dummy.pkl"),
-            expected_file_hash="sha256:def456",
-            # expected_params_hash missing
-        ),
-        model={"type": "xgboost", "path": "dummy.pkl"},
-        data={"dataset": "custom", "path": "dummy.csv"},
-    )
-
-    with pytest.raises((ValueError, RuntimeError)):
-        validate_strict_mode(config2)
+    # Missing params_hash - Pydantic validation should fail
+    with pytest.raises(ValueError, match="expected_params_hash must be specified"):
+        AuditConfig(
+            audit_profile="tabular_compliance",
+            strict_mode=True,
+            preprocessing=PreprocessingConfig(
+                mode="artifact",
+                artifact_path=Path("dummy.pkl"),
+                expected_file_hash="sha256:def456",
+                # expected_params_hash missing
+            ),
+            model={"type": "xgboost", "path": "dummy.pkl"},
+            data={"dataset": "custom", "path": "dummy.csv", "target_column": "target"},
+        )

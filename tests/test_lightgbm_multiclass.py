@@ -7,7 +7,7 @@ import pytest
 try:
     import lightgbm
 
-    from glassalpha.models.tabular.lightgbm import LightGBMWrapper
+    from glassalpha.models.lightgbm import LightGBMWrapper
 
     LIGHTGBM_AVAILABLE = True
 except ImportError:

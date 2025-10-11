@@ -16,7 +16,7 @@ from unittest.mock import patch
 import jinja2
 import pytest
 
-from glassalpha.config.schema import AuditConfig
+from glassalpha.config import AuditConfig
 from glassalpha.pipeline.audit import AuditResults
 from glassalpha.report.renderer import AuditReportRenderer, render_audit_report
 

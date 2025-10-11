@@ -1012,17 +1012,16 @@ def run_audit(
     # Load configuration
     audit_config = load_config_from_file(
         config_path,
-        override_path=override_config,
         profile_name=profile,
         strict=strict,
     )
 
-    # Determine explainer selection
-    from glassalpha.explain.registry import ExplainerRegistry
+    # Determine explainer selection (explicit dispatch)
+    from glassalpha.explain import select_explainer
 
-    selected_explainer = ExplainerRegistry.find_compatible(
-        audit_config.model.type,
-        audit_config.model_dump(),
+    selected_explainer = select_explainer(
+        model_type=audit_config.model.type,
+        config=audit_config.model_dump(),
     )
 
     # Run audit pipeline

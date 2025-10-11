@@ -11,7 +11,7 @@ Contract:
 import numpy as np
 import pandas as pd
 
-from glassalpha.models.tabular.sklearn import LogisticRegressionWrapper
+from glassalpha.models.sklearn import LogisticRegressionWrapper
 
 
 def _toy(n=40):

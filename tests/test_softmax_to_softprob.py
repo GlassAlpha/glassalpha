@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.models.tabular.xgboost import XGBoostWrapper
+from glassalpha.models.xgboost import XGBoostWrapper
 
 
 def test_softmax_coerced_to_softprob_with_require_proba():

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from glassalpha.config.schema import DataConfig
+from glassalpha.config import DataConfig
 from glassalpha.pipeline.audit import AuditPipeline
 
 

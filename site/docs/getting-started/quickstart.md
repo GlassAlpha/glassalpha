@@ -120,7 +120,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 # Load data (GlassAlpha returns file paths, not DataFrames)
-german_path = ga.datasets.REGISTRY['german_credit'].fetch_fn()
+german_path = ga.datasets.fetch('german_credit')
 df = pd.read_csv(german_path)
 
 # Encode categorical columns for sklearn compatibility
@@ -450,10 +450,13 @@ Open `my_first_audit.pdf` to see your comprehensive audit report containing:
 
 The `german_credit_simple.yaml` configuration file contains all audit settings (packaged with GlassAlpha):
 
-Audit profile determines component selection:
+Direct configuration (no profiles needed):
 
 ```yaml
-audit_profile: german_credit_default
+model:
+  type: xgboost
+explainers:
+  strategy: first_compatible
 ```
 
 Reproducibility settings:

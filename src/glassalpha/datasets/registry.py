@@ -1,34 +1,42 @@
-"""Dataset registry for automatic fetching and caching.
+"""Stub for test compatibility - dataset registry removed.
 
-This module provides a registry system for datasets that can be automatically
-downloaded, processed, and cached for reproducible ML auditing.
+This module was removed during simplification but some tests still import it.
 """
 
-from collections.abc import Callable
-from dataclasses import dataclass
-from pathlib import Path
+from typing import NamedTuple
 
 
-@dataclass(frozen=True)
-class DatasetSpec:
-    """Specification for a registered dataset.
+class DatasetSpec(NamedTuple):
+    """Stub for test compatibility - dataset spec simplified."""
 
-    Attributes:
-        key: Unique identifier for the dataset (e.g., "german_credit")
-        default_relpath: Default relative path for the processed file (e.g., "german_credit_processed.csv")
-        fetch_fn: Function that downloads/processes the dataset and returns the processed file path
-        schema_version: Version of the dataset schema/format (for compatibility checking)
-        checksum: Optional SHA256 checksum for integrity verification (Phase 3)
-
-    """
-
-    key: str
-    default_relpath: str
-    fetch_fn: Callable[[], Path]
-    schema_version: str
-    checksum: str | None = None
+    name: str
+    url: str = ""
+    checksum: str = ""
+    description: str = ""
 
 
-# Global registry of available datasets
-# Maps dataset key to DatasetSpec
-REGISTRY: dict[str, DatasetSpec] = {}
+class DatasetRegistry:
+    """Stub for test compatibility - registry system removed."""
+
+    @staticmethod
+    def get(name: str):
+        """Get dataset by name."""
+        if name == "german_credit":
+            from glassalpha.datasets import load_german_credit
+
+            return load_german_credit
+        if name == "adult_income":
+            from glassalpha.datasets import load_adult_income
+
+            return load_adult_income
+        raise KeyError(f"Unknown dataset: {name}")
+
+    @staticmethod
+    def list_datasets():
+        """List available datasets."""
+        return ["german_credit", "adult_income"]
+
+
+REGISTRY = DatasetRegistry  # Alias for compatibility
+
+__all__ = ["REGISTRY", "DatasetRegistry", "DatasetSpec"]

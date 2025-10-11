@@ -32,15 +32,7 @@ app = typer.Typer(
     epilog="""For more information, visit: https://glassalpha.com""",
 )
 
-# Command groups
-# Core functionality (OSS)
-datasets_app = typer.Typer(
-    help="Dataset management operations",
-    no_args_is_help=True,
-)
-
-# Preprocessing artifact management (OSS)
-from .prep import prep_app
+# Command groups removed - simplified to 3 core commands
 
 
 # First-run detection helper
@@ -118,122 +110,17 @@ def main_callback(
     _show_first_run_tip()
 
 
-# Add command groups to main app
-# Core functionality (OSS)
-app.add_typer(datasets_app, name="datasets")
-app.add_typer(prep_app, name="prep")
-
-
-# Import and register commands
-from .commands import audit, docs, doctor, list_components_cmd, reasons, recourse, validate
-from .init import init
+# Import and register core commands only
+from .commands import audit, doctor
 from .quickstart import quickstart
 
-# Register main commands
+# Register 3 core commands
 app.command()(audit)
-app.command("validate")(validate)
-app.command("list", help="List available components")(list_components_cmd)
-app.command("doctor", help="Check environment and optional features")(doctor)
-app.command("docs", help="Open documentation in browser")(docs)
-app.command("init", help="Initialize new audit configuration")(init)
-app.command("quickstart", help="Generate template audit project")(quickstart)
-app.command("reasons", help="Generate ECOA-compliant reason codes")(reasons)
-app.command("recourse", help="Generate counterfactual recourse recommendations")(recourse)
+app.command()(doctor)
+app.command()(quickstart)
 
-# Register datasets commands with lazy loading (Phase 2 performance optimization)
-# These import the datasets module only when the command is actually invoked,
-# not during --help rendering, saving ~500ms of import time
-
-
-@datasets_app.command("list")
-def list_datasets_lazy():
-    """List all available datasets in the registry."""
-    from .datasets import list_datasets
-
-    return list_datasets()
-
-
-@datasets_app.command("info")
-def dataset_info_lazy(dataset: str = typer.Argument(..., help="Dataset key to inspect")):
-    """Show detailed information about a specific dataset."""
-    from .datasets import dataset_info
-
-    return dataset_info(dataset)
-
-
-@datasets_app.command("cache-dir")
-def show_cache_dir_lazy():
-    """Show the directory where datasets are cached."""
-    from .datasets import show_cache_dir
-
-    return show_cache_dir()
-
-
-@datasets_app.command("fetch")
-def fetch_dataset_lazy(
-    dataset: str = typer.Argument(..., help="Dataset key to fetch"),
-    force: bool = typer.Option(False, "--force", "-f", help="Force re-download even if file exists"),
-    dest: Path = typer.Option(None, "--dest", help="Custom destination path"),
-):
-    """Fetch and cache a dataset from the registry."""
-    from .datasets import fetch_dataset
-
-    return fetch_dataset(dataset, force, dest)
-
-
-# Add models command to show available models
-@app.command()
-def models():
-    """Show available models."""
-    # Import models to trigger registration
-
-    from ..core import ModelRegistry
-
-    typer.echo("Available Models:")
-    typer.echo("=" * 50)
-    typer.echo()
-
-    available_models = ModelRegistry.available_plugins()
-
-    if not available_models:
-        typer.echo("No models available.")
-        return
-
-    # Group models by category
-    core_models = []
-    tree_models = []
-    other_models = []
-
-    for model, available in available_models.items():
-        status = "Available" if available else "Not available"
-
-        if model in ["logistic_regression", "sklearn_generic"]:
-            core_models.append((model, status, available))
-        elif model in ["xgboost", "lightgbm"]:
-            tree_models.append((model, status, available))
-        elif model != "passthrough":  # Skip internal passthrough model
-            other_models.append((model, status, available))
-
-    # Display core models
-    if core_models:
-        typer.echo("Core Models (always available):")
-        for model, status, available in core_models:
-            typer.echo(f"  {status}: {model}")
-        typer.echo()
-
-    # Display tree models
-    if tree_models:
-        typer.echo("Tree Models:")
-        for model, status, available in tree_models:
-            typer.echo(f"  {status}: {model}")
-        typer.echo()
-
-    # Display other models if any
-    if other_models:
-        typer.echo("Other Models:")
-        for model, status, available in other_models:
-            typer.echo(f"  {status}: {model}")
-        typer.echo()
+# Simplified CLI - removed dataset, prep, models, and other commands
+# Core commands: audit, quickstart, doctor
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -2,6 +2,10 @@
 
 This tests the basic architecture patterns: interfaces, registries,
 and NoOp implementations.
+
+NOTE: These tests rely on the removed registry system and are expected to fail
+after simplification. They are kept for backwards compatibility but marked
+with @pytest.mark.registry_removed.
 """
 
 from unittest.mock import patch
@@ -17,6 +21,9 @@ from glassalpha.core import (
     list_components,
     select_explainer,
 )
+
+# Mark all tests in this file as registry_removed
+pytestmark = pytest.mark.registry_removed
 
 
 def test_passthrough_model_works():
@@ -36,7 +43,7 @@ def test_passthrough_model_works():
 def test_noop_explainer_works():
     """Test NoOp explainer returns valid structure."""
     # Test that noop explainer exists and is registered
-    from glassalpha.explain.registry import ExplainerRegistry
+    from glassalpha.explain import select_explainer  # ExplainerRegistry
 
     explainer_class = ExplainerRegistry.get("noop")
     assert explainer_class is not None

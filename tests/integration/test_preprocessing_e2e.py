@@ -25,7 +25,7 @@ class TestPreprocessingIntegration:
         5. Manifest completeness
 
         """
-        from glassalpha.config.loader import load_config_from_file
+        from glassalpha.config import load_config_from_file
         from glassalpha.pipeline.audit import AuditPipeline
 
         # Use the test config with preprocessing
@@ -122,7 +122,7 @@ class TestPreprocessingIntegration:
         the report contains prominent non-compliance warnings.
 
         """
-        from glassalpha.config.loader import load_config_from_file
+        from glassalpha.config import load_config_from_file
         from glassalpha.pipeline.audit import AuditPipeline
 
         # Use quickstart config which doesn't have preprocessing configured
@@ -174,7 +174,7 @@ class TestPreprocessingIntegration:
         the audit fails appropriately in strict mode.
 
         """
-        from glassalpha.config.loader import load_config_from_file
+        from glassalpha.config import load_config_from_file
 
         config_path = Path(__file__).parent.parent.parent / "src" / "glassalpha" / "data" / "configs" / "german_credit.yaml"
         config = load_config_from_file(config_path)
@@ -258,12 +258,12 @@ class TestPreprocessingIntegration:
         information for reproducibility.
 
         """
-        from glassalpha.config.loader import load_config_from_file
+        from glassalpha.config import load_config_from_file
         from glassalpha.pipeline.audit import AuditPipeline
 
         # Create a minimal config for this test instead of using german_credit.yaml
         # which has complex column requirements that conflict with our test artifact
-        from glassalpha.config.schema import AuditConfig
+        from glassalpha.config import AuditConfig
 
         config = AuditConfig(
             audit_profile="tabular_compliance",

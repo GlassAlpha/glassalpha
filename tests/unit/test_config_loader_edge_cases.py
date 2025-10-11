@@ -12,14 +12,14 @@ from pathlib import Path
 import pytest
 import yaml
 
-from glassalpha.config.loader import (
+from glassalpha.config import (
     apply_profile_defaults,
     load_config,
     load_config_from_file,
     merge_configs,
     save_config,
 )
-from glassalpha.config.schema import AuditConfig
+from glassalpha.config import AuditConfig
 
 
 def _create_test_config_dict():

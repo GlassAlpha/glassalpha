@@ -5,25 +5,13 @@ commonly used for fairness and compliance auditing.
 
 Performance note: This module uses lazy imports via __getattr__ to avoid
 loading heavy dependencies (pandas, numpy) during CLI --help rendering.
-Dataset loaders are imported only when actually accessed, but registration
-happens immediately to populate REGISTRY.
+Dataset loaders are imported only when actually accessed.
 """
 
 from typing import Any
 
-# Register datasets immediately (lightweight operation)
-# This populates REGISTRY but doesn't import heavy data loaders
-from .register_builtin import register_builtin_datasets
-
-# Import registry - this is lightweight
-from .registry import REGISTRY, DatasetSpec
-
-register_builtin_datasets()
-
 __all__ = [
-    "REGISTRY",
     "AdultIncomeDataset",
-    "DatasetSpec",
     "GermanCreditDataset",
     "get_adult_income_schema",
     "get_german_credit_schema",
@@ -37,9 +25,6 @@ def __getattr__(name: str) -> Any:
 
     This function is called when an attribute is not found in the module,
     allowing us to defer expensive imports until they're actually needed.
-
-    Registration happens at module import time, but the heavy data loaders
-    (german_credit, adult_income modules with pandas/numpy) are imported lazily.
     """
     # Import adult_income components on demand
     if name == "AdultIncomeDataset":

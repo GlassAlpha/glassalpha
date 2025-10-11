@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from glassalpha.config.schema import AuditConfig
+from glassalpha.config import AuditConfig
 from glassalpha.datasets import load_german_credit
 from glassalpha.pipeline.audit import run_audit_pipeline
 from glassalpha.report import render_audit_pdf

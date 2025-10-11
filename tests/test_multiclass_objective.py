@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.models.tabular.xgboost import XGBoostWrapper
+from glassalpha.models.xgboost import XGBoostWrapper
 
 
 def test_binary_objective_with_multiclass_data_raises_error():

@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.explain.policy import PolicyConstraints
+# from glassalpha.explain.policy import PolicyConstraints
 from glassalpha.explain.recourse import generate_recourse
 
 
@@ -385,7 +385,7 @@ def test_recourse_cli_help():
 
 def test_recourse_config_loading():
     """Test that recourse config can be loaded from YAML."""
-    from glassalpha.config.schema import AuditConfig
+    from glassalpha.config import AuditConfig
 
     config_dict = {
         "audit_profile": "tabular_compliance",
