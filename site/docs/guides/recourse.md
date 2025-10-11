@@ -27,7 +27,7 @@ glassalpha recourse \
   --model models/german_credit.pkl \
   --data data/test.csv \
   --instance 42 \
-  --config recourse_german_credit.yaml \
+  --config configs/recourse_german_credit.yaml \
   --output recourse/instance_42.json
 ```
 

@@ -138,6 +138,7 @@ def quickstart(
             except (EOFError, RuntimeError):
                 # Handle non-interactive environments - don't overwrite by default
                 typer.echo("Directory exists. Use --no-interactive to skip confirmation.")
+                typer.echo("\n💡 Tip: Specify a different directory with --output my-project")
                 overwrite = False
 
             if not overwrite:
@@ -403,7 +404,7 @@ def _get_model_params(model: str) -> str:
     params_map = {
         "xgboost": "n_estimators: 100\n    max_depth: 6",
         "lightgbm": "n_estimators: 100\n    max_depth: 6\n    learning_rate: 0.1",
-        "logistic_regression": "max_iter: 1000",
+        "logistic_regression": "max_iter: 2000  # Increased to prevent convergence warnings",
     }
 
     return params_map.get(model, "")
@@ -429,9 +430,8 @@ def _get_explainer_config(model: str) -> str:
       normalize: true
     permutation:
       n_samples: 100"""
-    else:
-        # Tree models use SHAP explainers
-        return """priority:
+    # Tree models use SHAP explainers
+    return """priority:
     - treeshap       # Best for tree models (requires: pip install 'glassalpha[explain]')
     - kernelshap     # SHAP fallback
   config:

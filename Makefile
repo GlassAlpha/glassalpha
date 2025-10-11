@@ -1,5 +1,5 @@
 # GlassAlpha - Wheel-first development workflow
-.PHONY: smoke build install test lint clean hooks help dev-setup check check-workflows check-sigstore check-packaging check-determinism
+.PHONY: smoke build install test lint clean clean-temp hooks help dev-setup check check-workflows check-sigstore check-packaging check-determinism
 
 # Default target
 help:
@@ -10,10 +10,11 @@ help:
 	@echo "🔍 check      - Quick pre-commit check (smoke test + doctor + packaging + determinism)"
 	@echo "📦 build      - Build wheel"
 	@echo "📥 install    - Install wheel (for testing)"
-	@echo "🧪 test       - Run full test suite"
+	@echo "🧪 test       - Run full test suite (with pre-test cleanup)"
 	@echo "📊 coverage   - Run tests with coverage report (terminal + HTML)"
 	@echo "🔍 lint       - Run linting"
 	@echo "🧹 clean      - Clean build artifacts"
+	@echo "🧹 clean-temp - Remove AI-generated test files from root (auto-runs before tests)"
 	@echo "🪝 hooks      - Install git hooks (pre-commit + pre-push)"
 	@echo "🔐 check-sigstore - Test sigstore signing process locally"
 	@echo "🔍 check-workflows - Validate GitHub Actions workflows"
@@ -41,11 +42,12 @@ install: build
 # Test suite (requires dependencies)
 # Note: Parallel execution with pytest-xdist speeds up tests but some tests
 # (subprocess-based, shared file writes) must be marked to run serially
-test:
+# Automatically cleans AI-generated test outputs before running
+test: clean-temp
 	python3 -m pytest -q
 
 # Test with coverage report
-coverage:
+coverage: clean-temp
 	@echo "🔍 Running tests with coverage..."
 	pytest --cov=glassalpha --cov-report=term-missing --cov-report=html -q --disable-warnings
 	@echo ""
@@ -61,11 +63,15 @@ lint:
 	ruff check .
 	mypy src/
 
-# Clean artifacts
+# Clean build artifacts only
 clean:
 	rm -rf dist/ build/ *.egg-info/
 	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.pyc" -delete 2>/dev/null || true
+
+# Clean AI-generated test files from root (runs automatically before tests)
+clean-temp:
+	@./scripts/cleanup-temp-files.sh execute 2>&1 | grep -v "^Would delete" || true
 
 # Install git hooks (one-time setup)
 hooks:

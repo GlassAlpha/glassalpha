@@ -76,7 +76,7 @@ model:
 
   params:
     random_state: 42
-    max_iter: 1000
+    max_iter: 2000 # Increased to prevent convergence warnings
     C: 1.0 # Regularization strength
     penalty: l2
     solver: lbfgs

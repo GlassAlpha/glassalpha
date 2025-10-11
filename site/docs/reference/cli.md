@@ -308,6 +308,9 @@ Examples:
     # Enforce runtime checks (production-ready)
     glassalpha validate -c audit.yaml --strict-validation
 
+    # Validate data files exist and are readable
+    glassalpha validate -c audit.yaml --check-data
+
 **Arguments:**
 
 - `config_path` (file, optional): Path to configuration file to validate
@@ -319,6 +322,7 @@ Examples:
 - `--strict`: Validate for strict mode compliance (allows built-in datasets) (default: `False`)
 - `--strict-full`: Validate for full strict mode compliance (requires explicit schemas, disallows built-in datasets) (default: `False`)
 - `--strict-validation`: Enforce runtime availability checks (recommended for production) (default: `False`)
+- `--check-data`: Load and validate actual dataset (checks if target column exists, file is readable) (default: `False`)
 
 ## Global Options
 

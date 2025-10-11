@@ -78,7 +78,7 @@ git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha && pip install -e .
 
 # 2. Generate audit (lightning fast with --fast flag!)
-glassalpha audit --config german_credit_simple.yaml --output audit.html --fast
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.html --fast
 
 # 3. Done! Open your professional report
 open audit.html  # macOS

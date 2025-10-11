@@ -1,0 +1,51 @@
+audit_profile: "tabular_compliance"
+
+data:
+  dataset: custom
+  path: "~/.glassalpha/data/insurance_risk.csv"
+  target_column: "claim_outcome"
+  feature_columns:
+    - "age"
+    - "annual_mileage"
+    - "vehicle_value"
+    - "deductible_amount"
+    - "coverage_limit"
+    - "years_insured"
+    - "previous_claims"
+    - "credit_score"
+    - "marital_status"
+    - "occupation_risk"
+  protected_attributes:
+    - "age"
+    - "marital_status"
+
+model:
+  type: "xgboost"
+  params:
+    objective: "binary:logistic"
+    max_depth: 6
+    eta: 0.1
+    n_estimators: 100
+    random_state: 42
+  calibration:
+    method: "isotonic"
+    cv: 5
+    ensemble: true
+
+explainers:
+  priority:
+    - "treeshap"
+    - "kernelshap"
+
+metrics:
+  performance:
+    enabled: true
+  fairness:
+    enabled: true
+
+report:
+  template: "standard_audit.html"
+  output_format: "pdf"
+
+reproducibility:
+  random_seed: 42

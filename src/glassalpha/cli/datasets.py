@@ -31,6 +31,59 @@ def list_datasets():
         typer.echo(f"{key: <15} {spec.schema_version: <9} {spec.default_relpath}")
 
 
+@app.command("columns")
+def dataset_columns(
+    dataset: str = typer.Argument(..., help="Dataset key to inspect"),
+):
+    """Show column information for a dataset (quick version of info --show-columns)."""
+    # Delegate to dataset_info with show_columns=True
+    return dataset_info(dataset, show_columns=True, show_sample=False, show_stats=False, suggest_config=False)
+
+
+@app.command("preview")
+def dataset_preview(
+    dataset: str = typer.Argument(..., help="Dataset key to inspect"),
+    rows: int = typer.Option(5, "--rows", "-n", help="Number of rows to show"),
+):
+    """Show first N rows of a dataset."""
+    spec = REGISTRY.get(dataset)
+    if not spec:
+        typer.echo(f"Dataset '{dataset}' not found in registry.")
+        typer.echo(f"Available datasets: {', '.join(REGISTRY.keys())}")
+        raise typer.Exit(code=ExitCode.USER_ERROR)
+
+    cache_root = resolve_data_root()
+    expected_path = cache_root / spec.default_relpath
+
+    if not expected_path.exists():
+        typer.echo(f"\n❌ Dataset '{dataset}' not downloaded yet.")
+        typer.echo(f"   Run: glassalpha datasets fetch {dataset}")
+        raise typer.Exit(code=ExitCode.USER_ERROR)
+
+    try:
+        import pandas as pd
+
+        df = pd.read_csv(expected_path)
+
+        typer.echo(f"\nDataset: {dataset}")
+        typer.echo(f"Shape: {len(df)} rows × {len(df.columns)} columns")
+        typer.echo(f"\nFirst {rows} rows:")
+        typer.echo("-" * 70)
+
+        # Use pandas to_string for better formatting
+        pd.set_option("display.max_columns", None)
+        pd.set_option("display.width", None)
+        pd.set_option("display.max_colwidth", 20)
+
+        typer.echo(df.head(rows).to_string())
+
+        typer.echo(f"\n💡 To see column details: glassalpha datasets columns {dataset}")
+
+    except Exception as e:
+        typer.echo(f"\n❌ Failed to read dataset: {e}")
+        raise typer.Exit(code=ExitCode.USER_ERROR)
+
+
 @app.command("info")
 def dataset_info(
     dataset: str = typer.Argument(..., help="Dataset key to inspect"),
@@ -195,8 +248,8 @@ def _show_columns_info(df, schema, dataset: str):  # noqa: ARG001
     protected_cols = set()
 
     if schema:
-        target_col = schema.target
-        protected_cols = set(schema.sensitive_features) if hasattr(schema, "sensitive_features") else set()
+        target_col = getattr(schema, "target", None)
+        protected_cols = set(schema.sensitive_features) if schema.sensitive_features else set()
 
     for col in df.columns:
         dtype = df[col].dtype
@@ -294,8 +347,8 @@ def _suggest_config(df, schema, dataset: str):
     protected_attrs: list[str] = []
 
     if schema:
-        target_col = schema.target if hasattr(schema, "target") else None
-        if hasattr(schema, "sensitive_features"):
+        target_col = getattr(schema, "target", None)
+        if schema.sensitive_features:
             protected_attrs = list(schema.sensitive_features)[:2]  # Take first 2
 
     # If no schema, try to infer

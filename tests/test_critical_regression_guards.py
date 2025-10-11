@@ -218,15 +218,23 @@ class TestCriticalRegressions:
         )
 
         # Encode categorical features (this used to fail)
-        le = LabelEncoder()
         X_train_encoded = X_train.copy()
         X_test_encoded = X_test.copy()
 
         # This encoding loop used to cause failures with 'senior' values
         for col in X_train.columns:
             if X_train[col].dtype == "object":
+                le = LabelEncoder()
                 X_train_encoded[col] = le.fit_transform(X_train[col])
                 X_test_encoded[col] = le.transform(X_test[col])
+
+        # Verify all categorical columns are properly encoded (no strings remain)
+        for col in X_train_encoded.columns:
+            if X_train[col].dtype == "object":  # Original was object
+                assert X_train_encoded[col].dtype in [np.number, "int64", "int32", "float64", "float32"], (
+                    f"Column {col} not properly encoded: dtype {X_train_encoded[col].dtype}, "
+                    f"unique values: {X_train_encoded[col].unique()[:5]}"
+                )
 
         # Train model (this used to fail with "could not convert string to float")
         model = LogisticRegression(random_state=42, max_iter=2000, solver="liblinear")

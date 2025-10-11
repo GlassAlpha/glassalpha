@@ -258,7 +258,7 @@ model:
     # Uncomment and use these instead if you chose logistic_regression above
 
     # random_state: 42
-    # max_iter: 1000  # Maximum iterations for convergence
+    # max_iter: 2000  # Maximum iterations for convergence (increased to prevent warnings)
     # C: 1.0  # Inverse regularization strength (lower = more regularization)
     # penalty: l2  # Regularization type: l1, l2, elasticnet
     # solver: lbfgs  # Optimization algorithm: lbfgs, saga, liblinear

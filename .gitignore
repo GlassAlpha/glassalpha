@@ -217,16 +217,31 @@ test_outputs/
 logs/
 *.log
 
-# Test artifacts that shouldn't be committed
+# Test artifacts that shouldn't be committed (root only)
 /test_*.html
 /test_*.pdf
 /test_*.pkl
-/test_*.json
 /test.manifest.json
 /test.pdf
 /*_simple_audit.html
 /*_simple_audit.manifest.json
 /malformed.yaml
+
+# Test config outputs in root (but allow tests/fixtures/*.yaml)
+/adult_config.yaml
+/custom_config.yaml
+/incomplete_config.yaml
+/model_config.yaml
+/pdf_config.yaml
+/strict_config.yaml
+/test_config.yaml
+/xgboost_config.yaml
+/*_report.html
+/*_report.manifest.json
+
+# Test project directories
+/my-audit-project/
+/notebook-test/
 
 # Config overrides (user-specific configurations)
 configs/local/

@@ -16,7 +16,7 @@ model:
   type: logistic_regression
   params:
     random_state: 42
-    max_iter: 1000
+    max_iter: 2000 # Increased to prevent convergence warnings
 
 # Explainers
 explainers:

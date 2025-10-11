@@ -338,7 +338,7 @@ class AuditPipeline:
 
             # Step 1: Setup reproducibility (~5% of time)
             self._setup_reproducibility()
-            self._update_progress(progress_callback, "Reproducibility setup complete", 5)
+            self._update_progress(progress_callback, "Setting seeds for reproducibility", 5)
 
             # Step 2: Load and validate data (~10% of time)
             data, schema = self._load_data()
@@ -346,27 +346,27 @@ class AuditPipeline:
             self._dataset_df = data.copy()  # Store copy for provenance
             self._feature_count = len(schema.features) if schema.features else data.shape[1] - 1
             self._class_count = data[schema.target].nunique() if schema.target in data.columns else None
-            self._update_progress(progress_callback, "Data loaded and validated", 15)
+            self._update_progress(progress_callback, "Loading and validating dataset", 15)
 
             # Step 3: Load/initialize model (~10% of time)
             self.model = self._load_model(data, schema)
-            self._update_progress(progress_callback, "Model loaded/trained", 25)
+            self._update_progress(progress_callback, "Training/loading model", 25)
 
             # Step 4: Select and initialize explainer (~1% of time)
             self.explainer = self._select_explainer()
-            self._update_progress(progress_callback, "Explainer selected", 26)
+            self._update_progress(progress_callback, "Selecting explainer (SHAP, coefficients, etc.)", 26)
 
             # Step 5: Generate explanations (~20% of time for coefficients, ~50% for permutation)
             explanations = self._generate_explanations(data, schema)
-            self._update_progress(progress_callback, "Explanations generated", 45)
+            self._update_progress(progress_callback, "Generating feature explanations", 45)
 
             # Step 6: Compute metrics (~50% of time - fairness CIs are expensive)
             self._compute_metrics(data, schema)
-            self._update_progress(progress_callback, "Metrics computed", 95)
+            self._update_progress(progress_callback, "All metrics computed", 95)
 
             # Step 7: Finalize results and manifest (~5% of time)
             self._finalize_results(explanations)
-            self._update_progress(progress_callback, "Pipeline complete", 100)
+            self._update_progress(progress_callback, "Finalizing audit results", 100)
 
             # Friend's spec: On success - set end time and call set execution info
             end = datetime.now(UTC).isoformat()
@@ -1230,7 +1230,7 @@ class AuditPipeline:
                     raise
 
         # Compute performance metrics (~5% of time)
-        self._update_progress(progress_callback, "Computing performance metrics", 50)
+        self._update_progress(progress_callback, "Computing performance (accuracy, precision, recall)", 50)
         self._compute_performance_metrics(y_true, y_pred, y_proba)
         self._update_progress(progress_callback, "Performance metrics complete", 55)
 
@@ -1253,12 +1253,12 @@ class AuditPipeline:
 
         # Compute fairness metrics if sensitive features available (~33% of time - bootstrap CIs are expensive)
         if sensitive_features is not None:
-            self._update_progress(progress_callback, "Computing fairness metrics", 60)
+            self._update_progress(progress_callback, "Computing fairness (demographic parity, equal opportunity)", 60)
             self._compute_fairness_metrics(y_true, y_pred, y_proba, sensitive_features, X)
             self._update_progress(progress_callback, "Fairness metrics complete", 88)
 
         # Compute stability metrics (~2% of time)
-        self._update_progress(progress_callback, "Computing stability metrics", 90)
+        self._update_progress(progress_callback, "Computing stability (monotonicity, consistency)", 90)
         self._compute_stability_metrics(X, sensitive_features)
         self._update_progress(progress_callback, "Stability metrics complete", 92)
 

@@ -311,6 +311,7 @@ def _run_audit_pipeline(
                                 config=pdf_config,
                                 report_title=f"ML Model Audit Report - {report_date}",
                                 generation_date=generation_date,
+                                show_progress=True,  # Show progress in CLI
                             )
                         return pdf_path
                     except Exception as e:
@@ -1048,6 +1049,9 @@ def audit(  # pragma: no cover
 
     """
     try:
+        # Track if config was auto-detected for user messaging
+        config_was_auto_detected = config is None
+
         # Apply smart defaults
         try:
             defaults = get_smart_defaults(
@@ -1153,7 +1157,10 @@ def audit(  # pragma: no cover
             raise typer.Exit(ExitCode.VALIDATION_ERROR)
 
         # Load configuration - this doesn't need heavy ML libraries
-        typer.echo(f"Loading configuration from: {config}")
+        if config_was_auto_detected:
+            typer.echo(f"Loading configuration from: {config} (auto-detected)")
+        else:
+            typer.echo(f"Loading configuration from: {config}")
         if override_config:
             typer.echo(f"Applying overrides from: {override_config}")
 
@@ -1639,6 +1646,11 @@ def validate(  # pragma: no cover
         "--strict-validation",
         help="Enforce runtime availability checks (recommended for production)",
     ),
+    check_data: bool = typer.Option(
+        False,
+        "--check-data",
+        help="Load and validate actual dataset (checks if target column exists, file is readable)",
+    ),
 ):
     """Validate a configuration file.
 
@@ -1660,6 +1672,9 @@ def validate(  # pragma: no cover
 
         # Enforce runtime checks (production-ready)
         glassalpha validate -c audit.yaml --strict-validation
+
+        # Validate data files exist and are readable
+        glassalpha validate -c audit.yaml --check-data
 
     """
     try:
@@ -1804,8 +1819,83 @@ def validate(  # pragma: no cover
                     else:
                         validation_warnings.append(msg)
 
-        # Check dataset and validate schema if specified
-        if audit_config.data.path and audit_config.data.dataset == "custom":
+        # Check dataset and validate schema if --check-data is specified
+        if check_data:
+            typer.echo("\nValidating data files...")
+
+            if audit_config.data.path and audit_config.data.dataset == "custom":
+                data_path = Path(audit_config.data.path).expanduser()
+                if not data_path.exists():
+                    validation_errors.append(f"Data file not found: {data_path}")
+                else:
+                    # Validate dataset schema if file exists
+                    try:
+                        from ..data.tabular import TabularDataLoader
+
+                        # Load data to validate schema
+                        loader = TabularDataLoader()
+                        df = loader.load(data_path)
+
+                        typer.echo(f"  ✓ Data file readable: {data_path}")
+                        typer.echo(f"  ✓ Loaded: {len(df)} rows × {len(df.columns)} columns")
+
+                        # Check if target column exists
+                        if audit_config.data.target_column:
+                            if audit_config.data.target_column not in df.columns:
+                                validation_errors.append(
+                                    f"Target column '{audit_config.data.target_column}' not found in data.\n"
+                                    f"    Available columns: {list(df.columns)[:10]}...",
+                                )
+                            else:
+                                typer.echo(f"  ✓ Target column exists: {audit_config.data.target_column}")
+
+                        # Check if protected attributes exist
+                        if audit_config.data.protected_attributes:
+                            missing_protected = [
+                                attr for attr in audit_config.data.protected_attributes if attr not in df.columns
+                            ]
+                            if missing_protected:
+                                validation_warnings.append(
+                                    f"Protected attributes not found in data: {missing_protected}\n"
+                                    f"    Available columns: {list(df.columns)[:10]}...",
+                                )
+                            else:
+                                typer.echo(f"  ✓ Protected attributes exist: {audit_config.data.protected_attributes}")
+
+                    except ValueError as e:
+                        validation_errors.append(f"Dataset schema validation failed: {e}")
+                    except Exception as e:
+                        validation_errors.append(f"Error loading dataset: {e}")
+            elif audit_config.data.dataset and audit_config.data.dataset != "custom":
+                # Built-in dataset - try to load and validate
+                try:
+                    from ..datasets.registry import REGISTRY
+
+                    spec = REGISTRY.get(audit_config.data.dataset)
+                    if spec:
+                        typer.echo(f"  ✓ Using built-in dataset: {audit_config.data.dataset}")
+
+                        # Try to load the dataset to verify it exists
+                        from ..utils.cache_dirs import resolve_data_root
+
+                        cache_root = resolve_data_root()
+                        expected_path = cache_root / spec.default_relpath
+
+                        if expected_path.exists():
+                            typer.echo(f"  ✓ Dataset cached locally: {expected_path}")
+                        else:
+                            validation_warnings.append(
+                                f"Built-in dataset '{audit_config.data.dataset}' not cached yet.\n"
+                                f"    Run: glassalpha datasets fetch {audit_config.data.dataset}",
+                            )
+                    else:
+                        validation_errors.append(f"Unknown built-in dataset: {audit_config.data.dataset}")
+                except Exception as e:
+                    validation_warnings.append(f"Could not verify built-in dataset: {e}")
+            else:
+                validation_warnings.append("No data source specified in configuration")
+        elif audit_config.data.path and audit_config.data.dataset == "custom":
+            # Basic file existence check even without --check-data
             data_path = Path(audit_config.data.path).expanduser()
             if not data_path.exists():
                 msg = f"Data file not found: {data_path}"
@@ -1813,52 +1903,6 @@ def validate(  # pragma: no cover
                     validation_errors.append(msg)
                 else:
                     validation_warnings.append(msg)
-            else:
-                # Validate dataset schema if file exists
-                try:
-                    from ..data.tabular import TabularDataLoader, TabularDataSchema
-
-                    # Load data to validate schema
-                    loader = TabularDataLoader()
-                    df = loader.load(data_path)
-
-                    # Build schema from config
-                    schema = TabularDataSchema(
-                        target=audit_config.data.target_column,
-                        features=audit_config.data.feature_columns or [],
-                        sensitive_features=audit_config.data.protected_attributes or [],
-                    )
-
-                    # Validate schema
-                    loader.validate_schema(df, schema)
-                    typer.echo(f"  ✓ Dataset schema validated ({len(df)} rows, {len(df.columns)} columns)")
-
-                except ValueError as e:
-                    msg = f"Dataset schema validation failed: {e}"
-                    if strict_validation:
-                        validation_errors.append(msg)
-                    else:
-                        validation_warnings.append(msg)
-                except Exception as e:
-                    msg = f"Error loading dataset for validation: {e}"
-                    if strict_validation:
-                        validation_errors.append(msg)
-                    else:
-                        validation_warnings.append(msg)
-        elif audit_config.data.dataset and audit_config.data.dataset != "custom":
-            # Built-in dataset - validate feature columns if specified
-            if audit_config.data.feature_columns:
-                try:
-                    from ..data.registry import DatasetRegistry
-
-                    # Try to load dataset info
-                    dataset_info = DatasetRegistry.get(audit_config.data.dataset)
-                    if dataset_info:
-                        # Could validate against known schema here if we store it
-                        typer.echo(f"  ✓ Using built-in dataset: {audit_config.data.dataset}")
-                except Exception:
-                    # Built-in dataset validation is optional - don't fail if it doesn't work
-                    pass
 
         # Report validation errors
         if validation_errors:
@@ -2497,20 +2541,37 @@ def reasons(  # pragma: no cover
             else:
                 prediction = float(model_obj.predict(X_numpy)[0])
         except ValueError as e:
-            if "Too many missing features" in str(e):
+            error_msg = str(e)
+            if "Too many missing features" in error_msg or (
+                "features" in error_msg.lower() and "expecting" in error_msg.lower()
+            ):
+                # Extract feature counts from error message if available
+                import re
+
+                match = re.search(r"has (\d+) features.*expecting (\d+) features", error_msg)
+                if match:
+                    data_features, expected_count = match.groups()
+                    feature_info = f"Model expects {expected_count} features but data has {data_features} columns"
+                else:
+                    feature_info = f"Feature count mismatch: {error_msg}"
+
                 typer.secho(
-                    f"Error: Model expects {len(expected_features) if expected_features else 'unknown'} features but data has {len(X_instance_encoded.columns)} columns",
+                    f"❌ {feature_info}",
                     fg=typer.colors.RED,
                     err=True,
                 )
-                typer.echo("\nThis usually means:")
-                typer.echo("  • The model was trained on encoded/preprocessed data")
+                typer.echo("\n📊 This usually means:")
+                typer.echo("  • The model was trained on encoded/preprocessed data (e.g., one-hot encoded)")
                 typer.echo("  • But you're providing raw data with categorical columns")
-                typer.echo("\nSolutions:")
-                typer.echo("  1. Use the same dataset that was used for training")
-                typer.echo("  2. Apply the same preprocessing (encoding) that was used during training")
-                typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
-                typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
+                typer.echo("  • Model was saved without preprocessing metadata")
+                typer.echo("\n✅ Solutions:")
+                typer.echo("  1. Retrain and save model with preprocessing metadata:")
+                typer.echo("     glassalpha audit --config your_config.yaml --save-model model.pkl")
+                typer.echo("  2. Or use the exact preprocessed dataset that was used for training")
+                typer.echo("  3. Or include preprocessing artifact path in model metadata")
+                typer.echo("\n📚 For more help:")
+                typer.echo("  • Preprocessing guide: https://glassalpha.com/guides/preprocessing/")
+                typer.echo("  • Reason codes tutorial: https://glassalpha.com/guides/reason-codes/")
                 raise typer.Exit(ExitCode.USER_ERROR) from None
             raise
 
@@ -3158,20 +3219,37 @@ def recourse(  # pragma: no cover
             else:
                 prediction = float(model_obj.predict(X_instance_encoded)[0])
         except ValueError as e:
-            if "Too many missing features" in str(e):
+            error_msg = str(e)
+            if "Too many missing features" in error_msg or (
+                "features" in error_msg.lower() and "expecting" in error_msg.lower()
+            ):
+                # Extract feature counts from error message if available
+                import re
+
+                match = re.search(r"has (\d+) features.*expecting (\d+) features", error_msg)
+                if match:
+                    data_features, expected_count = match.groups()
+                    feature_info = f"Model expects {expected_count} features but data has {data_features} columns"
+                else:
+                    feature_info = f"Feature count mismatch: {error_msg}"
+
                 typer.secho(
-                    f"Error: Model expects {len(expected_features) if expected_features else 'unknown'} features but data has {len(X_instance_encoded.columns)} columns",
+                    f"❌ {feature_info}",
                     fg=typer.colors.RED,
                     err=True,
                 )
-                typer.echo("\nThis usually means:")
-                typer.echo("  • The model was trained on encoded/preprocessed data")
+                typer.echo("\n📊 This usually means:")
+                typer.echo("  • The model was trained on encoded/preprocessed data (e.g., one-hot encoded)")
                 typer.echo("  • But you're providing raw data with categorical columns")
-                typer.echo("\nSolutions:")
-                typer.echo("  1. Use the same dataset that was used for training")
-                typer.echo("  2. Apply the same preprocessing (encoding) that was used during training")
-                typer.echo("  3. Retrain the model on raw data if preprocessing isn't available")
-                typer.echo("\nFor help with preprocessing, see: https://glassalpha.com/guides/preprocessing/")
+                typer.echo("  • Model was saved without preprocessing metadata")
+                typer.echo("\n✅ Solutions:")
+                typer.echo("  1. Retrain and save model with preprocessing metadata:")
+                typer.echo("     glassalpha audit --config your_config.yaml --save-model model.pkl")
+                typer.echo("  2. Or use the exact preprocessed dataset that was used for training")
+                typer.echo("  3. Or include preprocessing artifact path in model metadata")
+                typer.echo("\n📚 For more help:")
+                typer.echo("  • Preprocessing guide: https://glassalpha.com/guides/preprocessing/")
+                typer.echo("  • Recourse tutorial: https://glassalpha.com/guides/recourse/")
                 raise typer.Exit(ExitCode.USER_ERROR) from None
             raise
 

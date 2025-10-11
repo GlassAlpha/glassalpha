@@ -145,7 +145,7 @@ Execute the audit with regulatory compliance mode enabled:
 ```bash
 # Generate comprehensive audit (use --fast for quick demos)
 glassalpha audit \
-  --config german_credit.yaml \
+  --config configs/german_credit.yaml \
   --output german_credit_audit.pdf \
   --fast
 

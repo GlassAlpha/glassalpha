@@ -23,7 +23,7 @@ model:
   type: logistic_regression # Fast and works with base installation
   params:
     random_state: 42
-    max_iter: 1000
+    max_iter: 2000 # Increased to prevent convergence warnings
     # For XGBoost (requires: pip install 'glassalpha[explain]'):
     # type: xgboost
     # params:
@@ -41,7 +41,7 @@ metrics:
     metrics:
       - demographic_parity
       - equal_opportunity
-  n_bootstrap: 100  # Reduced for faster tests
+  n_bootstrap: 100 # Reduced for faster tests
 
 report:
   template: standard_audit

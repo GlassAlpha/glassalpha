@@ -494,7 +494,7 @@ glassalpha reasons \
   --model artifacts/german_credit_model.pkl \
   --data artifacts/german_credit_test.csv \
   --instance 42 \
-  --config reason_codes_german_credit.yaml
+  --config configs/reason_codes_german_credit.yaml
 ```
 
 ### Adult Income

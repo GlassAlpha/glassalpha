@@ -34,18 +34,56 @@ echo ""
 
 # Find and remove temporary files
 TEMP_FILES=(
-    "temp-*.py"
-    "temp-*.txt"
-    "temp-*.md"
+    "temp-*"           # AI-generated temp files (any extension)
     "*.tmp"
     "*.temp"
 )
 
+# AI-generated test outputs (configs, reports, manifests)
+AI_TEST_OUTPUTS=(
+    "adult_config.yaml"
+    "custom_config.yaml"
+    "incomplete_config.yaml"
+    "model_config.yaml"
+    "pdf_config.yaml"
+    "strict_config.yaml"
+    "test_config.yaml"
+    "xgboost_config.yaml"
+    "*_report.html"
+    "*_report.manifest.json"
+    "test_*.html"
+    "test_*.pdf"
+    "test_*.pkl"
+    "test.html"
+    "test.pdf"
+    "test.manifest.json"
+    "quickstart.html"
+    "quickstart.pdf"
+    "quickstart.manifest.json"
+)
+
 echo -e "${YELLOW}Removing temporary files from root directory:${NC}"
 
+# Process temp files
 for pattern in "${TEMP_FILES[@]}"; do
     files=$(find . -maxdepth 1 -name "$pattern" 2>/dev/null || true)
     if [[ -n "$files" ]]; then
+        echo "$files" | while read -r file; do
+            if [[ -e "$file" ]]; then
+                echo "  $DELETE_CMD $file"
+                [[ "$DRY_RUN" != "dry-run" ]] && rm -rf "$file"
+            fi
+        done
+    fi
+done
+
+# Process AI test outputs
+echo -e "${YELLOW}Removing AI-generated test outputs from root:${NC}"
+found_any=false
+for pattern in "${AI_TEST_OUTPUTS[@]}"; do
+    files=$(find . -maxdepth 1 -name "$pattern" 2>/dev/null || true)
+    if [[ -n "$files" ]]; then
+        found_any=true
         echo "$files" | while read -r file; do
             if [[ -f "$file" ]]; then
                 echo "  $DELETE_CMD $file"
@@ -54,6 +92,10 @@ for pattern in "${TEMP_FILES[@]}"; do
         done
     fi
 done
+
+if [[ "$found_any" == "false" ]]; then
+    echo "  (none found)"
+fi
 
 echo ""
 
@@ -72,6 +114,23 @@ if [[ -n "$root_pycache" ]]; then
         echo "  $DELETE_CMD $dir"
         [[ "$DRY_RUN" != "dry-run" ]] && rm -rf "$dir"
     done
+else
+    echo "  (none found)"
+fi
+
+# Clean test project directories
+echo -e "${YELLOW}Cleaning test project directories:${NC}"
+TEST_DIRS=("my-audit-project" "notebook-test")
+found_dirs=false
+for dir in "${TEST_DIRS[@]}"; do
+    if [[ -d "$dir" ]]; then
+        found_dirs=true
+        echo "  $DELETE_CMD $dir/"
+        [[ "$DRY_RUN" != "dry-run" ]] && rm -rf "$dir"
+    fi
+done
+if [[ "$found_dirs" == "false" ]]; then
+    echo "  (none found)"
 fi
 
 echo ""

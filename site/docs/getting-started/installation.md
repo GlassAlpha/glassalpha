@@ -154,7 +154,7 @@ If you request a model that isn't installed, GlassAlpha automatically falls back
 
 ```bash
 # This works even without XGBoost installed
-glassalpha audit --config german_credit_simple.yaml --output audit.pdf
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf
 # → Falls back to LogisticRegression with clear message
 ```
 

@@ -63,7 +63,7 @@ graph TB
 pipx install glassalpha
 
 # 2. Generate audit (lightning fast!)
-glassalpha audit --config german_credit_simple.yaml --output audit.html --fast
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.html --fast
 
 # 3. Done! Open your professional report (~2-3 seconds total)
 open audit.html  # macOS
@@ -76,7 +76,7 @@ open audit.html  # macOS
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha && pip install -e .
-glassalpha audit --config german_credit_simple.yaml --output audit.html --fast
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.html --fast
 ```
 
 **Result**: A professional audit report with model performance, fairness analysis, feature importance, individual explanations, reason codes, preprocessing verification, and complete audit trail.

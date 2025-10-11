@@ -122,16 +122,44 @@ class BaseTabularWrapper:
 
         # If there's no overlap in feature names, this is likely an error
         if not overlap:
-            raise ValueError(
-                f"Input features do not match trained feature set. Expected: {expected}, got: {list(X.columns)}",
+            # Provide helpful error message about preprocessing mismatch
+            error_msg = (
+                f"❌ Feature mismatch: Model expects {len(expected)} features but data has {len(X.columns)} columns.\n"
+                f"\n"
+                f"This usually means:\n"
+                f"  • Model trained on preprocessed data (one-hot encoded, scaled)\n"
+                f"  • But you're providing raw data with categorical columns\n"
+                f"\n"
+                f"Solutions:\n"
+                f"  1. Use the same preprocessing pipeline that was used during training\n"
+                f"  2. Retrain the model on the current data format\n"
+                f"  3. Check glassalpha.com/guides/preprocessing/ for preprocessing verification\n"
+                f"\n"
+                f"Expected features: {expected[:5]}... ({len(expected)} total)\n"
+                f"Got features: {list(X.columns)[:5]}... ({len(X.columns)} total)"
             )
+            raise ValueError(error_msg)
 
         # If we're missing too many features (more than half), also raise error
         missing_count = len(expected_cols - actual_cols)
         if missing_count > len(expected) // 2:
-            raise ValueError(
-                f"Too many missing features: expected {len(expected)}, got {len(X.columns)}, missing {missing_count}",
+            missing_features = list(expected_cols - actual_cols)[:10]
+            extra_features = list(actual_cols - expected_cols)[:10]
+
+            error_msg = (
+                f"❌ Feature mismatch: Too many missing features.\n"
+                f"\n"
+                f"Expected: {len(expected)} features\n"
+                f"Got: {len(X.columns)} columns\n"
+                f"Missing: {missing_count} features\n"
+                f"\n"
+                f"Missing features (first 10): {missing_features}\n"
+                f"Extra features (first 10): {extra_features}\n"
+                f"\n"
+                f"This usually indicates a preprocessing mismatch between training and inference.\n"
+                f"See: glassalpha.com/guides/preprocessing/"
             )
+            raise ValueError(error_msg)
 
         # Otherwise reindex: drop extras, fill missing with 0
         return X.reindex(columns=expected, fill_value=0)

@@ -714,18 +714,27 @@ class TestManifestGenerator:
         assert env_info.platform is not None
         assert env_info.hostname is not None
 
-    @patch("glassalpha.utils.proc.subprocess.run")
+    @patch("subprocess.run")
     def test_collect_git_info_success(self, mock_run):
         """Test successful git info collection."""
-        # Mock git command responses
-        mock_run.side_effect = [
-            Mock(returncode=0, stdout="abc123def456", stderr=""),
-            Mock(returncode=0, stdout="main", stderr=""),
-            Mock(returncode=0, stdout="", stderr=""),  # Clean working directory
-            Mock(returncode=0, stdout="https://github.com/user/repo.git", stderr=""),
-            Mock(returncode=0, stdout="Initial commit", stderr=""),
-            Mock(returncode=0, stdout="2024-01-01 12:00:00 +0000", stderr=""),
-        ]
+
+        # Mock git command responses based on arguments
+        def mock_git_commands(*args, **kwargs):
+            if args[0] == ["git", "rev-parse", "HEAD"]:
+                return Mock(returncode=0, stdout="abc123def456", stderr="")
+            if args[0] == ["git", "rev-parse", "--abbrev-ref", "HEAD"]:
+                return Mock(returncode=0, stdout="main", stderr="")
+            if args[0] == ["git", "status", "--porcelain"]:
+                return Mock(returncode=0, stdout="", stderr="")  # Clean working directory
+            if args[0] == ["git", "config", "--get", "remote.origin.url"]:
+                return Mock(returncode=0, stdout="https://github.com/user/repo.git", stderr="")
+            if args[0] == ["git", "log", "-1", "--pretty=%B"]:
+                return Mock(returncode=0, stdout="Initial commit", stderr="")
+            if args[0] == ["git", "log", "-1", "--pretty=%ci"]:
+                return Mock(returncode=0, stdout="2024-01-01 12:00:00 +0000", stderr="")
+            return Mock(returncode=1, stdout="", stderr="Unknown command")
+
+        mock_run.side_effect = mock_git_commands
 
         generator = ManifestGenerator()
         git_info = generator._collect_git_info()
@@ -738,15 +747,24 @@ class TestManifestGenerator:
     @patch("subprocess.run")
     def test_collect_git_info_dirty_working_directory(self, mock_run):
         """Test git info collection with dirty working directory."""
+
         # Mock git command responses with dirty state
-        mock_run.side_effect = [
-            Mock(returncode=0, stdout="abc123def456", stderr=""),
-            Mock(returncode=0, stdout="main", stderr=""),
-            Mock(returncode=0, stdout="M file.py", stderr=""),  # Modified file
-            Mock(returncode=0, stdout="https://github.com/user/repo.git", stderr=""),
-            Mock(returncode=0, stdout="Initial commit", stderr=""),
-            Mock(returncode=0, stdout="2024-01-01 12:00:00 +0000", stderr=""),
-        ]
+        def mock_git_commands(*args, **kwargs):
+            if args[0] == ["git", "rev-parse", "HEAD"]:
+                return Mock(returncode=0, stdout="abc123def456", stderr="")
+            if args[0] == ["git", "rev-parse", "--abbrev-ref", "HEAD"]:
+                return Mock(returncode=0, stdout="main", stderr="")
+            if args[0] == ["git", "status", "--porcelain"]:
+                return Mock(returncode=0, stdout="M file.py", stderr="")  # Modified file
+            if args[0] == ["git", "config", "--get", "remote.origin.url"]:
+                return Mock(returncode=0, stdout="https://github.com/user/repo.git", stderr="")
+            if args[0] == ["git", "log", "-1", "--pretty=%B"]:
+                return Mock(returncode=0, stdout="Initial commit", stderr="")
+            if args[0] == ["git", "log", "-1", "--pretty=%ci"]:
+                return Mock(returncode=0, stdout="2024-01-01 12:00:00 +0000", stderr="")
+            return Mock(returncode=1, stdout="", stderr="Unknown command")
+
+        mock_run.side_effect = mock_git_commands
 
         generator = ManifestGenerator()
         git_info = generator._collect_git_info()

@@ -92,6 +92,7 @@ class AuditPDFRenderer:
         audit_results: AuditResults,
         output_path: Path,
         template_name: str = "standard_audit.html",
+        show_progress: bool = True,
         **template_vars: Any,
     ) -> Path:
         """Render complete audit report as PDF.
@@ -100,6 +101,7 @@ class AuditPDFRenderer:
             audit_results: Complete audit results from pipeline
             output_path: Path where PDF should be saved
             template_name: HTML template to use
+            show_progress: Show progress indicator during rendering
             **template_vars: Additional template variables
 
         Returns:
@@ -117,8 +119,13 @@ class AuditPDFRenderer:
         # Ensure output directory exists
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        html_content = None
+
         try:
             # Generate HTML content with embedded plots
+            if show_progress:
+                print("⏳ PDF generation (step 1/3): Converting HTML template...", end="", flush=True)
+
             html_content = self.html_renderer.render_audit_report(
                 audit_results=audit_results,
                 template_name=template_name,
@@ -128,6 +135,14 @@ class AuditPDFRenderer:
 
             logger.debug(f"Generated HTML content: {len(html_content):,} characters")
 
+            if show_progress:
+                print(" ✓", flush=True)
+                print(
+                    "⏳ PDF generation (step 2/3): Rendering pages (this may take 1-2 minutes)...",
+                    end="",
+                    flush=True,
+                )
+
             # Create WeasyPrint HTML object
             html_doc = HTML(string=html_content, base_url=str(self.html_renderer.template_dir))
 
@@ -136,7 +151,15 @@ class AuditPDFRenderer:
             css_doc = CSS(string=pdf_css)
 
             # Render PDF with custom configuration
+            # NOTE: This call can hang with certain HTML/CSS combinations
+            # The timeout is enforced at the CLI level via ThreadPoolExecutor
+            logger.debug("Starting WeasyPrint render (this may take 30-60 seconds)...")
             pdf_document = html_doc.render(stylesheets=[css_doc])
+            logger.debug("WeasyPrint render complete")
+
+            if show_progress:
+                print(" ✓", flush=True)
+                print("⏳ PDF generation (step 3/3): Writing file and normalizing metadata...", end="", flush=True)
 
             # Write PDF to file with metadata
             pdf_document.write_pdf(
@@ -144,7 +167,7 @@ class AuditPDFRenderer:
                 pdf_version="1.4",  # Good compatibility
                 pdf_identifier=False,  # Deterministic output
                 custom_metadata=True,  # Use HTML meta tags for deterministic timestamps
-                pdf_variant="pdf/a-1b" if self.config.optimize_size else None,
+                pdf_variant=None,  # Disable PDF/A for stability (was causing hangs)
                 presentational_hints=True,
                 optimize_images=self.config.optimize_size,
                 jpeg_quality=self.config.image_quality,
@@ -161,13 +184,18 @@ class AuditPDFRenderer:
             file_size = output_path.stat().st_size
             logger.info(f"Successfully generated PDF: {output_path} ({file_size:,} bytes)")
 
+            if show_progress:
+                print(" ✓", flush=True)
+                print(f"✅ PDF generated successfully: {output_path.name} ({file_size:,} bytes)")
+
             return output_path
 
         except ImportError as e:
             # Graceful fallback: write HTML next to requested PDF and explain
             html_path = str(Path(output_path).with_suffix(".html"))
-            Path(html_path).write_text(html_content, encoding="utf-8")
-            logger.warning(f"PDF backend not available. Wrote HTML to {html_path}")
+            if html_content:
+                Path(html_path).write_text(html_content, encoding="utf-8")
+                logger.warning(f"PDF backend not available. Wrote HTML to {html_path}")
 
             raise RuntimeError(
                 f"PDF backend (WeasyPrint) is not installed. "
@@ -179,6 +207,15 @@ class AuditPDFRenderer:
             ) from e
 
         except Exception as e:
+            # Save HTML on any error for debugging
+            if html_content:
+                debug_html = Path(output_path).with_suffix(".debug.html")
+                try:
+                    debug_html.write_text(html_content, encoding="utf-8")
+                    logger.error(f"PDF generation failed. Saved HTML to {debug_html} for debugging")
+                except Exception as write_error:
+                    logger.error(f"Failed to save debug HTML: {write_error}")
+
             logger.error(f"Failed to generate PDF: {e}")
             raise RuntimeError(f"PDF generation failed: {e}") from e
 
@@ -188,6 +225,7 @@ class AuditPDFRenderer:
             # This is a known cosmetic issue and doesn't affect functionality
             # See: https://github.com/Kozea/WeasyPrint/issues/
             import gc
+
             gc.collect()
 
     def _generate_pdf_css(self) -> str:
