@@ -26,7 +26,7 @@ This example demonstrates using GlassAlpha to detect bias in healthcare AI syste
 
 ```yaml
 # healthcare_audit.yaml
-audit_profile: healthcare_compliance
+# Direct configuration for healthcare compliance
 
 # Strict regulatory compliance
 strict_mode: true

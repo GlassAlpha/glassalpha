@@ -146,6 +146,7 @@ nav:
           - Detecting Dataset Bias: guides/dataset-bias.md
           - Counterfactual Recourse: guides/recourse.md
           - Testing Demographic Shifts: guides/shift-testing.md
+          - Using Saved Models: guides/saved-models.md
           - Strict Mode: guides/strict-mode.md
           - Determinism & Reproducibility: guides/determinism.md
 

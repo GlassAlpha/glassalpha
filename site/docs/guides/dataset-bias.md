@@ -1,9 +1,9 @@
 # Dataset Bias Detection Guide
 
 !!! tip "Quick Navigation"
-    **Prerequisites**: [Configuration Guide](../getting-started/configuration.md)  
-    **Related**: [Fairness Metrics](../reference/fairness-metrics.md) | [SR 11-7 Mapping](../compliance/sr-11-7-mapping.md)  
-    **Next**: [Testing Demographic Shifts](shift-testing.md)
+**Prerequisites**: [Configuration Guide](../getting-started/configuration.md)
+**Related**: [Fairness Metrics](../reference/fairness-metrics.md) | [SR 11-7 Mapping](../compliance/sr-11-7-mapping.md)
+**Next**: [Testing Demographic Shifts](shift-testing.md)
 
 # Dataset Bias Detection Guide
 
@@ -415,7 +415,7 @@ data:
 
 ```yaml
 # audit_config.yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42

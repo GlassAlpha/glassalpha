@@ -165,7 +165,7 @@ data:
 # Note: Data must be de-identified per HIPAA Safe Harbor
 # No direct identifiers, dates generalized to year, zip codes >3 digits only
 
-audit_profile: "healthcare_equity"
+# Direct configuration: "healthcare_equity"
 random_seed: 42
 strict_mode: true
 

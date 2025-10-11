@@ -34,7 +34,7 @@ glassalpha audit --config my_audit_config.yaml --output audit.pdf
 
 ```yaml
 # my_audit_config.yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42
@@ -132,7 +132,7 @@ Create a YAML configuration file specifying your data:
 
 ```yaml
 # loan_approval_audit.yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 # Essential: Set random seed for reproducibility
 reproducibility:
@@ -415,7 +415,7 @@ preprocessing:
 ### Financial services (credit scoring)
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 data:
   dataset: custom
@@ -445,7 +445,7 @@ metrics:
 ### Healthcare (treatment outcomes)
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 data:
   dataset: custom
@@ -475,7 +475,7 @@ metrics:
 ### Hiring (candidate screening)
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 data:
   dataset: custom
@@ -507,7 +507,7 @@ metrics:
 ### Criminal justice (risk assessment)
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 data:
   dataset: custom

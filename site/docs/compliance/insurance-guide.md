@@ -158,7 +158,7 @@ data:
     - "age_group"
     - "zip_code" # Potential proxy for race/ethnicity
 
-audit_profile: "insurance_pricing"
+# Direct configuration: "insurance_pricing"
 random_seed: 42
 strict_mode: true
 

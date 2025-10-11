@@ -1,276 +1,241 @@
-# Explainer Registry
+# Explainer Selection
 
-**Module**: `glassalpha.explain.registry`
+**Module**: `glassalpha.explain`
 
-Registry for managing explainer selection and availability with deterministic behavior.
+Explicit dispatch for selecting explainers based on model compatibility and availability.
 
 ---
 
 ## Overview
 
-The explainer registry provides deterministic explainer selection with fallback handling. Critical for reproducible audits.
+GlassAlpha uses explicit dispatch to select explainers based on model type and availability. This approach provides deterministic explainer selection with clear fallback chains for reproducible audits.
 
 **Key features**:
 
-- Priority-based explainer selection
-- Deterministic fallback chain
-- Availability checking
-- Strict mode for production
+- Model-type based explainer selection
+- Deterministic fallback chain (TreeSHAP → KernelSHAP → Permutation)
+- Clear error messages when explainers are unavailable
+- No dynamic registries - all logic is explicit and traceable
 
 ---
 
 ## Quick Start
 
 ```python
-from glassalpha.explain.registry import select_explainer_deterministic
+from glassalpha.explain import select_explainer
 
-# Deterministic explainer selection with priority list
-explainer_name, explainer = select_explainer_deterministic(
-    model=model,
-    X_test=X_test,
-    priority=['treeshap', 'kernelshap', 'coefficients'],
-    strict=False,  # Use fallbacks if preferred unavailable
-)
-
-print(f"Selected: {explainer_name}")
+# Explicit explainer selection based on model type
+try:
+    explainer = select_explainer("xgboost")  # Returns TreeSHAP for tree models
+    explanations = explainer.explain(model, X_test)
+except ImportError as e:
+    print(f"Explainer not available: {e}")
+    print("Install with: pip install 'glassalpha[explain]'")
 ```
 
 ---
 
 ## API Reference
 
-### select_explainer_deterministic
+### select_explainer
 
 ```python
-def select_explainer_deterministic(
-    model,
-    X_test: pd.DataFrame,
-    *,
-    priority: list[str] | None = None,
-    strict: bool = False,
-) -> tuple[str, ExplainerInterface]:
+def select_explainer(model_type: str, config: dict) -> ExplainerInterface:
     """Select explainer with guaranteed deterministic behavior.
 
     Args:
-        model: Trained model implementing predict/predict_proba
-        X_test: Test dataset for validation
-        priority: Ordered list of explainer names to try (default: ['treeshap', 'kernelshap', 'coefficients'])
-        strict: If True, fail if preferred explainer unavailable. If False, use deterministic fallback chain.
+        model_type: Type of model ("xgboost", "lightgbm", "sklearn")
+        config: Configuration dictionary with explainer preferences
 
     Returns:
-        Tuple of (explainer_name, explainer_instance)
+        ExplainerInterface instance compatible with the model type
 
     Raises:
-        ExplainerUnavailableError: If no compatible explainer in strict mode
+        ImportError: If required explainer dependencies are not installed
+        ValueError: If model_type is not supported
 
     Example:
-        >>> from glassalpha.explain.registry import select_explainer_deterministic
-        >>> explainer_name, explainer = select_explainer_deterministic(
-        ...     model=xgb_model,
-        ...     X_test=X_test,
-        ...     priority=['treeshap', 'kernelshap'],
-        ...     strict=True,
-        ... )
-        >>> print(f"Using: {explainer_name}")
+        >>> from glassalpha.explain import select_explainer
+        >>> explainer = select_explainer("xgboost")
+        >>> explanations = explainer.explain(model, X_test)
     """
 ```
 
-### \_available_explainers
+## Explainer Types
+
+GlassAlpha provides these explainer types through explicit dispatch:
+
+| Explainer        | Model Types       | Description                          | Installation                        |
+| ---------------- | ----------------- | ------------------------------------ | ----------------------------------- |
+| **TreeSHAP**     | XGBoost, LightGBM | Exact Shapley values for tree models | `pip install 'glassalpha[explain]'` |
+| **KernelSHAP**   | Any model         | Approximation for non-tree models    | `pip install 'glassalpha[explain]'` |
+| **Permutation**  | Any model         | Model-agnostic feature importance    | Built-in (no extra dependencies)    |
+| **Coefficients** | Linear models     | Direct coefficient analysis          | Built-in (no extra dependencies)    |
+
+### Explainer Selection Logic
+
+The explicit dispatch follows this deterministic priority chain:
+
+1. **TreeSHAP** for tree-based models (XGBoost, LightGBM) - most accurate
+2. **KernelSHAP** for any model - good approximation when TreeSHAP unavailable
+3. **Permutation** explainer - always available, model-agnostic
+4. **Coefficients** for linear models - direct interpretation
+
+Example selection:
 
 ```python
-def _available_explainers() -> dict[str, type[ExplainerInterface]]:
-    """Get all currently available explainers.
+from glassalpha.explain import select_explainer
 
-    Checks which explainers can be imported with current dependencies.
+# XGBoost model gets TreeSHAP (if available) or KernelSHAP fallback
+explainer = select_explainer("xgboost")
 
-    Returns:
-        Dict mapping explainer name to explainer class
-
-    Example:
-        >>> from glassalpha.explain.registry import _available_explainers
-        >>> available = _available_explainers()
-        >>> print(f"Available: {list(available.keys())}")
-        ['coefficients', 'permutation', 'treeshap', 'kernelshap']
-    """
+# Linear model gets Coefficients explainer
+explainer = select_explainer("sklearn")
 ```
 
 ---
 
-## Explainer Priority Lists
+## Configuration-Based Selection
 
-### Recommended Priorities by Model Type
+GlassAlpha uses configuration-driven explainer selection rather than priority lists:
 
-**Tree-based models** (XGBoost, LightGBM, RandomForest):
-
-```python
-priority = ['treeshap', 'kernelshap', 'permutation', 'coefficients']
+```yaml
+explainers:
+  strategy: first_compatible # or "all", "priority"
+  priority: [treeshap, kernelshap, permutation]
 ```
 
-**Linear models** (LogisticRegression, LinearRegression):
+### Explainer Strategies
 
-```python
-priority = ['coefficients', 'permutation', 'kernelshap']
+**first_compatible**: Use first available explainer in priority order
+**all**: Try all explainers, return results from all that work
+**priority**: Use explicit priority list from config
+
+### Configuration Example
+
+```yaml
+explainers:
+  strategy: first_compatible
+  priority:
+    - treeshap # Best for tree models
+    - kernelshap # Good approximation
+    - permutation # Always available
+
+model:
+  type: xgboost
 ```
 
-**General fallback** (works for any model):
+### Code Example
 
 ```python
-priority = ['permutation', 'coefficients']
+from glassalpha.explain import select_explainer
+
+config = {
+    "explainers": {
+        "strategy": "first_compatible",
+        "priority": ["treeshap", "kernelshap", "permutation"]
+    }
+}
+
+explainer = select_explainer("xgboost", config)
 ```
-
----
-
-## Strict Mode
-
-### When to Use Strict Mode
-
-**Use strict=True** when:
-
-- Running production audits
-- Regulatory submissions
-- Reproducibility is critical
-- You've verified dependencies
-
-**Use strict=False** when:
-
-- Exploring new models
-- Development/testing
-- Dependency availability uncertain
-
-### Strict Mode Example
-
-```python
-from glassalpha.explain.registry import select_explainer_deterministic, ExplainerUnavailableError
 
 try:
-    explainer_name, explainer = select_explainer_deterministic(
-        model=model,
-        X_test=X_test,
-        priority=['treeshap'],
-        strict=True,
-    )
-except ExplainerUnavailableError as e:
-    print(f"❌ Required explainer unavailable: {e}")
-    print("Fix: pip install shap")
-    raise
-```
+explainer = select_explainer("xgboost")
+explanations = explainer.explain(model, X_test)
+except ImportError as e:
+print(f"❌ Explainer unavailable: {e}")
+print("Fix: pip install 'glassalpha[explain]'")
+raise
+
+````
 
 ---
 
-## Exceptions
+## Error Handling
 
-### ExplainerUnavailableError
+### Common Errors and Solutions
 
-```python
-class ExplainerUnavailableError(RuntimeError):
-    """Raised when requested explainer is not available in strict mode."""
-```
-
-**Example**:
+**ImportError: No module named 'shap'**
 
 ```python
-from glassalpha.explain.registry import ExplainerUnavailableError
-
 try:
-    explainer_name, explainer = select_explainer_deterministic(
-        model=model,
-        X_test=X_test,
-        priority=['treeshap'],
-        strict=True,
-    )
-except ExplainerUnavailableError as e:
-    # Handle missing dependency
-    print(f"Required explainer unavailable: {e}")
-    print("Available explainers:", e.available_explainers)  # If provided
+    explainer = select_explainer("xgboost")
+except ImportError as e:
+    print(f"SHAP not installed: {e}")
+    print("Install with: pip install 'glassalpha[explain]'")
+````
+
+**ValueError: Unknown model_type**
+
+```python
+try:
+    explainer = select_explainer("unknown_model")
+except ValueError as e:
+    print(f"Unsupported model type: {e}")
+    print("Supported types: xgboost, lightgbm, sklearn")
 ```
 
 ---
 
 ## Usage Patterns
 
-### CI/CD Pre-Deployment Check
+### CI/CD Validation
 
 ```python
-from glassalpha.explain.registry import select_explainer_deterministic, _available_explainers
+from glassalpha.explain import select_explainer
 
-def validate_explainer_dependencies(model, X_test, required_explainer: str):
+def validate_explainer_availability(model_type: str):
     """Validate that required explainer is available."""
 
-    # Check availability
-    available = _available_explainers()
-    if required_explainer not in available:
-        raise RuntimeError(
-            f"Required explainer '{required_explainer}' not available. "
-            f"Available: {list(available.keys())}"
-        )
-
-    # Validate selection works
     try:
-        explainer_name, explainer = select_explainer_deterministic(
-            model=model,
-            X_test=X_test,
-            priority=[required_explainer],
-            strict=True,
-        )
-        print(f"✅ {required_explainer} available and working")
+        explainer = select_explainer(model_type)
+        print(f"✅ {model_type} explainer available")
         return True
-    except Exception as e:
-        print(f"❌ {required_explainer} failed: {e}")
+    except ImportError as e:
+        print(f"❌ Explainer unavailable: {e}")
         return False
+
+# Example usage
+validate_explainer_availability("xgboost")
 ```
 
-### Fallback Strategy
+### Configuration-Based Selection
 
-```python
-from glassalpha.explain.registry import select_explainer_deterministic
+````python
+from glassalpha.explain import select_explainer
 
-def get_explainer_with_logging(model, X_test):
-    """Get explainer with detailed logging."""
+def get_explainer_from_config(config: dict):
+    """Get explainer based on configuration."""
 
-    priority = ['treeshap', 'kernelshap', 'permutation', 'coefficients']
+    model_type = config["model"]["type"]
+    explainer_config = config.get("explainers", {})
 
-    explainer_name, explainer = select_explainer_deterministic(
-        model=model,
-        X_test=X_test,
-        priority=priority,
-        strict=False,  # Allow fallbacks
-    )
+    explainer = select_explainer(model_type, explainer_config)
+    print(f"Selected explainer for {model_type}")
 
-    print(f"Selected explainer: {explainer_name}")
-
-    # Warn if not first choice
-    if explainer_name != priority[0]:
-        print(f"⚠️  Using fallback explainer. Preferred '{priority[0]}' unavailable.")
-        print(f"   Install with: pip install glassalpha[shap]")
-
-    return explainer_name, explainer
-```
+    return explainer
 
 ### Testing Explainer Compatibility
 
 ```python
 import pytest
-from glassalpha.explain.registry import select_explainer_deterministic
+from glassalpha.explain import select_explainer
 
-@pytest.mark.parametrize("explainer_name", ["treeshap", "kernelshap", "coefficients"])
-def test_explainer_compatibility(explainer_name, model, X_test):
-    """Test that explainer works with model."""
+@pytest.mark.parametrize("model_type", ["xgboost", "lightgbm", "sklearn"])
+def test_explainer_compatibility(model_type):
+    """Test that explainer selection works for model type."""
 
     try:
-        name, explainer = select_explainer_deterministic(
-            model=model,
-            X_test=X_test,
-            priority=[explainer_name],
-            strict=True,
-        )
+        explainer = select_explainer(model_type)
 
-        # Test explain works
-        explanations = explainer.explain(X_test.iloc[0:1])
-        assert explanations is not None
+        # Test that we got an explainer
+        assert explainer is not None
+        print(f"✅ {model_type} explainer: {explainer.__class__.__name__}")
 
-    except ExplainerUnavailableError:
-        pytest.skip(f"{explainer_name} not available in test environment")
-```
+    except (ImportError, ValueError) as e:
+        pytest.skip(f"Explainer unavailable for {model_type}: {e}")
+````
 
 ---
 
@@ -278,11 +243,11 @@ def test_explainer_compatibility(explainer_name, model, X_test):
 
 ### What is Deterministic
 
-✅ **Explainer selection order**: Same priority → same explainer selected
+✅ **Explainer selection**: Same model_type → same explainer selected
 
-✅ **Availability checking**: Deterministic import checks
+✅ **Import checking**: Deterministic dependency availability checks
 
-✅ **Fallback chain**: Deterministic fallback order
+✅ **Configuration processing**: Same config → same explainer selection
 
 ### What Requires Additional Steps
 
@@ -304,8 +269,10 @@ def test_explainer_compatibility(explainer_name, model, X_test):
 
 **Speed**: Fast (tree-optimized)
 
+**Usage**: Automatically selected for tree models
+
 ```python
-priority = ['treeshap']  # For tree-based models
+explainer = select_explainer("xgboost")  # Gets TreeSHAP if available
 ```
 
 ### KernelSHAP
@@ -318,8 +285,10 @@ priority = ['treeshap']  # For tree-based models
 
 **Speed**: Slow (model-agnostic)
 
+**Usage**: Fallback for non-tree models or when TreeSHAP unavailable
+
 ```python
-priority = ['kernelshap']  # For general models
+explainer = select_explainer("sklearn")  # Gets KernelSHAP if available
 ```
 
 ### Coefficients
@@ -332,8 +301,10 @@ priority = ['kernelshap']  # For general models
 
 **Speed**: Instant
 
+**Usage**: Primary explainer for linear models
+
 ```python
-priority = ['coefficients']  # For linear models
+explainer = select_explainer("sklearn")  # Gets Coefficients for linear models
 ```
 
 ### Permutation
@@ -346,8 +317,10 @@ priority = ['coefficients']  # For linear models
 
 **Speed**: Medium
 
+**Usage**: Always available fallback explainer
+
 ```python
-priority = ['permutation']  # Reliable fallback
+explainer = select_explainer("xgboost")  # Falls back to Permutation if TreeSHAP unavailable
 ```
 
 ---
@@ -362,6 +335,6 @@ priority = ['permutation']  # Reliable fallback
 
 ## Source
 
-**Module path**: `src/glassalpha/explain/registry.py`
+**Module path**: `src/glassalpha/explain/__init__.py`
 
 **Example notebook**: `examples/explainer_selection.ipynb`

@@ -696,7 +696,7 @@ df.to_csv('adult_income_processed.csv', index=False)
 ### Step 4: Create GlassAlpha config
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42

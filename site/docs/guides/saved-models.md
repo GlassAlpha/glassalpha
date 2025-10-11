@@ -215,4 +215,4 @@ Automate model validation in deployment pipelines:
 - `glassalpha datasets info`: Check dataset schema compatibility
 - `glassalpha validate`: Validate model and data compatibility
 
-For more examples, see the [examples directory](../examples/) and [API reference](../reference/).
+For more examples, see the [examples directory](../examples/index.md) and [API reference](../reference/cli.md).

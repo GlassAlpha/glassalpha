@@ -210,7 +210,7 @@ glassalpha audit --config german_credit_simple.yaml --output audit.pdf
 **Error:**
 
 ```
-Warning: Model type 'unknown_model' not found in registry
+Warning: Model type 'unknown_model' not supported
 ```
 
 **Solution:**
@@ -1127,14 +1127,20 @@ export GLASSALPHA_LOG_LEVEL=DEBUG
 glassalpha audit --config config.yaml --output audit.pdf
 ```
 
-### Component registry debugging
+### Explainer/model compatibility debugging
 
 ```python
-# Debug component registration
+# Debug explainer availability
 python -c "
-from glassalpha.core import list_components
-import pprint
-pprint.pprint(list_components())
+from glassalpha.explain import select_explainer
+
+# Test each model type
+for model_type in ['xgboost', 'lightgbm', 'sklearn']:
+    try:
+        explainer = select_explainer(model_type)
+        print(f'{model_type}: {explainer.__class__.__name__}')
+    except Exception as e:
+        print(f'{model_type}: ERROR - {e}')
 "
 ```
 

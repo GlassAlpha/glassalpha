@@ -65,7 +65,7 @@ Required for production audits and regulatory submission.
 4. **Profile Specification**: Explicit audit profile
 
    ```yaml
-   audit_profile: tabular_compliance
+   # Direct configuration
    ```
 
 5. **Version Pinning**: Use `constraints.txt` for dependencies

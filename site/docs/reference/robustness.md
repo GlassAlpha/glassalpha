@@ -237,7 +237,7 @@ Full configuration with robustness testing:
 
 ```yaml
 # audit_config.yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42 # Required for deterministic perturbations

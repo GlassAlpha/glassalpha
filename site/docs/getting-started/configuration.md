@@ -41,7 +41,7 @@ reproducibility: { random_seed: 42 }
 Adds fairness analysis and protected attributes. Most teams start here.
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration (no profiles needed)
 
 data:
   dataset: german_credit
@@ -80,7 +80,7 @@ reproducibility:
 Comprehensive configuration for regulatory submissions.
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration (no profiles needed)
 
 data:
   dataset: german_credit
@@ -164,7 +164,7 @@ Every configuration has this structure (minimal → production):
 
 ```yaml
 # Required: Audit profile determines component selection
-audit_profile: tabular_compliance
+# Direct configuration (no profiles needed)
 
 # Required: Reproducibility settings
 reproducibility:
@@ -193,7 +193,7 @@ The audit profile determines which components are available and what validations
 
 ```yaml
 # Determines the audit context and available components
-audit_profile: tabular_compliance # Currently supported profile
+# Direct configuration (no profiles needed) # Currently supported profile
 ```
 
 **Available Profiles:**
@@ -486,7 +486,7 @@ Generate hashes for your preprocessing artifact:
 **See Also:**
 
 - [Preprocessing Verification Guide](../guides/preprocessing.md) - Complete documentation
-- [CLI Reference](../reference/cli.md#preprocessing-commands) - Command-line tools
+- [CLI Reference](../reference/cli.md) - Command-line tools
 
 ## Report configuration
 
@@ -585,7 +585,7 @@ When strict mode is enabled, the following fields become **required**:
 **Example strict mode configuration:**
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration (no profiles needed)
 
 reproducibility:
   random_seed: 42
@@ -708,7 +708,7 @@ metrics:
 ### Enterprise compliance configuration
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration (no profiles needed)
 strict_mode: true
 
 reproducibility:
@@ -783,7 +783,7 @@ compliance:
 ### Custom model configuration
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration (no profiles needed)
 
 reproducibility:
   random_seed: 123

@@ -150,7 +150,7 @@ data:
     - "age_group"
     - "race"
 
-audit_profile: "sr_11_7_banking"
+# Direct configuration for SR 11-7 compliance
 random_seed: 42
 strict_mode: true
 

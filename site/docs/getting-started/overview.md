@@ -115,7 +115,7 @@ Additional model types available through extension framework.
 Working configuration structure:
 
 ```yaml
-audit_profile: german_credit_default
+# Direct configuration example
 
 data:
   path: data/german_credit_processed.csv

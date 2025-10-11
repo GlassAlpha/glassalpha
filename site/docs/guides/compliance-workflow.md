@@ -61,7 +61,7 @@ Provide ML team with compliance requirements:
 
 ```yaml
 # Requirements for compliance review
-audit_profile: "sr_11_7_banking"
+# Direct configuration for SR 11-7 compliance
 strict_mode: true # Enforce determinism
 policy_gates: "configs/policy/sr_11_7_banking.yaml"
 
@@ -204,7 +204,7 @@ ML engineers reference policy in audit configs:
 
 ```yaml
 # Standard audit config
-audit_profile: "sr_11_7_banking"
+# Direct configuration for SR 11-7 compliance
 policy_gates: "configs/policy/firm_credit_baseline.yaml"
 strict_mode: true
 ```

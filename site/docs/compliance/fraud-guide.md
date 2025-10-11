@@ -154,7 +154,7 @@ data:
     - "merchant_category" # Could correlate with demographics
     - "device_type" # Could correlate with income
 
-audit_profile: "fraud_detection"
+# Direct configuration: "fraud_detection"
 random_seed: 42
 strict_mode: true
 

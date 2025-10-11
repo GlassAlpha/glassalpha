@@ -64,7 +64,7 @@ data:
     - "gender"
     - "age_group"
 
-audit_profile: "quickstart"
+# Direct configuration for quickstart
 random_seed: 42
 
 # Fast settings for dev

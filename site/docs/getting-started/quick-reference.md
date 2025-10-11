@@ -93,7 +93,7 @@ result.to_pdf("audit_report.pdf")
 ### 1. Minimal Config (Quick Start)
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42
@@ -114,7 +114,7 @@ model:
 ### 2. Fairness-Focused Config
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42
@@ -158,7 +158,7 @@ model:
 ### 3. Performance-Focused Config
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42
@@ -187,7 +187,7 @@ explainers:
 ### 4. Strict Mode (Regulatory Compliance)
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42
@@ -218,7 +218,7 @@ strict_mode: true # Enforce all requirements
 ### 5. Custom Data Template
 
 ```yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42

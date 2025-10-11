@@ -1,8 +1,8 @@
 # Calibration Analysis
 
 !!! info "Part of Understanding Section"
-    Learn about calibration metrics with statistical confidence intervals. Related topics:
-    
+Learn about calibration metrics with statistical confidence intervals. Related topics:
+
     - **[Fairness Metrics](fairness-metrics.md)** - Statistical rigor for fairness analysis
     - **[Configuration Guide](../getting-started/configuration.md)** - How to enable calibration analysis
     - **[SR 11-7 §III.B.2](../compliance/sr-11-7-mapping.md)** - Validation testing requirements
@@ -438,7 +438,7 @@ reproducibility:
 
 ```yaml
 # audit_config.yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42

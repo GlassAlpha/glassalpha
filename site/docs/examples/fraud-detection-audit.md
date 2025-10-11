@@ -83,7 +83,7 @@ Create a configuration file for the fraud detection audit:
 
 ```yaml
 # fraud_detection_audit.yaml
-audit_profile: fraud_detection
+# Direct configuration for fraud detection
 
 # Reproducibility for regulatory compliance
 reproducibility:

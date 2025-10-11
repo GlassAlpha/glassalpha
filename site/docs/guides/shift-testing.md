@@ -148,7 +148,7 @@ Ensure your audit config includes the protected attributes you want to test:
 
 ```yaml
 # audit.yaml
-audit_profile: tabular_compliance
+# Direct configuration
 
 reproducibility:
   random_seed: 42
