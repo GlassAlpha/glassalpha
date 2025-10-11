@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch: # Allow manual triggers
 
+permissions:
+  contents: read
+
 jobs:
   validate-determinism:
     name: Validate Determinism (${{ matrix.os }}, Python ${{ matrix.python-version }})

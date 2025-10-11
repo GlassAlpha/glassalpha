@@ -1,5 +1,5 @@
 # GlassAlpha - Wheel-first development workflow
-.PHONY: smoke build install test lint clean clean-temp hooks help dev-setup check check-workflows check-sigstore check-packaging check-determinism
+.PHONY: smoke build install test lint clean clean-temp hooks help dev-setup check check-workflows check-sigstore check-packaging check-determinism check-venv sync-deps freeze-deps
 
 # Default target
 help:
@@ -10,7 +10,7 @@ help:
 	@echo "🔍 check      - Quick pre-commit check (smoke test + doctor + packaging + determinism)"
 	@echo "📦 build      - Build wheel"
 	@echo "📥 install    - Install wheel (for testing)"
-	@echo "🧪 test       - Run full test suite (with pre-test cleanup)"
+	@echo "🧪 test       - Run full test suite (auto-checks venv first)"
 	@echo "📊 coverage   - Run tests with coverage report (terminal + HTML)"
 	@echo "🔍 lint       - Run linting"
 	@echo "🧹 clean      - Clean build artifacts"
@@ -20,11 +20,21 @@ help:
 	@echo "🔍 check-workflows - Validate GitHub Actions workflows"
 	@echo "📦 check-packaging - Validate MANIFEST.in and pyproject.toml"
 	@echo ""
+	@echo "Environment Management:"
+	@echo "🔍 check-venv - Check if venv is in sync with source code"
+	@echo "🔄 sync-deps  - Auto-fix environment (reinstall in editable mode)"
+	@echo "🧊 freeze-deps - Freeze current versions to constraints file"
+	@echo ""
 	@echo "Getting Started:"
 	@echo "1. make dev-setup      (one-time: installs deps + hooks + runs doctor)"
 	@echo "2. make check          (before commit: validates setup + packaging)"
 	@echo "3. git commit          (pre-commit: smoke test if fragile areas changed)"
 	@echo "4. git push            (pre-push: always runs smoke test)"
+	@echo ""
+	@echo "Environment Troubleshooting:"
+	@echo "• Tests failing mysteriously? → make check-venv"
+	@echo "• Environment out of sync? → make sync-deps"
+	@echo "• Quick auto-fix? → make test AUTO_FIX=1"
 
 # Smoke test - the key guardrail against CI thrashing
 smoke:
@@ -43,7 +53,7 @@ install: build
 # Note: Parallel execution with pytest-xdist speeds up tests but some tests
 # (subprocess-based, shared file writes) must be marked to run serially
 # Automatically cleans AI-generated test outputs before running
-test: clean-temp
+test: check-venv clean-temp
 	python3 -m pytest -q
 
 # Test with coverage report
@@ -180,3 +190,46 @@ check-determinism:
 		echo "   ⚠️  Determinism test script not found, skipping"; \
 		echo "   💡 This validation ensures local environment matches CI"; \
 	fi
+
+# Check that venv is in sync with source code (with auto-fix option)
+check-venv:
+	@echo "🔍 Checking virtual environment sync..."
+	@if [ -d ".venv" ]; then \
+		if [ -z "$$VIRTUAL_ENV" ]; then \
+			echo "   ⚠️  Virtual environment exists but not activated"; \
+			echo "   💡 Run: source .venv/bin/activate"; \
+			echo "   📝 Or use: .venv/bin/python3 -m pytest"; \
+		fi; \
+		./.venv/bin/python3 -c "import glassalpha; import sys; from pathlib import Path; src_path = Path('src/glassalpha/__init__.py'); pkg_path = Path(glassalpha.__file__); is_editable = 'site-packages' not in str(pkg_path); print(f'   ✓ Package installed in editable mode' if is_editable else f'   ✗ Package NOT in editable mode: {pkg_path}'); sys.exit(0 if is_editable else 1)" || ( \
+			echo ""; \
+			echo "   ❌ Environment out of sync - package not in editable mode"; \
+			echo ""; \
+			if [ "$$AUTO_FIX" = "1" ]; then \
+				echo "   🔧 Auto-fixing (set by AUTO_FIX=1)..."; \
+				.venv/bin/pip install -e . --no-deps -q; \
+				echo "   ✅ Fixed! Package reinstalled in editable mode"; \
+			else \
+				echo "   💡 Quick fix: Run one of these commands:"; \
+				echo "      make sync-deps           # Recommended: full sync"; \
+				echo "      make test AUTO_FIX=1     # Auto-fix and continue"; \
+				echo "      .venv/bin/pip install -e . --no-deps  # Manual fix"; \
+				exit 1; \
+			fi \
+		); \
+	else \
+		echo "   ❌ No .venv directory found"; \
+		echo ""; \
+		echo "   💡 Fix with: make dev-setup"; \
+		exit 1; \
+	fi
+	@echo "   ✓ Virtual environment is properly configured"
+
+# Synchronize development environment
+sync-deps:
+	@echo "🔄 Synchronizing development dependencies..."
+	@python3 scripts/sync-deps.py --sync
+
+# Freeze current dependencies to constraints file
+freeze-deps:
+	@echo "🧊 Freezing current dependencies..."
+	@python3 scripts/sync-deps.py --freeze
