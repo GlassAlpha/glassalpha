@@ -71,6 +71,11 @@ exclude DETERMINISM_FIX_PLAN.md
 exclude DETERMINISM_FIX_PROMPT.md
 exclude SOLUTION_*.md
 exclude CI_FIXES_SUMMARY.md
+# AI-generated analysis and planning docs (not for distribution)
+exclude CI_*.md
+exclude *_ANALYSIS.md
+exclude *_PLAN.md
+exclude fix-*.plan.md
 global-exclude test_*.html test_*.pdf test_*.pkl test_*.json
 global-exclude *_simple_audit.html *_simple_audit.manifest.json
 global-exclude malformed.yaml

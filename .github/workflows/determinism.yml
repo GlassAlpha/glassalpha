@@ -98,16 +98,6 @@ jobs:
           python -c "import pypdf; print(f'✅ pypdf {pypdf.__version__}')" || \
             (echo "❌ pypdf not available"; exit 1)
 
-      - name: Set deterministic environment
-        run: |
-          echo "SOURCE_DATE_EPOCH=1577836800" >> $GITHUB_ENV
-          echo "PYTHONHASHSEED=42" >> $GITHUB_ENV
-          echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
-          echo "OPENBLAS_NUM_THREADS=1" >> $GITHUB_ENV
-          echo "MKL_NUM_THREADS=1" >> $GITHUB_ENV
-          echo "GLASSALPHA_DETERMINISTIC=1" >> $GITHUB_ENV
-          echo "TZ=UTC" >> $GITHUB_ENV
-          echo "MPLBACKEND=Agg" >> $GITHUB_ENV
 
       - name: Verify environment setup
         run: |
