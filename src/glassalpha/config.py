@@ -182,6 +182,9 @@ class GAConfig(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
+    # Optional audit profile name (defaults to "default" if not specified)
+    audit_profile: str = Field(default="default")
+    
     model: ModelConfig
     data: DataConfig
     preprocessing: PreprocessingConfig = Field(
