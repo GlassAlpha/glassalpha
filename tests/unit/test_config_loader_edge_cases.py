@@ -13,19 +13,18 @@ import pytest
 import yaml
 
 from glassalpha.config import (
+    AuditConfig,
     apply_profile_defaults,
     load_config,
     load_config_from_file,
     merge_configs,
     save_config,
 )
-from glassalpha.config import AuditConfig
 
 
 def _create_test_config_dict():
     """Create a basic test configuration dictionary."""
     return {
-        "audit_profile": "tabular_compliance",
         "model": {"type": "logistic_regression", "path": "/tmp/model.pkl"},
         "data": {
             "dataset": "custom",
@@ -48,7 +47,6 @@ def _create_test_config_dict():
 def _create_invalid_config_dict():
     """Create an invalid configuration dictionary for testing error cases."""
     return {
-        "audit_profile": "nonexistent_profile",  # Invalid profile
         "model": {"type": "logistic_regression"},
         "data": {
             "dataset": "custom",
@@ -74,7 +72,6 @@ class TestConfigEnvironmentVariableSubstitution:
 
         try:
             config_dict = {
-                "audit_profile": "tabular_compliance",
                 "model": {"type": "logistic_regression", "path": "${TEST_MODEL_PATH}"},
                 "data": {
                     "dataset": "custom",
@@ -104,7 +101,6 @@ class TestConfigEnvironmentVariableSubstitution:
     def test_load_config_with_missing_env_var(self):
         """Test that missing environment variables are handled gracefully."""
         config_dict = {
-            "audit_profile": "tabular_compliance",
             "model": {"type": "logistic_regression", "path": "${MISSING_ENV_VAR}"},
             "data": {
                 "dataset": "custom",
@@ -130,7 +126,6 @@ class TestConfigEnvironmentVariableSubstitution:
 
         try:
             config_dict = {
-                "audit_profile": "tabular_compliance",
                 "model": {"type": "logistic_regression", "path": "/tmp/model.pkl"},
                 "data": {
                     "dataset": "custom",
@@ -159,7 +154,7 @@ class TestConfigValidationErrors:
 
     def test_load_config_validation_errors_clear_messages(self):
         """Test that config validation provides clear error messages."""
-        # Test with truly invalid config (missing audit_profile)
+        # Test with truly invalid config
         invalid_config = {
             "model": {"type": "logistic_regression"},
             "data": {"dataset": "custom", "path": "/tmp/data.csv"},
@@ -175,7 +170,6 @@ class TestConfigValidationErrors:
     def test_load_config_missing_required_fields(self):
         """Test error handling for missing required fields."""
         incomplete_config = {
-            "audit_profile": "tabular_compliance",
             # Missing model, data, etc.
         }
 
@@ -191,7 +185,6 @@ class TestConfigValidationErrors:
         # Note: Model type validation happens during training, not config loading
         # Config loading only validates schema structure, not model availability
         invalid_config = {
-            "audit_profile": "tabular_compliance",
             "model": {"type": "invalid_model_type", "path": "/tmp/model.pkl"},
             "data": {
                 "dataset": "custom",
@@ -227,7 +220,6 @@ class TestConfigDifferentFormats:
             # Should load successfully from YAML
             config = load_config_from_file(yaml_path)
             assert isinstance(config, AuditConfig)
-            assert config.audit_profile == "tabular_compliance"
             assert config.model.type == "logistic_regression"
 
         finally:
@@ -240,7 +232,6 @@ class TestConfigProfileDefaults:
     def test_apply_profile_defaults_basic(self):
         """Test basic profile defaults application."""
         config_dict = {
-            "audit_profile": "tabular_compliance",
             "model": {"type": "logistic_regression"},
             "data": {"dataset": "custom", "path": "/tmp/data.csv"},
         }
@@ -251,7 +242,6 @@ class TestConfigProfileDefaults:
         # Should add missing defaults from profile (check what's actually added)
         # The profile may add defaults in a different way than expected
         assert isinstance(enhanced_config, dict)
-        assert "audit_profile" in enhanced_config  # Original field preserved
 
 
 class TestConfigMergeFunctionality:
@@ -260,7 +250,6 @@ class TestConfigMergeFunctionality:
     def test_merge_configs_basic(self):
         """Test basic config merging."""
         base_config = {
-            "audit_profile": "tabular_compliance",
             "model": {"type": "logistic_regression"},
         }
 
@@ -272,7 +261,6 @@ class TestConfigMergeFunctionality:
         merged = merge_configs(base_config, override_config)
 
         # Should combine both configs
-        assert merged["audit_profile"] == "tabular_compliance"
         assert merged["model"]["type"] == "logistic_regression"
         assert merged["model"]["path"] == "/tmp/model.pkl"
         assert merged["data"]["path"] == "/tmp/data.csv"
@@ -333,7 +321,6 @@ class TestConfigSaveLoadRoundtrip:
             loaded_config = load_config_from_file(yaml_path)
 
             # Should be equivalent
-            assert loaded_config.audit_profile == config.audit_profile
             assert loaded_config.model.type == config.model.type
 
 
@@ -343,7 +330,6 @@ class TestConfigComplexScenarios:
     def test_load_config_with_unicode_values(self):
         """Test config with Unicode values."""
         config_dict = {
-            "audit_profile": "tabular_compliance",
             "model": {"type": "logistic_regression", "path": "/tmp/model.pkl"},
             "data": {
                 "dataset": "custom",

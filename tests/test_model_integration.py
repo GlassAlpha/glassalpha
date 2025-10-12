@@ -24,6 +24,7 @@ except ImportError:
     LogisticRegression = None
     SKLEARN_AVAILABLE = False
 
+
 # Include additional sklearn imports in conditional block
 try:
     if SKLEARN_AVAILABLE:
@@ -96,34 +97,6 @@ def sample_multiclass_data():
     X_df = pd.DataFrame(X, columns=feature_names)
 
     return X_df, y, feature_names
-
-
-class TestModelRegistry:
-    """Test model registration and discovery."""
-
-    def test_sklearn_models_are_registered(self):
-        """Test that sklearn models are properly registered."""
-        components = ModelRegistry.get_all()
-
-        # Should include sklearn models
-        assert "logistic_regression" in components
-        assert "sklearn_generic" in components
-
-    def test_get_sklearn_model_classes(self):
-        """Test that we can retrieve sklearn model classes."""
-        lr_cls = ModelRegistry.get("logistic_regression")
-        assert lr_cls == LogisticRegressionWrapper
-
-        generic_cls = ModelRegistry.get("sklearn_generic")
-        assert generic_cls == SklearnGenericWrapper
-
-    def test_model_priorities(self):
-        """Test that models have expected priorities."""
-        # This tests the registry metadata (if available)
-        components = ModelRegistry.get_all()
-
-        # All registered models should be available
-        assert len(components) >= 2  # At least logistic_regression and sklearn_generic
 
 
 class TestLogisticRegressionWrapper:
@@ -519,25 +492,6 @@ class TestModelWrapperCompatibility:
         assert info["n_features"] > 0
         assert info["n_classes"] >= 2
         assert isinstance(info["status"], str)
-
-    def test_registry_integration(self):
-        """Test that models are properly integrated with registry."""
-        # Test model retrieval from registry
-        LogisticWrapperCls = ModelRegistry.get("logistic_regression")
-        GenericWrapperCls = ModelRegistry.get("sklearn_generic")
-
-        # Should be able to instantiate from registry
-        wrapper1 = LogisticWrapperCls()
-        wrapper2 = GenericWrapperCls()
-
-        assert isinstance(wrapper1, LogisticRegressionWrapper)
-        assert isinstance(wrapper2, SklearnGenericWrapper)
-
-        # Should have required attributes
-        assert hasattr(wrapper1, "capabilities")
-        assert hasattr(wrapper1, "version")
-        assert hasattr(wrapper2, "capabilities")
-        assert hasattr(wrapper2, "version")
 
 
 class TestModelWrapperEdgeCases:

@@ -23,7 +23,6 @@ except ImportError:
 # Skip all tests if sklearn not available
 pytestmark = pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="sklearn not available - CI compatibility issues")
 
-from glassalpha.core import MetricRegistry
 from glassalpha.metrics.fairness.bias_detection import (
     DemographicParityMetric,
     EqualizedOddsMetric,
@@ -101,34 +100,6 @@ def biased_predictions():
     y_pred[biased_indices] = 1
 
     return y_true, y_pred, sensitive_df
-
-
-class TestFairnessMetricRegistry:
-    """Test fairness metric registration and discovery."""
-
-    def test_fairness_metrics_are_registered(self):
-        """Test that fairness metrics are properly registered."""
-        components = MetricRegistry.get_all()
-
-        # Should include our fairness metrics
-        assert "demographic_parity" in components
-        assert "equal_opportunity" in components
-        assert "equalized_odds" in components
-        assert "predictive_parity" in components
-
-    def test_get_fairness_metric_classes(self):
-        """Test that we can retrieve fairness metric classes."""
-        dp_cls = MetricRegistry.get("demographic_parity")
-        assert dp_cls == DemographicParityMetric
-
-        eo_cls = MetricRegistry.get("equal_opportunity")
-        assert eo_cls == EqualOpportunityMetric
-
-        eod_cls = MetricRegistry.get("equalized_odds")
-        assert eod_cls == EqualizedOddsMetric
-
-        pp_cls = MetricRegistry.get("predictive_parity")
-        assert pp_cls == PredictiveParityMetric
 
 
 class TestDemographicParityMetric:

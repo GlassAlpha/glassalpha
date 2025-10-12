@@ -26,7 +26,6 @@ from glassalpha.pipeline.audit import AuditPipeline, AuditResults, run_audit_pip
 def minimal_config():
     """Create minimal valid audit configuration for testing."""
     return AuditConfig(
-        audit_profile="tabular_compliance",
         model=ModelConfig(type="xgboost"),
         data=DataConfig(dataset="custom", path="test_data.csv"),
         explainers=ExplainerConfig(strategy="first_compatible", priority=["treeshap", "kernelshap"]),
@@ -100,7 +99,6 @@ class TestAuditPipelineInitialization:
         """Test that pipeline stores config correctly."""
         pipeline = AuditPipeline(minimal_config)
 
-        assert pipeline.config.audit_profile == "tabular_compliance"
         assert pipeline.config.model.type == "xgboost"
         assert pipeline.config.reproducibility.random_seed == 42
 

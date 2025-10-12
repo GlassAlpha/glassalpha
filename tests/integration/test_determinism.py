@@ -49,7 +49,6 @@ def simple_config(tmp_path, tiny_binary_data):
 
     # Create config (valid AuditConfig schema)
     config = {
-        "audit_profile": "tabular_compliance",
         "data": {
             "dataset": "custom",  # Required for external files
             "path": str(data_path),
@@ -413,7 +412,6 @@ def test_cli_respects_source_date_epoch(tmp_path):
 
     # Create minimal config
     config.write_text("""
-audit_profile: tabular_compliance
 data:
   dataset: german_credit
   target_column: credit_risk
@@ -480,7 +478,6 @@ def test_cli_pdf_determinism_with_source_date_epoch(tmp_path):
 
     # Create minimal config
     config.write_text("""
-audit_profile: tabular_compliance
 data:
   dataset: german_credit
   target_column: credit_risk

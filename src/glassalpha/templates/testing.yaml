@@ -1,0 +1,11 @@
+# Test template configuration
+# This is a stub template file for testing purposes
+
+template_name: "testing"
+description: "Test template for validation"
+
+# Template structure (simplified for testing)
+sections:
+  - header
+  - metrics
+  - explanations

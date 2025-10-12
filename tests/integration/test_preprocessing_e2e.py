@@ -126,7 +126,9 @@ class TestPreprocessingIntegration:
         from glassalpha.pipeline.audit import AuditPipeline
 
         # Use quickstart config which doesn't have preprocessing configured
-        config_path = Path(__file__).parent.parent.parent / "src" / "glassalpha" / "data" / "configs" / "quickstart.yaml"
+        config_path = (
+            Path(__file__).parent.parent.parent / "src" / "glassalpha" / "data" / "configs" / "quickstart.yaml"
+        )
         assert config_path.exists(), f"Quickstart config not found: {config_path}"
 
         config = load_config_from_file(config_path)
@@ -176,7 +178,9 @@ class TestPreprocessingIntegration:
         """
         from glassalpha.config import load_config_from_file
 
-        config_path = Path(__file__).parent.parent.parent / "src" / "glassalpha" / "data" / "configs" / "german_credit.yaml"
+        config_path = (
+            Path(__file__).parent.parent.parent / "src" / "glassalpha" / "data" / "configs" / "german_credit.yaml"
+        )
         config = load_config_from_file(config_path)
 
         # Enable preprocessing and set up artifact path for hash validation
@@ -225,7 +229,7 @@ class TestPreprocessingIntegration:
             transformers=[
                 ("num", StandardScaler(), numeric_features),
                 ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_features),
-            ]
+            ],
         )
 
         # Fit on dummy data that matches the expected structure
@@ -258,26 +262,28 @@ class TestPreprocessingIntegration:
         information for reproducibility.
 
         """
-        from glassalpha.config import load_config_from_file
-        from glassalpha.pipeline.audit import AuditPipeline
-
         # Create a minimal config for this test instead of using german_credit.yaml
         # which has complex column requirements that conflict with our test artifact
-        from glassalpha.config import AuditConfig
+        from glassalpha.config import AuditConfig, load_config_from_file
+        from glassalpha.pipeline.audit import AuditPipeline
 
         config = AuditConfig(
-            audit_profile="tabular_compliance",
             model={"type": "logistic_regression", "params": {"random_state": 42}},
             data={
                 "dataset": "custom",
                 "path": str(tmp_path / "dummy_data.csv"),
                 "target_column": "target",
-                "protected_attributes": ["group"]
+                "protected_attributes": ["group"],
             },
             explainers={"strategy": "first_compatible", "priority": ["noop"]},
             metrics={"performance": ["accuracy"], "fairness": ["demographic_parity"]},
             reproducibility={"random_seed": 42, "deterministic": True},
-            manifest={"enabled": True, "include_git_sha": False, "include_config_hash": False, "include_data_hash": False}
+            manifest={
+                "enabled": True,
+                "include_git_sha": False,
+                "include_config_hash": False,
+                "include_data_hash": False,
+            },
         )
 
         # Enable preprocessing for this test
@@ -302,7 +308,7 @@ class TestPreprocessingIntegration:
             transformers=[
                 ("num", StandardScaler(), numeric_features),
                 ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_features),
-            ]
+            ],
         )
 
         # Create dummy data that matches our test config
@@ -310,7 +316,7 @@ class TestPreprocessingIntegration:
             "age": np.random.randn(10),
             "income": np.random.randn(10),
             "group": np.random.choice(["A", "B"], 10),
-            "target": np.random.choice([0, 1], 10)
+            "target": np.random.choice([0, 1], 10),
         }
 
         dummy_df = pd.DataFrame(dummy_data)

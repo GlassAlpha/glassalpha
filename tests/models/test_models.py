@@ -20,6 +20,7 @@ import pytest
 
 # from glassalpha.core.noop_components import PassThroughModel
 from glassalpha.models._io import read_wrapper_state, write_wrapper_state
+from glassalpha.models.passthrough import PassThroughModel
 
 # ============================================================================
 # Model I/O Tests (from test_models_io.py)

@@ -450,20 +450,3 @@ class LightGBMWrapper(BaseTabularWrapper):
         """String representation of the wrapper."""
         status = "loaded" if self.model else "not loaded"
         return f"LightGBMWrapper(status={status}, n_classes={self.n_classes}, version={self.version})"
-
-
-# Register LightGBM model with ModelRegistry at module import
-try:
-    from glassalpha.core.registry import ModelRegistry
-
-    # Check if LightGBM is actually available before registering
-    _import_lightgbm()
-    ModelRegistry.register(
-        "lightgbm",
-        LightGBMWrapper,
-        import_check="lightgbm",
-        extra_hint="lightgbm",
-    )
-except ImportError:
-    # LightGBM not available - model will show as unavailable in registry
-    pass

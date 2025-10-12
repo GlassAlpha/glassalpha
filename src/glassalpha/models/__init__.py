@@ -114,8 +114,11 @@ def load_model_from_config(model_config: ModelConfig) -> Any:
     )
 
 
+from glassalpha.models.passthrough import PassThroughModel
+
 __all__ = [
     "ModelLoadError",
+    "PassThroughModel",
     "load_model",
     "load_model_from_config",
 ]

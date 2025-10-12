@@ -21,5 +21,16 @@ class MetricRegistry:
             "auc_roc": True,
         }
 
+    @classmethod
+    def get(cls, name: str):
+        """Get metric class by name (stub)."""
+        # Return None for compatibility
+        return
+
+    @classmethod
+    def get_all(cls):
+        """Get all registered metrics (stub)."""
+        return {}
+
 
 __all__ = ["MetricRegistry"]

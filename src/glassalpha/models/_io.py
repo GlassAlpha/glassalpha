@@ -9,7 +9,7 @@ def read_wrapper_state(path):
     raise NotImplementedError("Model I/O system was simplified - use joblib directly")
 
 
-def write_wrapper_state(wrapper, path):
+def write_wrapper_state(wrapper, path, model_str: str | None = None, **kwargs):
     """Stub for test compatibility."""
     raise NotImplementedError("Model I/O system was simplified - use joblib directly")
 

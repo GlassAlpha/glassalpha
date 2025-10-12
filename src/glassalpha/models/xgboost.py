@@ -547,20 +547,3 @@ class XGBoostWrapper(BaseTabularWrapper):
         """String representation of the wrapper."""
         status = "loaded" if self.model else "not loaded"
         return f"XGBoostWrapper(status={status}, n_classes={self.n_classes}, version={self.version})"
-
-
-# Register XGBoost model with ModelRegistry at module import
-try:
-    from glassalpha.core.registry import ModelRegistry
-
-    # Check if XGBoost is actually available before registering
-    _import_xgboost()
-    ModelRegistry.register(
-        "xgboost",
-        XGBoostWrapper,
-        import_check="xgboost",
-        extra_hint="xgboost",
-    )
-except ImportError:
-    # XGBoost not available - model will show as unavailable in registry
-    pass

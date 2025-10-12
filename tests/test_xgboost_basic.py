@@ -45,17 +45,6 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_xgboost_wrapper_registration():
-    """Test that XGBoostWrapper is registered correctly."""
-    # Check that xgboost is in the registry
-    components = ModelRegistry.get_all()
-    assert "xgboost" in components
-
-    # Check that we can get the wrapper class
-    wrapper_class = ModelRegistry.get("xgboost")
-    assert wrapper_class == XGBoostWrapper
-
-
 def test_xgboost_wrapper_capabilities():
     """Test XGBoostWrapper declares correct capabilities."""
     assert XGBoostWrapper.capabilities["supports_shap"] is True

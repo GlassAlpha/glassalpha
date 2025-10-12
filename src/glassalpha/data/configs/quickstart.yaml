@@ -1,5 +1,3 @@
-audit_profile: tabular_compliance
-
 reproducibility:
   random_seed: 42
 

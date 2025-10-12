@@ -20,7 +20,6 @@ except ImportError:
 # Skip all tests if sklearn not available
 pytestmark = pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="sklearn not available - CI compatibility issues")
 
-from glassalpha.core import MetricRegistry
 from glassalpha.metrics.performance.classification import (
     AccuracyMetric,
     AUCROCMetric,
@@ -97,33 +96,6 @@ def sensitive_features_data():
             "ethnicity": np.random.choice(["A", "B", "C"], 100),
         },
     )
-
-
-class TestMetricRegistry:
-    """Test metric registration and discovery."""
-
-    def test_metrics_are_registered(self):
-        """Test that metrics are properly registered."""
-        components = MetricRegistry.get_all()
-
-        # Should include our performance metrics
-        assert "accuracy" in components
-        assert "precision" in components
-        assert "recall" in components
-        assert "f1" in components
-        assert "auc_roc" in components
-        assert "classification_report" in components
-
-    def test_get_metric_classes(self):
-        """Test that we can retrieve metric classes."""
-        accuracy_cls = MetricRegistry.get("accuracy")
-        assert accuracy_cls == AccuracyMetric
-
-        precision_cls = MetricRegistry.get("precision")
-        assert precision_cls == PrecisionMetric
-
-        f1_cls = MetricRegistry.get("f1")
-        assert f1_cls == F1Metric
 
 
 class TestAccuracyMetric:

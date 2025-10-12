@@ -58,7 +58,6 @@ class TestEndToEndWorkflow:
         """Base audit configuration for testing."""
         data_path, _ = german_credit_data
         return {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 42},
             "data": {
                 "dataset": "custom",
@@ -261,7 +260,6 @@ class TestEndToEndWorkflow:
                 explainer_priority = ["treeshap", "kernelshap"]
 
             config_dict = {
-                "audit_profile": "tabular_compliance",
                 "reproducibility": {"random_seed": 42},
                 "data": {
                     "dataset": "custom",
@@ -323,7 +321,6 @@ class TestEndToEndWorkflow:
 
         # Test with minimal configuration
         minimal_config = {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 42},
             "data": {
                 "dataset": "custom",
@@ -340,7 +337,6 @@ class TestEndToEndWorkflow:
 
         # Test with comprehensive configuration
         comprehensive_config = {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 123},
             "data": {
                 "dataset": "custom",
@@ -385,7 +381,6 @@ class TestEndToEndWorkflow:
         """Test proper error handling for invalid scenarios."""
         # Test 1: Invalid data path
         invalid_data_config = {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 42},
             "data": {
                 "dataset": "custom",
@@ -407,7 +402,6 @@ class TestEndToEndWorkflow:
         data.drop(columns=["credit_risk"]).to_csv(temp_data_path, index=False)
 
         missing_target_config = {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 42},
             "data": {
                 "dataset": "custom",
@@ -424,7 +418,6 @@ class TestEndToEndWorkflow:
 
         # Test 3: Invalid model type
         invalid_model_config = {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 42},
             "data": {
                 "dataset": "custom",
@@ -479,7 +472,6 @@ class TestEndToEndWorkflow:
 
         # Test configuration hash consistency
         config_dict = {
-            "audit_profile": "tabular_compliance",
             "model": {"type": "xgboost"},
             "reproducibility": {"random_seed": 42},
         }
@@ -516,7 +508,6 @@ class TestCLIEndToEnd:
         data.to_csv(data_path, index=False)
 
         config_dict = {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 42},
             "data": {
                 "dataset": "custom",
@@ -647,7 +638,6 @@ class TestScalabilityAndLimits:
         data.to_csv(small_data_path, index=False)
 
         config_dict = {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 42},
             "data": {
                 "dataset": "custom",
@@ -712,7 +702,6 @@ class TestScalabilityAndLimits:
         data_subset.to_csv(data_path, index=False)
 
         return {
-            "audit_profile": "tabular_compliance",
             "reproducibility": {"random_seed": 42},
             "data": {
                 "dataset": "custom",

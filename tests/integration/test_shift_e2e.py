@@ -284,9 +284,6 @@ class TestShiftSimulatorCLIIntegration:
         """Create a config file for German Credit audit."""
         config_path = tmp_path / "audit_shift_test.yaml"
         config_content = """
-# Audit profile
-audit_profile: tabular_compliance
-
 # Data configuration
 data:
   dataset: "german_credit"  # Built-in dataset

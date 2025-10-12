@@ -770,20 +770,3 @@ else:
             """Initialize stub - raises ImportError."""
             msg = "scikit-learn not available - install sklearn or fix CI environment"
             raise ImportError(msg)
-
-
-# Register sklearn models with ModelRegistry at module import
-try:
-    from glassalpha.core.registry import ModelRegistry
-
-    # Use the real implementations when sklearn is available
-    if SKLEARN_AVAILABLE:
-        ModelRegistry.register("logistic_regression", LogisticRegressionWrapper)
-        ModelRegistry.register("sklearn_generic", SklearnGenericWrapper)
-    else:
-        # Use stub implementations when sklearn is not available
-        ModelRegistry.register("logistic_regression", LogisticRegressionWrapper)
-        ModelRegistry.register("sklearn_generic", SklearnGenericWrapper)
-except ImportError:
-    # Registry import failed - models will be unavailable
-    pass
