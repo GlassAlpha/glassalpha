@@ -472,7 +472,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,all]"
 
-
       - name: Verify no parallel testing
         run: |
           # Check for pytest-xdist (breaks determinism if used for parallel execution)

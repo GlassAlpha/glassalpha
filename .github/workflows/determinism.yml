@@ -83,7 +83,6 @@ jobs:
           pip install -c constraints.txt -e ".[all,pdf_determinism,dev]"
           pip install shap  # Required for deterministic explainer selection
 
-
       - name: Verify dependencies
         run: |
           echo "=== Verify critical dependencies ==="
@@ -93,7 +92,6 @@ jobs:
             (echo "❌ WeasyPrint not available"; exit 1)
           python -c "import pypdf; print(f'✅ pypdf {pypdf.__version__}')" || \
             (echo "❌ pypdf not available"; exit 1)
-
 
       - name: Verify environment setup
         run: |
