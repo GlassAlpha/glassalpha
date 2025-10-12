@@ -109,6 +109,45 @@ source .venv/bin/activate  # Now 'python3' uses venv
 make test                   # Uses venv automatically
 ```
 
+## Determinism Requirements
+
+GlassAlpha is a compliance tool that must produce byte-identical outputs. All code changes must preserve determinism.
+
+### Running Tests Locally
+
+Always source the determinism environment before running tests:
+
+```bash
+source scripts/setup-determinism-env.sh
+pytest tests/
+```
+
+### Determinism Rules
+
+1. **Never use parallel testing**: No `pytest -n` or `pytest-xdist`
+2. **Always set seeds**: Any randomness must use `glassalpha.utils.seeds.get_rng()`
+3. **Single-threaded only**: All BLAS/LAPACK/OpenMP operations run single-threaded
+4. **No system time**: Use `SOURCE_DATE_EPOCH` for timestamps
+5. **Fixed locale**: All tests run in `C` locale
+
+### Verifying Determinism
+
+Before pushing changes:
+
+```bash
+# Quick check (30 seconds)
+./scripts/check-determinism-quick.sh
+
+# Full check (5 minutes)
+./scripts/test_determinism_local.sh
+```
+
+If determinism breaks, check:
+
+- Config has `reproducibility.strict: true`
+- No unseeded random operations
+- Thread counts are controlled
+
 ### How Other Projects Handle This
 
 GlassAlpha's approach combines best practices from major Python projects:

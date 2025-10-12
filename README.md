@@ -58,6 +58,36 @@ That's it. You now have a complete audit report with model performance, explanat
 
 **More details:** See the [full installation guide](https://glassalpha.com/getting-started/installation/) and [German Credit tutorial](https://glassalpha.com/examples/german-credit-audit/) to see what's in the report.
 
+## Development Setup
+
+To ensure your local environment matches CI:
+
+```bash
+# Clone repository
+git clone https://github.com/GlassAlpha/glassalpha.git
+cd glassalpha
+
+# Set up determinism environment
+source scripts/setup-determinism-env.sh
+
+# Install with dev dependencies
+pip install -e ".[dev,all]"
+
+# Verify determinism
+./scripts/check-determinism-quick.sh
+```
+
+### Local vs CI Environment
+
+GlassAlpha requires deterministic outputs for compliance. Our CI enforces:
+
+- Single-threaded execution (no pytest-xdist)
+- Fixed random seeds (PYTHONHASHSEED=0)
+- UTC timezone (TZ=UTC)
+- Headless matplotlib (MPLBACKEND=Agg)
+
+Use `source scripts/setup-determinism-env.sh` to match CI environment locally.
+
 ## Repository Structure
 
 - **`src/glassalpha/`** - Main Python package source code

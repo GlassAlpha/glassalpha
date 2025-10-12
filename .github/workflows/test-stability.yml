@@ -1,20 +1,11 @@
 name: Test Stability Check
 
-# Run stability checks on critical test paths
-# Purpose: Detect flaky tests and non-deterministic behavior before they reach main
-
+# DISABLED: Redundant with determinism.yml multi-run checks
+# To re-enable: Remove workflow_dispatch and restore on: triggers below
 on:
-  pull_request:
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - "pytest.ini"
-      - ".github/workflows/test-stability.yml"
-  schedule:
-    # Run daily at 2 AM UTC to catch intermittent issues
-    - cron: "0 2 * * *"
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger only
+    # pull_request: ...
+    # schedule: ...
     inputs:
       runs:
         description: "Number of test runs"

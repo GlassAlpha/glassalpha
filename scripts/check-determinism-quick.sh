@@ -8,23 +8,8 @@ echo "Quick Determinism Check (3 runs)"
 echo "========================================"
 echo ""
 
-# Set deterministic environment (same as CI)
-export SOURCE_DATE_EPOCH=1577836800
-export PYTHONHASHSEED=42
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export GLASSALPHA_DETERMINISTIC=1
-export TZ=UTC
-export MPLBACKEND=Agg
-
-echo "Environment:"
-echo "  SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH"
-echo "  PYTHONHASHSEED: $PYTHONHASHSEED"
-echo "  OMP_NUM_THREADS: $OMP_NUM_THREADS"
-echo "  TZ: $TZ"
-echo "  MPLBACKEND: $MPLBACKEND"
-echo ""
+# Source unified determinism environment
+source "$(dirname "$0")/setup-determinism-env.sh"
 
 # Cleanup function
 cleanup() {

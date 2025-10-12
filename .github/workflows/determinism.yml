@@ -67,6 +67,10 @@ jobs:
           pip install -c constraints.txt -e ".[all,pdf_determinism,dev]"
           pip install shap  # Required for deterministic explainer selection
 
+      - name: Set up determinism environment
+        run: |
+          source scripts/setup-determinism-env.sh
+
       - name: Verify dependencies
         run: |
           echo "=== Verify critical dependencies ==="
@@ -96,6 +100,30 @@ jobs:
           echo "OMP_NUM_THREADS: $OMP_NUM_THREADS"
           echo "Python version: $(python --version)"
           echo "Platform: $(uname -a)"
+
+      - name: Verify determinism environment
+        run: |
+          echo "=== Determinism Environment Check ==="
+          echo "OMP_NUM_THREADS: ${OMP_NUM_THREADS:-not set}"
+          echo "PYTHONHASHSEED: ${PYTHONHASHSEED:-not set}"
+          echo "TZ: ${TZ:-not set}"
+          echo "MPLBACKEND: ${MPLBACKEND:-not set}"
+
+          # Verify single-threaded
+          if [ "${OMP_NUM_THREADS}" != "1" ]; then
+            echo "⚠️  OMP_NUM_THREADS should be 1 for determinism (currently: ${OMP_NUM_THREADS:-not set})"
+          fi
+
+          python -c "
+          import os
+          from glassalpha.config import load_config
+          cfg = load_config('/tmp/test_config.yaml')
+          print(f'Config strict mode: {cfg.reproducibility.strict}')
+          print(f'Config thread_control: {cfg.reproducibility.thread_control}')
+          assert cfg.reproducibility.strict == True, 'strict must be True'
+          assert cfg.reproducibility.thread_control == True, 'thread_control must be True'
+          print('✅ Determinism config validated')
+          "
 
       - name: Run determinism regression test
         run: |
