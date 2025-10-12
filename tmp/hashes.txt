@@ -1,4 +1,0 @@
-ubuntu | Python latest | 37b34f5f7674ee377f35cb958582c85d2d8b7ff242c1da6a3e800d1b3c0a064a
-ubuntu | Python latest | 4e2c43af3b03bb7c9ae839f0993178c16d264734fb62e8a4fde3d45a573a7e9e
-macos | Python latest | 4832baf52daa38d264c8be49aadafdaf7333bab93b0f7b9dc14a273d74858efd
-macos | Python latest | d542ff7cc0549e2cc639c08f5cbd61ab80c4e7b6976bc87a6fe4e48df47ccffe

@@ -36,6 +36,29 @@ cd glassalpha
 pip install -e ".[all]"  # Install with all optional features
 ```
 
+## Development Setup
+
+To ensure your local environment matches CI:
+
+```bash
+# Set up determinism environment (required for compliance)
+source scripts/setup-determinism-env.sh
+
+# Verify determinism works
+./scripts/check-determinism-quick.sh
+```
+
+### Local vs CI Environment
+
+GlassAlpha requires deterministic outputs for compliance. Our CI enforces:
+
+- Single-threaded execution (no pytest-xdist)
+- Fixed random seeds (PYTHONHASHSEED=0)
+- UTC timezone (TZ=UTC)
+- Headless matplotlib (MPLBACKEND=Agg)
+
+Use `source scripts/setup-determinism-env.sh` to match CI environment locally.
+
 Create a configuration (interactive wizard)
 
 ```bash

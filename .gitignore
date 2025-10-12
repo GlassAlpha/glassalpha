@@ -269,3 +269,4 @@ notebook-test/
 # - .vscode settings ARE committed for team consistency (except workspace files)
 # - PDFs are ignored except in site/docs/examples/ for documentation
 # - Documentation files in .github/ are ignored except permanent docs in site/
+tmp/

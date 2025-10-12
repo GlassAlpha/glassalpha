@@ -69,7 +69,24 @@ jobs:
 
       - name: Set up determinism environment
         run: |
-          source scripts/setup-determinism-env.sh
+          echo "=== Setting up determinism environment for GitHub Actions ==="
+          # Export environment variables to $GITHUB_ENV for persistence across steps
+          cat >> $GITHUB_ENV << 'EOF'
+          PYTHONHASHSEED=0
+          TZ=UTC
+          MPLBACKEND=Agg
+          SOURCE_DATE_EPOCH=1577836800
+          OMP_NUM_THREADS=1
+          MKL_NUM_THREADS=1
+          OPENBLAS_NUM_THREADS=1
+          NUMEXPR_NUM_THREADS=1
+          VECLIB_MAXIMUM_THREADS=1
+          BLIS_NUM_THREADS=1
+          GLASSALPHA_NO_PROGRESS=1
+          GLASSALPHA_DETERMINISTIC=1
+          LC_ALL=C
+          EOF
+          echo "✅ Determinism environment configured for GitHub Actions"
 
       - name: Verify dependencies
         run: |
