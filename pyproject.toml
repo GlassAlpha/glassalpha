@@ -173,7 +173,7 @@ ignore = [
 # API files use trusted pickle for model loading (controlled environment)
 "src/glassalpha/api/audit.py" = ["S301", "S110"]  # Trusted model files + intentional fallback patterns
 # Model files use trusted pickle for serialization (controlled environment)
-"src/glassalpha/models/tabular/sklearn.py" = ["S301"]  # Trusted model serialization
+"src/glassalpha/models/sklearn.py" = ["S301"]  # Trusted model serialization
 # Test files need module-level imports for mocking dependencies
 "tests/*.py" = [
     "E402", "F401", "F811",  # Allow late imports + unused/repeated imports (testing import behavior)

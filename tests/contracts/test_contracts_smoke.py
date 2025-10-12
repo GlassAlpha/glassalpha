@@ -134,7 +134,7 @@ def test_wheel_contains_all_contracts() -> None:
         assert "self.model.fit(X_processed, y_true" in audit_source, "Model fit call missing"
 
         # Contract 4: Save/load symmetry
-        sklearn_source = zf.read("glassalpha/models/tabular/sklearn.py").decode("utf-8")
+        sklearn_source = zf.read("glassalpha/models/sklearn.py").decode("utf-8")
         assert "return self" in sklearn_source, "Load method doesn't return self"
         assert "self._is_fitted = True" in sklearn_source, "Load doesn't set _is_fitted"
         assert '"n_classes": len(getattr(self.model, "classes_"' in sklearn_source, "Save doesn't include n_classes"

@@ -5,7 +5,7 @@ set -euo pipefail
 # Define the fragile files that could break our 4 critical contracts
 FRAGILE_PATTERNS=(
     "src/glassalpha/pipeline/audit.py"        # Logger contract
-    "src/glassalpha/models/tabular/sklearn.py" # Save/load contract
+    "src/glassalpha/models/sklearn.py" # Save/load contract
     "src/glassalpha/report/templates/"        # Template packaging
     "src/glassalpha/utils/manifest.py"        # Manifest structure
     "src/glassalpha/constants.py"             # Contract definitions

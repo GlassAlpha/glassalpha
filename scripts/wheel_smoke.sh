@@ -88,7 +88,7 @@ import zipfile
 import sys
 wheel = '$WHEEL'
 with zipfile.ZipFile(wheel, 'r') as zf:
-    content = zf.read('glassalpha/models/tabular/sklearn.py').decode('utf-8')
+    content = zf.read('glassalpha/models/sklearn.py').decode('utf-8')
     checks = {
         'return self': 'return self' in content,
         '_is_fitted = True': 'self._is_fitted = True' in content,

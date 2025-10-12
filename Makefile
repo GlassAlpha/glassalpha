@@ -53,7 +53,13 @@ install: build
 # Note: Parallel execution with pytest-xdist speeds up tests but some tests
 # (subprocess-based, shared file writes) must be marked to run serially
 # Automatically cleans AI-generated test outputs before running
-test: check-venv clean-temp
+# Pre-test validation - ensures environment, packaging, and contracts work before tests
+check-before-test: check-venv smoke check-packaging check-determinism
+	@echo ""
+	@echo "🏥 Checking environment..."
+	@glassalpha doctor
+
+test: check-before-test clean-temp
 	python3 -m pytest -q
 
 # Test with coverage report
