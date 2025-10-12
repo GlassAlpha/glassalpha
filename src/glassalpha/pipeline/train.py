@@ -43,8 +43,8 @@ def train_from_config(cfg: Any, X: pd.DataFrame, y: Any) -> Any:
 
     logger.info(f"Training {model_type} model from configuration")
 
-    # Create model instance
-    model = model_class()
+    # Get model wrapper instance
+    model = model_class
 
     # Extract parameters from config
     params = dict(getattr(cfg.model, "params", {}))

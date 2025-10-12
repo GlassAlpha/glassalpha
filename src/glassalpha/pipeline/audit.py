@@ -792,13 +792,15 @@ class AuditPipeline:
             explainer_instance = self.selected_explainer
             selected_name = type(explainer_instance).__name__
         else:
-            explainer_instance = select_explainer(
+            explainer_name = select_explainer(
                 model_type=self.config.model.type,
                 config=self.config.model_dump(),
             )
-            selected_name = type(explainer_instance).__name__
+            selected_name = explainer_name
 
-        explainer_class = explainer_instance
+            # Map explainer name to class
+            explainer_class = self._get_explainer_class(explainer_name)
+            explainer_instance = explainer_class()
 
         logger.info(f"Selected explainer: {selected_name}")
 
@@ -807,27 +809,24 @@ class AuditPipeline:
             msg = "No compatible explainer found"
             raise RuntimeError(msg)
 
-        # Create explainer instance
-        selected_explainer = explainer_class()
-
         # Store selection info
         self.results.selected_components["explainer"] = {
             "name": selected_name,
-            "capabilities": getattr(selected_explainer, "capabilities", {}),
+            "capabilities": getattr(explainer_instance, "capabilities", {}),
         }
 
         # Add to manifest with new signature
         self.manifest_generator.add_component(
             "explainer",
             selected_name,
-            selected_explainer,
+            explainer_instance,
             details={
                 "implementation": selected_name,
-                "priority": getattr(selected_explainer, "priority", None),
+                "priority": getattr(explainer_instance, "priority", None),
             },
         )
 
-        return selected_explainer
+        return explainer_instance
 
     def _generate_explanations(self, data: pd.DataFrame, schema: TabularDataSchema) -> dict[str, Any]:
         """Generate model explanations.
@@ -1588,12 +1587,12 @@ class AuditPipeline:
             }
 
         # Get available fairness metrics
-        all_metric_names = MetricRegistry.get_all()
+        all_metric_names = self._get_available_fairness_metrics()
         fairness_metrics = []
 
         for name in all_metric_names:
             try:
-                metric_class = MetricRegistry.get(name)
+                metric_class = self._get_fairness_metric_class(name)
                 # Check if it's a fairness metric
                 if (hasattr(metric_class, "metric_type") and metric_class.metric_type == "fairness") or name in [
                     "demographic_parity",
@@ -2278,6 +2277,86 @@ class AuditPipeline:
             logger.debug("All component modules imported and registered")
         except ImportError as e:
             logger.warning(f"Some components could not be imported: {e}")
+
+    def _get_explainer_class(self, explainer_name: str) -> type:
+        """Get explainer class from explainer name.
+
+        Args:
+            explainer_name: Name of explainer (treeshap, kernelshap, coefficients)
+
+        Returns:
+            Explainer class
+
+        Raises:
+            RuntimeError: If explainer name is not recognized
+
+        """
+        explainer_map = {
+            "treeshap": "glassalpha.explain.shap.tree.TreeSHAPExplainer",
+            "kernelshap": "glassalpha.explain.shap.kernel.KernelSHAPExplainer",
+            "coefficients": "glassalpha.explain.coefficients.CoefficientsExplainer",
+        }
+
+        if explainer_name not in explainer_map:
+            raise RuntimeError(f"Unknown explainer: {explainer_name}")
+
+        module_path, class_name = explainer_map[explainer_name].rsplit(".", 1)
+
+        try:
+            # Import the module dynamically
+            import importlib
+
+            module = importlib.import_module(module_path)
+            explainer_class = getattr(module, class_name)
+            return explainer_class
+        except (ImportError, AttributeError) as e:
+            raise RuntimeError(f"Failed to load explainer {explainer_name}: {e}") from e
+
+    def _get_available_fairness_metrics(self) -> list[str]:
+        """Get list of available fairness metric names.
+
+        Returns:
+            List of fairness metric names
+
+        """
+        return [
+            "demographic_parity",
+            "equal_opportunity",
+            "equalized_odds",
+            "predictive_parity",
+        ]
+
+    def _get_fairness_metric_class(self, metric_name: str) -> type:
+        """Get fairness metric class from metric name.
+
+        Args:
+            metric_name: Name of the fairness metric
+
+        Returns:
+            Metric class
+
+        Raises:
+            RuntimeError: If metric name is not recognized
+
+        """
+        # Import metrics dynamically to avoid circular imports
+        if metric_name == "demographic_parity":
+            from glassalpha.metrics.fairness import DemographicParity
+
+            return DemographicParity
+        if metric_name == "equal_opportunity":
+            from glassalpha.metrics.fairness import EqualOpportunity
+
+            return EqualOpportunity
+        if metric_name == "equalized_odds":
+            from glassalpha.metrics.fairness import EqualizedOdds
+
+            return EqualizedOdds
+        if metric_name == "predictive_parity":
+            from glassalpha.metrics.fairness import PredictiveParity
+
+            return PredictiveParity
+        raise RuntimeError(f"Unknown fairness metric: {metric_name}")
 
     def _resolve_dataset_path(self) -> Path:
         """Resolve dataset path with offline and fetch policy enforcement.

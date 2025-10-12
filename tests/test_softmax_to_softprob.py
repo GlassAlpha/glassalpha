@@ -25,7 +25,7 @@ def test_softmax_coerced_to_softprob_with_require_proba():
     wrapper = XGBoostWrapper()
 
     # Capture log messages
-    with patch("glassalpha.models.tabular.xgboost.logger") as mock_logger:
+    with patch("glassalpha.models.xgboost.logger") as mock_logger:
         # Fit with multi:softmax and require_proba=True (default)
         wrapper.fit(X, y, objective="multi:softmax", n_estimators=5)
 
@@ -62,7 +62,7 @@ def test_softmax_not_coerced_with_require_proba_false():
     wrapper = XGBoostWrapper()
 
     # Capture log messages
-    with patch("glassalpha.models.tabular.xgboost.logger") as mock_logger:
+    with patch("glassalpha.models.xgboost.logger") as mock_logger:
         # Fit with multi:softmax and require_proba=False
         wrapper.fit(X, y, objective="multi:softmax", require_proba=False, n_estimators=5)
 
@@ -93,7 +93,7 @@ def test_softprob_not_coerced():
     wrapper = XGBoostWrapper()
 
     # Capture log messages
-    with patch("glassalpha.models.tabular.xgboost.logger") as mock_logger:
+    with patch("glassalpha.models.xgboost.logger") as mock_logger:
         # Fit with multi:softprob - should not be coerced
         wrapper.fit(X, y, objective="multi:softprob", n_estimators=5)
 
@@ -124,7 +124,7 @@ def test_binary_objective_not_coerced():
     wrapper = XGBoostWrapper()
 
     # Capture log messages
-    with patch("glassalpha.models.tabular.xgboost.logger") as mock_logger:
+    with patch("glassalpha.models.xgboost.logger") as mock_logger:
         # Fit with binary:logistic - should not be coerced
         wrapper.fit(X, y, objective="binary:logistic", n_estimators=5)
 
@@ -191,7 +191,7 @@ def test_coercion_logged_only_once():
     wrapper = XGBoostWrapper()
 
     # Use real logger to test actual behavior
-    logger = logging.getLogger("glassalpha.models.tabular.xgboost")
+    logger = logging.getLogger("glassalpha.models.xgboost")
 
     with patch.object(logger, "warning") as mock_warning:
         # Fit with multi:softmax

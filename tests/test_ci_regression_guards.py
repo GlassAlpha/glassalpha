@@ -526,6 +526,149 @@ class TestPerformanceRegressionGuards:
         # Should return expected metrics
         assert len(metrics) > 5, "Should compute multiple metrics"
 
+    def test_audit_generation_performance(self):
+        """CRITICAL: Full audit generation must complete in reasonable time.
+
+        German Credit audit should complete in under 60 seconds to be practical
+        for CI/CD pipelines and interactive use.
+        """
+        import time
+
+        from sklearn.linear_model import LogisticRegression
+
+        from glassalpha.api import from_model
+        from glassalpha.datasets import get_german_credit_schema, load_german_credit
+
+        # Load German Credit data (realistic size)
+        data = load_german_credit()
+        schema = get_german_credit_schema()
+
+        # Prepare data for model training
+        protected_cols = ["gender", "age_group"]
+        feature_cols = [col for col in data.columns if col not in protected_cols + ["credit_risk"]]
+        target_col = "credit_risk"
+
+        # Convert categorical features to numeric for sklearn compatibility
+        X = data[feature_cols].copy()
+        # Convert categorical columns to numeric codes
+        for col in X.columns:
+            if X[col].dtype == "object":
+                X[col] = X[col].astype("category").cat.codes
+
+        y = data[target_col]
+        protected_attributes = {col: data[col] for col in protected_cols}
+
+        # Train model (this is part of the realistic audit workflow)
+        model = LogisticRegression(random_state=42, max_iter=1000)
+        model.fit(X, y)
+
+        # Time the full audit generation
+        start_time = time.time()
+        result = from_model(
+            model=model,
+            X=X,
+            y=y,
+            feature_names=feature_cols,
+            protected_attributes=protected_attributes,
+            random_seed=42,
+            explain=True,
+            calibration=True,
+        )
+        end_time = time.time()
+
+        audit_time = end_time - start_time
+
+        # Performance gate: Full audit should complete in under 60 seconds
+        # This allows for CI/CD integration and interactive use
+        PERFORMANCE_BUDGET_SECONDS = 60.0
+        if audit_time > PERFORMANCE_BUDGET_SECONDS:
+            pytest.fail(
+                f"REGRESSION: Audit generation too slow: {audit_time:.2f}s\n"
+                f"Performance regression detected - should complete in < {PERFORMANCE_BUDGET_SECONDS}s\n"
+                f"This impacts CI/CD pipeline efficiency and user experience.",
+            )
+
+        # Verify audit completed successfully
+        assert result is not None
+        # Check that we have the expected components
+        assert hasattr(result, "performance")
+        assert hasattr(result, "fairness")
+        assert hasattr(result, "explanations")
+        # Check that performance has some metrics
+        assert len(result.performance) > 0
+
+        print(f"✅ Audit generation completed in {audit_time:.2f}s (within budget)")
+
+    def test_html_report_generation_performance(self):
+        """CRITICAL: HTML report generation must be fast for interactive use.
+
+        HTML report generation should be under 2 seconds to feel responsive
+        in Jupyter notebooks and CLI usage.
+        """
+        import time
+
+        from sklearn.linear_model import LogisticRegression
+
+        from glassalpha.api import from_model
+        from glassalpha.datasets import get_german_credit_schema, load_german_credit
+
+        # Load German Credit data
+        data = load_german_credit()
+        schema = get_german_credit_schema()
+
+        # Prepare data for model training
+        protected_cols = ["gender", "age_group"]
+        feature_cols = [col for col in data.columns if col not in protected_cols + ["credit_risk"]]
+        target_col = "credit_risk"
+
+        # Convert categorical features to numeric for sklearn compatibility
+        X = data[feature_cols].copy()
+        # Convert categorical columns to numeric codes
+        for col in X.columns:
+            if X[col].dtype == "object":
+                X[col] = X[col].astype("category").cat.codes
+
+        y = data[target_col]
+        protected_attributes = {col: data[col] for col in protected_cols}
+
+        # Train model and run audit
+        model = LogisticRegression(random_state=42, max_iter=1000)
+        model.fit(X, y)
+
+        result = from_model(
+            model=model,
+            X=X,
+            y=y,
+            feature_names=feature_cols,
+            protected_attributes=protected_attributes,
+            random_seed=42,
+            explain=True,
+            calibration=True,
+        )
+
+        # Time HTML report generation (this is what users see in notebooks)
+        start_time = time.time()
+        html_content = result._repr_html_()
+        end_time = time.time()
+
+        html_time = end_time - start_time
+
+        # Performance gate: HTML generation should be under 2 seconds
+        # This ensures responsive notebook experience
+        HTML_BUDGET_SECONDS = 2.0
+        if html_time > HTML_BUDGET_SECONDS:
+            pytest.fail(
+                f"REGRESSION: HTML report generation too slow: {html_time:.2f}s\n"
+                f"Performance regression detected - should be < {HTML_BUDGET_SECONDS}s\n"
+                f"This impacts notebook interactivity and user experience.",
+            )
+
+        # Verify HTML content is reasonable
+        assert len(html_content) > 100, "HTML content should be substantial"
+        assert "div" in html_content.lower(), "Should contain HTML div tags"
+
+        print(f"✅ HTML report generation completed in {html_time:.2f}s (within budget)")
+
     @pytest.mark.skip(reason="Security module not yet implemented")
     def test_security_validation_performance(self):
         """CRITICAL: Security validation must not be prohibitively slow."""

@@ -112,7 +112,7 @@ class XGBoostWrapper(BaseTabularWrapper):
             return X
         X = pd.DataFrame(X)
         if getattr(self, "feature_names_", None):
-            from ...utils.features import align_features  # lazy import  # noqa: PLC0415
+            from glassalpha.utils.features import align_features  # lazy import
 
             X = align_features(X, self.feature_names_)
 

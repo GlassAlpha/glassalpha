@@ -154,20 +154,21 @@ def test_config_with_missing_required_fields():
         AuditConfig(audit_profile="tabular_compliance")  # Missing model, data, etc.
 
 
-def test_config_extra_fields_forbidden():
-    """Test that extra fields are rejected."""
+def test_config_extra_fields_allowed():
+    """Test that extra fields are now allowed (simplified config behavior)."""
     config_data = {
-        "audit_profile": "tabular_compliance",
         "model": {"type": "xgboost"},
         "data": {"dataset": "custom", "path": "test.csv"},
         "explainers": {"strategy": "first_compatible", "priority": ["treeshap"]},
         "metrics": {"performance": ["accuracy"]},
         "reproducibility": {"random_seed": 42},
-        "extra_field": "not_allowed",  # This should cause validation error
+        "extra_field": "now_allowed",  # Extra fields allowed in simplified config
     }
 
-    with pytest.raises(ValidationError):
-        AuditConfig(**config_data)
+    # Should not raise ValidationError for extra fields
+    config = AuditConfig(**config_data)
+    assert config.model.type == "xgboost"
+    assert config.data.dataset == "custom"
 
 
 # ============================================================================

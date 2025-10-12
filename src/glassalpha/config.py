@@ -37,6 +37,9 @@ class DataConfig(BaseModel):
         description="Protected attributes for fairness analysis",
     )
     feature_columns: list[str] | None = Field(None, description="Feature columns to use")
+    schema_path: str | None = Field(None, description="Path to schema file")
+    offline: bool = Field(False, description="Offline mode - don't fetch remote datasets")
+    fetch: str = Field("auto", description="Fetch policy for remote datasets: auto, never, always")
 
     @field_validator("protected_attributes")
     @classmethod
@@ -72,11 +75,82 @@ class ExplainerConfig(BaseModel):
     priority: list[str] = Field(default_factory=list, description="Priority order for explainer selection")
 
 
+class PerformanceConfig(BaseModel):
+    """Performance metrics configuration."""
+
+    config: dict[str, Any] = Field(default_factory=dict, description="Performance metric configuration")
+    metrics: list[str] = Field(default_factory=lambda: ["accuracy"], description="Performance metrics to compute")
+
+    @field_validator("metrics", mode="before")
+    @classmethod
+    def handle_legacy_format(cls, v):
+        """Handle legacy list format for backwards compatibility."""
+        if isinstance(v, list):
+            return v
+        return v
+
+
+class FairnessConfig(BaseModel):
+    """Fairness metrics configuration."""
+
+    config: dict[str, Any] = Field(default_factory=dict, description="Fairness metric configuration")
+    metrics: list[str] = Field(default_factory=list, description="Fairness metrics to compute")
+
+    @field_validator("metrics", mode="before")
+    @classmethod
+    def handle_legacy_format(cls, v):
+        """Handle legacy list format for backwards compatibility."""
+        if isinstance(v, list):
+            return v
+        return v
+
+
+class StabilityConfig(BaseModel):
+    """Stability analysis configuration."""
+
+    enabled: bool = Field(True, description="Enable stability analysis")
+    config: dict[str, Any] = Field(default_factory=dict, description="Stability analysis configuration")
+    epsilon_values: list[float] = Field(
+        default_factory=lambda: [0.01, 0.05, 0.1],
+        description="Epsilon values for perturbation analysis",
+    )
+    threshold: float = Field(0.05, description="Threshold for stability analysis")
+
+
 class MetricsConfig(BaseModel):
     """Metrics configuration."""
 
     compute_fairness: bool = Field(True, description="Compute fairness metrics")
     compute_calibration: bool = Field(True, description="Compute calibration metrics")
+    performance: PerformanceConfig | list[str] = Field(
+        default_factory=PerformanceConfig,
+        description="Performance metrics configuration",
+    )
+    fairness: FairnessConfig | list[str] = Field(
+        default_factory=FairnessConfig,
+        description="Fairness metrics configuration",
+    )
+    n_bootstrap: int = Field(1000, description="Number of bootstrap samples for confidence intervals")
+    compute_confidence_intervals: bool = Field(True, description="Compute confidence intervals")
+    performance_mode: str = Field("comprehensive", description="Performance computation mode")
+    individual_fairness: dict[str, Any] = Field(default_factory=dict, description="Individual fairness configuration")
+    stability: StabilityConfig = Field(default_factory=StabilityConfig, description="Stability analysis configuration")
+
+    @field_validator("performance", mode="before")
+    @classmethod
+    def handle_legacy_performance_format(cls, v):
+        """Handle legacy performance format (list vs object)."""
+        if isinstance(v, list):
+            return PerformanceConfig(metrics=v)
+        return v
+
+    @field_validator("fairness", mode="before")
+    @classmethod
+    def handle_legacy_fairness_format(cls, v):
+        """Handle legacy fairness format (list vs object)."""
+        if isinstance(v, list):
+            return FairnessConfig(metrics=v)
+        return v
 
 
 class RuntimeConfig(BaseModel):
@@ -94,16 +168,39 @@ class GAConfig(BaseModel):
     Provides canonical_json() method for deterministic manifest hashing.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
 
     model: ModelConfig
     data: DataConfig
-    preprocessing: PreprocessingConfig = Field(default_factory=PreprocessingConfig)
-    reproducibility: ReproducibilityConfig = Field(default_factory=ReproducibilityConfig)
-    report: ReportConfig = Field(default_factory=ReportConfig)
-    explainers: ExplainerConfig = Field(default_factory=ExplainerConfig)
-    metrics: MetricsConfig = Field(default_factory=MetricsConfig)
-    runtime: RuntimeConfig = Field(default_factory=RuntimeConfig)
+    preprocessing: PreprocessingConfig = Field(
+        default_factory=lambda: PreprocessingConfig(mode="auto", artifact_path=None),
+    )
+    reproducibility: ReproducibilityConfig = Field(default_factory=lambda: ReproducibilityConfig(random_seed=42))
+    report: ReportConfig = Field(default_factory=lambda: ReportConfig(output_format="html", output_path=None))
+    explainers: ExplainerConfig = Field(
+        default_factory=lambda: ExplainerConfig(strategy="first_compatible", priority=[]),
+    )
+    metrics: MetricsConfig = Field(
+        default_factory=lambda: MetricsConfig(
+            compute_fairness=True,
+            compute_calibration=True,
+            performance=PerformanceConfig(),
+            fairness=FairnessConfig(),
+            n_bootstrap=1000,
+            compute_confidence_intervals=True,
+            performance_mode="comprehensive",
+            individual_fairness={},
+            stability=StabilityConfig(threshold=0.05),
+        ),
+    )
+    runtime: RuntimeConfig = Field(
+        default_factory=lambda: RuntimeConfig(
+            strict_mode=False,
+            fast_mode=False,
+            compact_report=True,
+            no_fallback=False,
+        ),
+    )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary (backwards compatibility)."""
@@ -116,7 +213,6 @@ class GAConfig(BaseModel):
         Critical for byte-identical audit outputs.
         """
         return self.model_dump_json(
-            sort_keys=True,
             exclude_none=True,
             by_alias=True,
         )
@@ -171,7 +267,7 @@ AuditConfig = GAConfig  # Alias for backwards compatibility
 load_config_from_file = load_config  # Alias for backwards compatibility
 
 
-def load_yaml(config_path: str | Path) -> dict:
+def load_yaml(config_path: str | Path) -> dict[str, Any]:
     """Load YAML config as dictionary (backwards compatibility).
 
     Args:
@@ -190,42 +286,45 @@ def load_yaml(config_path: str | Path) -> dict:
         )
 
     with open(config_path, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        result = yaml.safe_load(f)
+        return result if result is not None else {}
 
 
-# Stub classes for test compatibility
-class ExplainerConfig(BaseModel):
-    """Stub for test compatibility - explainer config removed."""
-
-    strategy: str = Field("first_compatible", description="Explainer selection strategy")
-    priority: list[str] = Field(default_factory=list)
+# Stub functions for test compatibility
 
 
-class MetricsConfig(BaseModel):
-    """Stub for test compatibility - metrics config simplified."""
-
-    compute_fairness: bool = True
-    compute_calibration: bool = True
-
-
-def apply_profile_defaults(config: dict, profile: str = "default") -> dict:
+def apply_profile_defaults(config: dict[str, Any], profile: str = "default") -> dict[str, Any]:
     """Stub for test compatibility - profile system removed."""
     return config
 
 
-def merge_configs(base: dict, override: dict) -> dict:
-    """Stub for test compatibility - merge system simplified."""
-    result = base.copy()
-    result.update(override)
-    return result
+def merge_configs(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """Deep merge two config dictionaries."""
+    import copy
+
+    def deep_merge_dict(base_dict: dict, override_dict: dict) -> dict:
+        """Deep merge two dictionaries."""
+        result = copy.deepcopy(base_dict)
+
+        for key, value in override_dict.items():
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                # Deep merge nested dictionaries
+                result[key] = deep_merge_dict(result[key], value)
+            else:
+                # Override or add new key
+                result[key] = copy.deepcopy(value)
+
+        return result
+
+    return deep_merge_dict(base, override)
 
 
-def save_config(config: GAConfig | dict, path: str | Path) -> None:
+def save_config(config: GAConfig | dict[str, Any], path: str | Path) -> None:
     """Stub for test compatibility - save config to YAML."""
     import yaml
 
     data = config.model_dump() if isinstance(config, GAConfig) else config
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         yaml.dump(data, f)
 
 

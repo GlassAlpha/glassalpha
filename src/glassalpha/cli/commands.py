@@ -22,6 +22,34 @@ from .exit_codes import ExitCode
 logger = logging.getLogger(__name__)
 
 
+def is_ci_environment() -> bool:
+    """Check if running in CI environment.
+
+    Returns:
+        True if CI environment variables are detected, False otherwise.
+
+    CI indicators:
+        - CI=true (GitHub Actions, Travis CI, etc.)
+        - GITHUB_ACTIONS=true (GitHub Actions)
+        - GITLAB_CI=true (GitLab CI)
+        - JENKINS_URL (Jenkins)
+        - BUILDKITE (Buildkite)
+
+    """
+    ci_indicators = [
+        "CI",  # Generic CI indicator
+        "GITHUB_ACTIONS",  # GitHub Actions
+        "GITLAB_CI",  # GitLab CI
+        "JENKINS_URL",  # Jenkins
+        "BUILDKITE",  # Buildkite
+        "TRAVIS",  # Travis CI
+        "CIRCLECI",  # CircleCI
+        "AZURE_HTTP_USER_AGENT",  # Azure DevOps
+    ]
+
+    return any(os.environ.get(indicator) for indicator in ci_indicators)
+
+
 def _output_error(message: str) -> None:
     """Output error message to stderr.
 
@@ -211,7 +239,8 @@ def _run_audit_pipeline(
     try:
         # Step 1: Run audit pipeline with progress bar
         # Check if progress should be shown (respects strict mode, env vars)
-        show_progress = not config.strict_mode
+        strict_mode_progress = getattr(config.runtime, "strict_mode", False) if hasattr(config, "runtime") else False
+        show_progress = not strict_mode_progress
 
         # Create progress bar (auto-detects notebook vs terminal)
         with get_progress_bar(total=100, desc="Running audit", disable=not show_progress, leave=False) as pbar:
@@ -996,21 +1025,34 @@ def audit(  # pragma: no cover
         # Track if config was auto-detected for user messaging
         config_was_auto_detected = config is None
 
-        # Apply smart defaults
-        try:
-            defaults = get_smart_defaults(
-                config=config,
-                output=output,
-                strict=strict if strict is not None else None,
-            )
-        except ValueError as e:
-            _output_error(f"Configuration error: {e}")
-            raise typer.Exit(ExitCode.USER_ERROR) from None
+        # Auto-detect config if not provided
+        if config is None:
+            # Look for config files in current directory
+            config_candidates = ["glassalpha.yaml", "audit.yaml", "config.yaml"]
+            config = None
 
-        # Extract resolved values
-        config = defaults["config"]
-        output = defaults["output"]
-        strict = defaults["strict"]
+            for candidate in config_candidates:
+                if Path(candidate).exists():
+                    config = Path(candidate)
+                    break
+
+            if config is None:
+                _output_error(
+                    "Configuration file not found.\n\n"
+                    "Quick fixes:\n"
+                    "  1. Create a config: glassalpha init\n"
+                    "  2. List datasets: glassalpha datasets list\n"
+                    "  3. Use example template: glassalpha init --template quickstart\n\n"
+                    "Examples:\n"
+                    "  glassalpha init --template quickstart --output my-audit.yaml\n"
+                    "  glassalpha audit --config my-audit.yaml --output report.html",
+                )
+                raise typer.Exit(ExitCode.USER_ERROR)
+
+        # Auto-detect output path if not provided
+        if output is None:
+            # Default to {config_name}.html
+            output = config.with_suffix(".html")
 
         # Auto-detect CI environment for repro mode
         repro = is_ci_environment()
@@ -1019,13 +1061,13 @@ def audit(  # pragma: no cover
         if not config.exists():
             _output_error(
                 f"Configuration file does not exist: {config}\n\n"
-                f"Quick fixes:\n"
-                f"  1. Create a config: glassalpha init\n"
-                f"  2. List datasets: glassalpha datasets list\n"
-                f"  3. Use example template: glassalpha init --template quickstart\n\n"
-                f"Examples:\n"
-                f"  glassalpha init --template quickstart --output my-audit.yaml\n"
-                f"  glassalpha audit --config my-audit.yaml --output report.html",
+                "Quick fixes:\n"
+                "  1. Create a config: glassalpha init\n"
+                "  2. List datasets: glassalpha datasets list\n"
+                "  3. Use example template: glassalpha init --template quickstart\n\n"
+                "Examples:\n"
+                "  glassalpha init --template quickstart --output my-audit.yaml\n"
+                "  glassalpha audit --config my-audit.yaml --output report.html",
             )
             raise typer.Exit(ExitCode.USER_ERROR)
 
@@ -1050,7 +1092,7 @@ def audit(  # pragma: no cover
             raise typer.Exit(ExitCode.SYSTEM_ERROR)
 
         # Import here to avoid circular imports
-        from ..config import load_config_from_file
+        from ..config import load_config
         from ..core import list_components
         from .preflight import preflight_check_dependencies, preflight_check_model
 
@@ -1069,7 +1111,7 @@ def audit(  # pragma: no cover
         else:
             typer.echo(f"Loading configuration from: {config}")
 
-        audit_config = load_config_from_file(
+        audit_config = load_config(
             config,
             profile_name=profile,
             strict=strict,
@@ -1153,10 +1195,16 @@ def audit(  # pragma: no cover
 
         # Report configuration
         typer.echo(f"Audit profile: {audit_config.audit_profile}")
-        typer.echo(f"Strict mode: {'ENABLED' if audit_config.strict_mode else 'disabled'}")
+        strict_mode_display = (
+            getattr(audit_config.runtime, "strict_mode", False) if hasattr(audit_config, "runtime") else False
+        )
+        typer.echo(f"Strict mode: {'ENABLED' if strict_mode_display else 'disabled'}")
         typer.echo(f"Repro mode: {'ENABLED' if repro else 'disabled'}")
 
-        if audit_config.strict_mode:
+        strict_mode_enabled = (
+            getattr(audit_config.runtime, "strict_mode", False) if hasattr(audit_config, "runtime") else False
+        )
+        if strict_mode_enabled:
             typer.secho("⚠️  Strict mode enabled - enforcing regulatory compliance", fg=typer.colors.YELLOW)
 
         if repro:
@@ -1241,7 +1289,7 @@ def audit(  # pragma: no cover
         )
 
         # Get strict mode from config, defaulting appropriately
-        strict_mode = getattr(config, "strict_mode", False)
+        strict_mode = getattr(config.runtime, "strict_mode", False) if hasattr(config, "runtime") else False
 
         with deterministic(seed=seed, strict=strict_mode):
             audit_results = _run_audit_pipeline(
@@ -1579,29 +1627,37 @@ def validate(  # pragma: no cover
 
     """
     try:
-        from ..config import load_config_from_file
+        from ..config import load_config
 
         # Use positional arg if provided, otherwise fall back to --config
         config_to_validate = config_path or config
 
         # Auto-detect config if not provided
         if config_to_validate is None:
-            from .defaults import get_smart_defaults
+            # Look for config files in current directory
+            config_candidates = ["glassalpha.yaml", "audit.yaml", "config.yaml"]
+            config_to_validate = None
 
-            defaults = get_smart_defaults()
-            config_to_validate = defaults["config"]
+            for candidate in config_candidates:
+                if Path(candidate).exists():
+                    config_to_validate = Path(candidate)
+                    break
+
             if config_to_validate is None:
                 typer.echo("Error: No configuration file specified", fg=typer.colors.RED, err=True)
                 typer.echo("\nUsage:")
                 typer.echo("  glassalpha validate config.yaml")
                 typer.echo("  glassalpha validate --config config.yaml")
+                typer.echo("\nOr create a config file in current directory:")
+                typer.echo("  glassalpha init")
                 raise typer.Exit(ExitCode.USER_ERROR.value)
+
             typer.echo(f"Auto-detected config: {config_to_validate}")
 
         typer.echo(f"Validating configuration: {config_to_validate}")
 
         # Load and validate
-        audit_config = load_config_from_file(
+        audit_config = load_config(
             config_to_validate,
             profile_name=profile,
             strict=strict,
@@ -2090,8 +2146,6 @@ def reasons(  # pragma: no cover
         seed = 42
 
         if config and config.exists():
-            from ..config import load_config_from_file
-
             cfg = load_config_from_file(config)
             protected_attributes = getattr(cfg.data, "protected_attributes", None) if hasattr(cfg, "data") else None
             seed = getattr(cfg.reproducibility, "random_seed", 42) if hasattr(cfg, "reproducibility") else 42
@@ -2760,8 +2814,6 @@ def recourse(  # pragma: no cover
         seed = 42
 
         if config and config.exists():
-            from ..config import load_config_from_file
-
             cfg = load_config_from_file(config)
 
             # Load recourse config
