@@ -30,7 +30,10 @@ jobs:
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
+          brew update
           brew install gobject-introspection cairo pango gdk-pixbuf libffi libomp
+          # Set PKG_CONFIG_PATH so WeasyPrint can find libraries
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
 
       - name: Install system dependencies (Ubuntu)
         if: runner.os == 'Linux'
