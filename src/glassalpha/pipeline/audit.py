@@ -1610,11 +1610,20 @@ class AuditPipeline:
                 continue
 
         if not fairness_metrics:
-            logger.warning("No fairness metrics found")
-            self.results.fairness_analysis = {}
-            # Track that fairness analysis was skipped (could be due to missing protected_attributes)
+            # Provide detailed error message based on config structure
             if hasattr(self.config.data, "protected_attributes") and not self.config.data.protected_attributes:
-                self.results.fairness_analysis = {"skipped": "No protected attributes configured"}
+                error_msg = "No protected attributes configured in data.protected_attributes"
+                logger.warning(f"Fairness metrics skipped: {error_msg}")
+                self.results.fairness_analysis = {"skipped": error_msg}
+            else:
+                # Config structure issue - provide clear guidance
+                error_msg = (
+                    "No fairness metrics found. Check config structure:\n"
+                    "  Expected: metrics.fairness.metrics = ['demographic_parity', ...]\n"
+                    "  Or configure: metrics.fairness with nested 'metrics' key"
+                )
+                logger.warning(error_msg)
+                self.results.fairness_analysis = {"error": "No fairness metrics configured", "hint": error_msg}
             return
 
         # Use the new fairness runner with E10 confidence intervals
@@ -1686,7 +1695,11 @@ class AuditPipeline:
             if hasattr(self.config, "metrics") and hasattr(self.config.metrics, "individual_fairness"):
                 individual_fairness_config = self.config.metrics.individual_fairness
                 if individual_fairness_config is not None:
-                    individual_fairness_enabled = individual_fairness_config.enabled
+                    # Handle both dict and object config formats
+                    if isinstance(individual_fairness_config, dict):
+                        individual_fairness_enabled = individual_fairness_config.get("enabled", True)
+                    elif hasattr(individual_fairness_config, "enabled"):
+                        individual_fairness_enabled = individual_fairness_config.enabled
 
             if individual_fairness_enabled:
                 logger.debug("Computing E11: Individual fairness metrics")
@@ -1719,10 +1732,21 @@ class AuditPipeline:
                     if hasattr(self.config, "metrics") and hasattr(self.config.metrics, "individual_fairness"):
                         ifc = self.config.metrics.individual_fairness
                         if ifc is not None:
-                            distance_metric = ifc.distance_metric
-                            similarity_percentile = ifc.similarity_percentile
-                            prediction_diff_threshold = ifc.prediction_diff_threshold
-                            threshold = ifc.threshold
+                            # Handle both dict and object config formats
+                            if isinstance(ifc, dict):
+                                distance_metric = ifc.get("distance_metric", distance_metric)
+                                similarity_percentile = ifc.get("similarity_percentile", similarity_percentile)
+                                prediction_diff_threshold = ifc.get("prediction_diff_threshold", prediction_diff_threshold)
+                                threshold = ifc.get("threshold", threshold)
+                            else:
+                                if hasattr(ifc, "distance_metric"):
+                                    distance_metric = ifc.distance_metric
+                                if hasattr(ifc, "similarity_percentile"):
+                                    similarity_percentile = ifc.similarity_percentile
+                                if hasattr(ifc, "prediction_diff_threshold"):
+                                    prediction_diff_threshold = ifc.prediction_diff_threshold
+                                if hasattr(ifc, "threshold"):
+                                    threshold = ifc.threshold
 
                     # Initialize individual fairness metrics
                     individual_metrics = IndividualFairnessMetrics(
@@ -1806,6 +1830,10 @@ class AuditPipeline:
             threshold = stability_config.threshold
             seed = get_component_seed("stability_perturbation")
 
+            # Preprocess features to handle categorical columns (prevent "could not convert string to float" errors)
+            # This ensures stability metrics work on datasets with categorical features like German Credit
+            X_processed = self._preprocess_for_training(X)
+            
             # Run perturbation sweep
             logger.info(
                 f"Running perturbation sweep: epsilon={epsilon_values}, threshold={threshold}, seed={seed}",
@@ -1813,7 +1841,7 @@ class AuditPipeline:
 
             result = run_perturbation_sweep(
                 model=self.model,
-                X_test=X,
+                X_test=X_processed,  # Use preprocessed features
                 protected_features=protected_features,
                 epsilon_values=epsilon_values,
                 threshold=threshold,
@@ -2317,12 +2345,35 @@ class AuditPipeline:
             raise RuntimeError(f"Failed to load explainer {explainer_name}: {e}") from e
 
     def _get_available_fairness_metrics(self) -> list[str]:
-        """Get list of available fairness metric names.
+        """Get list of available fairness metric names from config.
 
         Returns:
             List of fairness metric names
 
         """
+        # Try to get metrics from config
+        if hasattr(self.config, "metrics"):
+            metrics_config = self.config.metrics
+            
+            # Handle both nested structure (metrics.fairness.metrics) and legacy flat structure
+            if hasattr(metrics_config, "fairness"):
+                fairness_config = metrics_config.fairness
+                
+                logger.debug(f"Fairness config type: {type(fairness_config)}")
+                logger.debug(f"Fairness config has metrics attr: {hasattr(fairness_config, 'metrics')}")
+                
+                # New structure: metrics.fairness.metrics = [...]
+                if hasattr(fairness_config, "metrics") and fairness_config.metrics:
+                    logger.debug(f"Returning metrics from config: {fairness_config.metrics}")
+                    return fairness_config.metrics
+                
+                # Legacy structure: metrics.fairness = [...] (list directly)
+                if isinstance(fairness_config, list):
+                    logger.debug(f"Returning metrics as list: {fairness_config}")
+                    return fairness_config
+        
+        # Fallback to default metrics if not configured
+        logger.debug("Using default fairness metrics")
         return [
             "demographic_parity",
             "equal_opportunity",
@@ -2345,21 +2396,21 @@ class AuditPipeline:
         """
         # Import metrics dynamically to avoid circular imports
         if metric_name == "demographic_parity":
-            from glassalpha.metrics.fairness import DemographicParity
+            from glassalpha.metrics.fairness.bias_detection import DemographicParityMetric
 
-            return DemographicParity
+            return DemographicParityMetric
         if metric_name == "equal_opportunity":
-            from glassalpha.metrics.fairness import EqualOpportunity
+            from glassalpha.metrics.fairness.bias_detection import EqualOpportunityMetric
 
-            return EqualOpportunity
+            return EqualOpportunityMetric
         if metric_name == "equalized_odds":
-            from glassalpha.metrics.fairness import EqualizedOdds
+            from glassalpha.metrics.fairness.bias_detection import EqualizedOddsMetric
 
-            return EqualizedOdds
+            return EqualizedOddsMetric
         if metric_name == "predictive_parity":
-            from glassalpha.metrics.fairness import PredictiveParity
+            from glassalpha.metrics.fairness.bias_detection import PredictiveParityMetric
 
-            return PredictiveParity
+            return PredictiveParityMetric
         raise RuntimeError(f"Unknown fairness metric: {metric_name}")
 
     def _resolve_dataset_path(self) -> Path:

@@ -57,7 +57,7 @@ def _show_first_run_tip():
         typer.echo()
         typer.echo("Quick start:")
         typer.echo("  1. Check environment: glassalpha doctor")
-        typer.echo("  2. Create config: glassalpha init")
+        typer.echo("  2. Generate project: glassalpha quickstart")
         typer.echo("  3. Run audit: glassalpha audit --fast")
         typer.echo()
         typer.echo("Tip: Use --fast flag for lightning-quick demos (2-3s vs 5-7s)")
@@ -110,17 +110,16 @@ def main_callback(
     _show_first_run_tip()
 
 
-# Import and register core commands only
-from .commands import audit, doctor
+# Import and register core commands
+from .commands import audit, doctor, list_components_cmd, validate
 from .quickstart import quickstart
 
-# Register 3 core commands
+# Register commands
 app.command()(audit)
 app.command()(doctor)
 app.command()(quickstart)
-
-# Simplified CLI - removed dataset, prep, models, and other commands
-# Core commands: audit, quickstart, doctor
+app.command()(validate)
+app.command(name="list")(list_components_cmd)
 
 
 if __name__ == "__main__":  # pragma: no cover

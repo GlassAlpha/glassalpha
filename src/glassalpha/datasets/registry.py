@@ -32,7 +32,8 @@ class DatasetRegistry:
 
                 cache_path = resolve_data_root() / "german_credit.csv"
                 if not cache_path.exists():
-                    df = load_german_credit()
+                    # Load with encoded=True by default for sklearn compatibility
+                    df = load_german_credit(encoded=True)
                     cache_path.parent.mkdir(parents=True, exist_ok=True)
                     df.to_csv(cache_path, index=False)
                 return str(cache_path)

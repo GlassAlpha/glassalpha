@@ -108,12 +108,37 @@ class NoOpMetric:
         return {"noop": 0.0}
 
 
-def list_components():
-    """List available components (stub for compatibility)."""
-    return {
+def list_components(component_type=None, include_enterprise=False):
+    """List available components.
+
+    Args:
+        component_type: Filter by type (models, explainers, metrics, profiles) or None for all
+        include_enterprise: Include enterprise components (not implemented yet)
+
+    Returns:
+        Dictionary of component types and their available options
+
+    """
+    all_components = {
         "models": ["logistic_regression", "xgboost", "lightgbm"],
         "explainers": ["treeshap", "kernelshap", "coefficients"],
+        "metrics": [
+            "accuracy",
+            "precision",
+            "recall",
+            "f1",
+            "auc_roc",
+            "demographic_parity",
+            "equal_opportunity",
+            "equalized_odds",
+        ],
+        "profiles": ["tabular_compliance"],
     }
+
+    if component_type:
+        return {component_type: all_components.get(component_type, [])}
+
+    return all_components
 
 
 def select_explainer(model_type: str, config=None):

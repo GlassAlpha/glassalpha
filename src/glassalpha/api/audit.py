@@ -393,29 +393,48 @@ def from_config(config_path: str | Path) -> AuditResult:
         GlassAlphaError (GAE2003): Data hash mismatch
         FileNotFoundError: Config or referenced files not found
 
-    Config schema:
-        model:
-          path: "models/xgboost.pkl"  # Pickled model
-          type: "xgboost.XGBClassifier"  # For verification
+    Config schemas:
 
-        data:
-          X_path: "data/X_test.parquet"
-          y_path: "data/y_test.parquet"
-          protected_attributes:
-            gender: "data/gender.parquet"
-            race: "data/race.parquet"
-          expected_hashes:
-            X: "sha256:abc123..."
-            y: "sha256:def456..."
+        Training config (model.type):
+            model:
+              type: xgboost  # Train new model
+              params:
+                random_state: 42
+                n_estimators: 100
 
-        audit:
-          random_seed: 42
-          explain: true
-          recourse: false
-          calibration: true
+            data:
+              dataset: german_credit  # Built-in dataset
+              target_column: credit_risk
+              protected_attributes:
+                - gender
+                - age_group
 
-        validation:
-          expected_result_id: "abc123..."  # Optional: fail if mismatch
+            reproducibility:
+              random_seed: 42
+
+        Inference config (model.path):
+            model:
+              path: "models/xgboost.pkl"  # Pre-trained model
+              type: "xgboost.XGBClassifier"  # For verification
+
+            data:
+              X_path: "data/X_test.parquet"
+              y_path: "data/y_test.parquet"
+              protected_attributes:
+                gender: "data/gender.parquet"
+                race: "data/race.parquet"
+              expected_hashes:
+                X: "sha256:abc123..."
+                y: "sha256:def456..."
+
+            audit:
+              random_seed: 42
+              explain: true
+              recourse: false
+              calibration: true
+
+            validation:
+              expected_result_id: "abc123..."  # Optional: fail if mismatch
 
     Examples:
         Basic usage:
@@ -448,14 +467,33 @@ def from_config(config_path: str | Path) -> AuditResult:
     # Get base directory for relative paths
     base_dir = config_path_obj.parent
 
-    # Load model
-    model_path = base_dir / config["model"]["path"]
-    with open(model_path, "rb") as f:
-        model = pickle.load(f)  # nosec: B301
+    # Detect config type: inference (model.path) vs training (model.type)
+    model_config = config.get("model", {})
+    data_config = config.get("data", {})
 
-    # Load data
-    X_path = base_dir / config["data"]["X_path"]
-    y_path = base_dir / config["data"]["y_path"]
+    if "path" in model_config:
+        # Inference config: Load pre-trained model
+        model_path = base_dir / model_config["path"]
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)  # nosec: B301
+    elif "type" in model_config:
+        # Training config: Use run_audit CLI workflow instead
+        # This delegates to the full audit pipeline which handles dataset loading and training
+        from glassalpha.config import load_config
+        from glassalpha.pipeline.audit import run_audit
+
+        audit_config = load_config(config_path_obj)
+        result = run_audit(audit_config)
+        return result
+    else:
+        raise ValueError(
+            "Config must have either model.path (for inference) or model.type (for training). "
+            f"Found: {list(model_config.keys())}",
+        )
+
+    # Load data (inference config path)
+    X_path = base_dir / data_config["X_path"]
+    y_path = base_dir / data_config["y_path"]
 
     # Load X and y (support CSV, parquet, etc.)
     if str(X_path).endswith(".parquet"):

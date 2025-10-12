@@ -468,6 +468,7 @@ def load_german_credit(
     train_test_split: bool = False,
     test_size: float = 0.2,
     random_state: int = 42,
+    encoded: bool = False,
 ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
     """Convenience function to load German Credit dataset.
 
@@ -476,6 +477,7 @@ def load_german_credit(
         train_test_split: Whether to return train/test split
         test_size: Fraction for test set if splitting
         random_state: Random seed for splitting
+        encoded: If True, categorical columns are label-encoded for sklearn compatibility
 
     Returns:
         Full dataset or (train_data, test_data) if train_test_split=True
@@ -484,8 +486,45 @@ def load_german_credit(
     dataset = GermanCreditDataset(cache_dir)
 
     if train_test_split:
-        return dataset.get_train_test_split(test_size, random_state)
-    return dataset.load_processed_data()
+        data = dataset.get_train_test_split(test_size, random_state)
+        if encoded:
+            # Encode both train and test splits
+            train_data, test_data = data
+            train_data = _encode_categorical_columns(train_data)
+            test_data = _encode_categorical_columns(test_data)
+            return train_data, test_data
+        return data
+
+    data = dataset.load_processed_data()
+    if encoded:
+        return _encode_categorical_columns(data)
+    return data
+
+
+def _encode_categorical_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Encode categorical columns using label encoding.
+
+    Args:
+        df: DataFrame with potential categorical columns
+
+    Returns:
+        DataFrame with categorical columns encoded as integers
+
+    """
+    from sklearn.preprocessing import LabelEncoder
+
+    df = df.copy()
+
+    # Find categorical columns (excluding target if present)
+    categorical_cols = df.select_dtypes(include=["object", "category", "string"]).columns
+    categorical_cols = [col for col in categorical_cols if col != TARGET_NAME]
+
+    # Encode each categorical column
+    for col in categorical_cols:
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col])
+
+    return df
 
 
 if __name__ == "__main__":

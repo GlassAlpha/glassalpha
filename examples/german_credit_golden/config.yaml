@@ -62,17 +62,19 @@ explainers:
 metrics:
   # Performance metrics for model evaluation
   performance:
-    - "accuracy"
-    - "precision"
-    - "recall"
-    - "f1"
-    - "auc_roc"
+    metrics:
+      - "accuracy"
+      - "precision"
+      - "recall"
+      - "f1"
+      - "auc_roc"
 
   # Fairness metrics for bias detection
   fairness:
-    - "demographic_parity"
-    - "equal_opportunity"
-    - "equalized_odds"
+    metrics:
+      - "demographic_parity"
+      - "equal_opportunity"
+      - "equalized_odds"
 
   # Enable confidence intervals
   compute_confidence_intervals: true
