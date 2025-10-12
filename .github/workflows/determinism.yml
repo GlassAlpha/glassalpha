@@ -70,12 +70,16 @@ jobs:
             gobject-introspection \
             harfbuzz \
             fribidi \
-            glib
+            glib \
+            fontconfig \
+            freetype
           # Set library paths for WeasyPrint runtime linking
           echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
           echo "DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib:$DYLD_FALLBACK_LIBRARY_PATH" >> $GITHUB_ENV
           echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
+          # Ensure consistent font rendering
+          echo "FONTCONFIG_PATH=$(brew --prefix)/etc/fonts" >> $GITHUB_ENV
 
       - name: Install dependencies with constraints
         run: |
@@ -163,13 +167,13 @@ jobs:
 
           # Run audit twice (seed is set in config file)
           echo "=== Running first audit ==="
-          PYTHONHASHSEED=0 TZ=UTC MPLBACKEND=Agg SOURCE_DATE_EPOCH=1577836800 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 BLIS_NUM_THREADS=1 GLASSALPHA_NO_PROGRESS=1 GLASSALPHA_DETERMINISTIC=1 LC_ALL=C python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit1.pdf || {
+          python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit1.pdf || {
             echo "❌ First audit failed"
             exit 1
           }
 
           echo "=== Running second audit ==="
-          PYTHONHASHSEED=0 TZ=UTC MPLBACKEND=Agg SOURCE_DATE_EPOCH=1577836800 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 BLIS_NUM_THREADS=1 GLASSALPHA_NO_PROGRESS=1 GLASSALPHA_DETERMINISTIC=1 LC_ALL=C python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit2.pdf || {
+          python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit2.pdf || {
             echo "❌ Second audit failed"
             exit 1
           }
