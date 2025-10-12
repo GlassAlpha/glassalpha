@@ -27,6 +27,9 @@ data:
   # Dataset key for built-in datasets
   dataset: "adult_income"
 
+  # Target column for prediction
+  target_column: "income"
+
   # Protected attributes for fairness analysis
   protected_attributes:
     - "sex"

@@ -27,6 +27,9 @@ data:
   # Dataset key for built-in datasets
   dataset: "german_credit"
 
+  # Target column for prediction
+  target_column: "credit_risk"
+
   # Protected attributes for fairness analysis
   protected_attributes:
     - "gender"
