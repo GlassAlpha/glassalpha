@@ -462,6 +462,11 @@ def validate_audit_determinism(
     env["OMP_NUM_THREADS"] = "1"
     env["OPENBLAS_NUM_THREADS"] = "1"
     env["MKL_NUM_THREADS"] = "1"
+    env["TZ"] = "UTC"
+    env["MPLBACKEND"] = "Agg"
+    # Additional determinism variables for WeasyPrint
+    env["WEASYPRINT_BACKEND"] = "cairo"
+    env["WEASYPRINT_DEBUG"] = "0"
 
     results = {
         "success": True,

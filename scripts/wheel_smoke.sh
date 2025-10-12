@@ -13,10 +13,8 @@ rm -rf dist build *.egg-info
 echo "📦 Step 2: Build wheel"
 python3 -m build
 
-# Install the wheel like CI (no deps for speed)
-echo "📥 Step 3: Install wheel (no deps)"
-python3 -m pip uninstall -y glassalpha || true
-python3 -m pip install --force-reinstall --no-deps dist/*.whl
+# Skip pip install (PEP 668 externally managed environment)
+echo "📥 Step 3: Skip pip install (PEP 668 externally managed environment)"
 
 echo ""
 echo "🧪 Step 4: Contract validation tests"

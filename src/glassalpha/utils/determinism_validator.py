@@ -93,6 +93,9 @@ class DeterminismValidator:
                 "GLASSALPHA_DETERMINISTIC": "1",
                 "TZ": "UTC",
                 "MPLBACKEND": "Agg",
+                # Additional determinism variables for WeasyPrint
+                "WEASYPRINT_BACKEND": "cairo",
+                "WEASYPRINT_DEBUG": "0",
             },
         )
 
@@ -104,8 +107,8 @@ class DeterminismValidator:
         for run_num in range(runs):
             logger.info(f"Running audit {run_num + 1}/{runs} for determinism validation")
 
-            # Run single audit
-            run_result = self._run_single_audit(config_path, seed + run_num, env)
+            # Run single audit with same seed for reproducibility verification
+            run_result = self._run_single_audit(config_path, seed, env)
 
             if run_result["success"]:
                 hashes.append(run_result["hash"])
