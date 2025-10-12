@@ -139,25 +139,14 @@ jobs:
         run: |
           echo "=== Cross-platform determinism check ==="
 
-          # Create test config with strict determinism controls
-          cat > /tmp/test_config.yaml << 'EOF'
-          audit_profile: tabular_compliance
-          data:
-            dataset: german_credit
-            target_column: credit_risk
-          model:
-            type: logistic_regression
-          reproducibility:
-            random_seed: 42
-            strict: true
-            thread_control: true
-          EOF
+          # Use production golden config (known to work)
+          CONFIG_FILE="examples/german_credit_golden/config.yaml"
 
           # Validate config has correct determinism settings
           echo "=== Validating determinism config ==="
           python -c "
           from glassalpha.config import load_config
-          cfg = load_config('/tmp/test_config.yaml')
+          cfg = load_config('$CONFIG_FILE')
           print(f'Config strict mode: {cfg.reproducibility.strict}')
           print(f'Config thread_control: {cfg.reproducibility.thread_control}')
           assert cfg.reproducibility.strict == True, 'strict must be True'
@@ -167,13 +156,13 @@ jobs:
 
           # Run audit twice (seed is set in config file)
           echo "=== Running first audit ==="
-          python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit1.pdf || {
+          python3 -m glassalpha audit -c "$CONFIG_FILE" -o /tmp/audit1.pdf || {
             echo "❌ First audit failed"
             exit 1
           }
 
           echo "=== Running second audit ==="
-          python3 -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit2.pdf || {
+          python3 -m glassalpha audit -c "$CONFIG_FILE" -o /tmp/audit2.pdf || {
             echo "❌ Second audit failed"
             exit 1
           }
