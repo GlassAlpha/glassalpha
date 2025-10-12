@@ -55,8 +55,11 @@ jobs:
             harfbuzz \
             fribidi \
             glib
-          # Set PKG_CONFIG_PATH so WeasyPrint can find libraries
+          # Set library paths for WeasyPrint runtime linking
           echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib:$DYLD_FALLBACK_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
 
       - name: Install dependencies with constraints
         run: |

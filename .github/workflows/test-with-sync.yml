@@ -32,8 +32,11 @@ jobs:
         run: |
           brew update
           brew install gobject-introspection cairo pango gdk-pixbuf libffi libomp
-          # Set PKG_CONFIG_PATH so WeasyPrint can find libraries
+          # Set library paths for WeasyPrint runtime linking
           echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib:$DYLD_FALLBACK_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
 
       - name: Install system dependencies (Ubuntu)
         if: runner.os == 'Linux'
