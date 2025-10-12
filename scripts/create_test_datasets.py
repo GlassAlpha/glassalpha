@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from glassalpha.config.loader import load_config_from_file
+from glassalpha.config import load_config_from_file
 from glassalpha.utils.cache_dirs import resolve_data_root
 
 

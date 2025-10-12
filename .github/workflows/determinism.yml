@@ -115,7 +115,7 @@ jobs:
         run: |
           echo "=== Cross-platform determinism check ==="
 
-          # Create test config
+          # Create test config with strict determinism controls
           cat > /tmp/test_config.yaml << 'EOF'
           audit_profile: tabular_compliance
           data:
@@ -125,6 +125,8 @@ jobs:
             type: logistic_regression
           reproducibility:
             random_seed: 42
+            strict: true
+            thread_control: true
           EOF
 
           # Run audit twice (seed is set in config file)
@@ -273,7 +275,7 @@ jobs:
           # Use installed package (not hardcoded path)
           from glassalpha.utils.determinism_validator import validate_audit_determinism
 
-          # Create test config
+          # Create test config with strict determinism controls
           config = {
               'audit_profile': 'tabular_compliance',
               'data': {
@@ -283,6 +285,8 @@ jobs:
               'model': {'type': 'logistic_regression'},
               'reproducibility': {
                   'random_seed': 42,
+                  'strict': True,
+                  'thread_control': True,
               },
           }
 
