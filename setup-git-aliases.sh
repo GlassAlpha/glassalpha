@@ -5,7 +5,7 @@ echo "🔧 Setting up Git aliases for GlassAlpha..."
 
 # Add git alias for safe commits
 git config alias.safe-commit '!f() {
-    echo "🧹 Running pre-commit checks...";
+    echo "Running pre-commit checks...";
     source venv/bin/activate && ruff check src/ tests/ --fix && ruff format src/ tests/ && pre-commit run --all-files &&
     git add . && git commit -m "$1";
 }; f'
@@ -21,7 +21,7 @@ git config alias.fix '!f() {
 }; f'
 
 echo ""
-echo "✅ Git aliases created! You can now use:"
+echo "Git aliases created! You can now use:"
 echo ""
 echo "   git fix              - Quick auto-fix with Ruff"
 echo "   git lint             - Full pre-commit check (no commit)"

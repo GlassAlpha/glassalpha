@@ -18,6 +18,11 @@ jobs:
     env:
       COV_FLOOR_OVERALL: "70" # Overall coverage target (trend monitoring, does not fail build)
       COV_FLOOR_CRITICAL: "45" # Lowered from 65% until pipeline tests are added
+      # Determinism environment for core tests
+      PYTHONHASHSEED: 0
+      TZ: UTC
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: 1
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
@@ -428,6 +433,12 @@ jobs:
   test-cross-platform:
     name: Cross-platform tests (macOS + Ubuntu)
     runs-on: ${{ matrix.os }}
+    env:
+      # Determinism environment for cross-platform tests
+      PYTHONHASHSEED: 0
+      TZ: UTC
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: 1
     strategy:
       fail-fast: false
       matrix:
@@ -461,26 +472,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,all]"
 
-      - name: Set up determinism environment
-        run: |
-          echo "=== Setting up determinism environment for GitHub Actions ==="
-          # Export environment variables to $GITHUB_ENV for persistence across steps
-          cat >> $GITHUB_ENV << 'EOF'
-          PYTHONHASHSEED=0
-          TZ=UTC
-          MPLBACKEND=Agg
-          SOURCE_DATE_EPOCH=1577836800
-          OMP_NUM_THREADS=1
-          MKL_NUM_THREADS=1
-          OPENBLAS_NUM_THREADS=1
-          NUMEXPR_NUM_THREADS=1
-          VECLIB_MAXIMUM_THREADS=1
-          BLIS_NUM_THREADS=1
-          GLASSALPHA_NO_PROGRESS=1
-          GLASSALPHA_DETERMINISTIC=1
-          LC_ALL=C
-          EOF
-          echo "✅ Determinism environment configured for GitHub Actions"
 
       - name: Verify no parallel testing
         run: |
