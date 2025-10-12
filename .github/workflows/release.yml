@@ -34,7 +34,7 @@ jobs:
 
       - name: Generate SBOM
         run: |
-          cyclonedx-py --format json --outfile dist/sbom.json
+          cyclonedx-py environment --outfile dist/sbom.json
           echo "✅ Generated SBOM: $(ls -lh dist/sbom.json)"
 
       - name: Check distribution

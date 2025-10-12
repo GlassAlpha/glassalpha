@@ -32,9 +32,16 @@ def check_venv_exists() -> bool:
 
 def check_editable_install() -> bool:
     """Check if package is installed in editable mode."""
+    # Try .venv first (local development)
+    if check_venv_exists():
+        python_cmd = ".venv/bin/python3"
+    else:
+        # Fall back to system python (CI/global installation)
+        python_cmd = "python3"
+
     try:
         result = subprocess.run(
-            [".venv/bin/python3", "-c", "import glassalpha; print(glassalpha.__file__)"],
+            [python_cmd, "-c", "import glassalpha; print(glassalpha.__file__)"],
             capture_output=True,
             text=True,
             check=False,
@@ -57,10 +64,9 @@ def check_sync() -> bool:
 
     issues = []
 
-    # Check 1: Virtual environment exists
+    # Check 1: Virtual environment exists (optional for CI)
     if not check_venv_exists():
-        print("❌ Virtual environment not found at .venv/")
-        issues.append("missing_venv")
+        print("ℹ️  Virtual environment not found at .venv/ (using global installation)")
     else:
         print("✓ Virtual environment exists")
 
@@ -79,10 +85,13 @@ def check_sync() -> bool:
         print("❌ Environment is NOT in sync")
         print()
         print("Fix with:")
-        if "missing_venv" in issues:
-            print("  python3 -m venv .venv")
-        if "not_editable" in issues or "missing_venv" in issues:
-            print('  .venv/bin/pip install -e ".[dev,all]"')
+        if check_venv_exists():
+            # Local development with venv
+            if "not_editable" in issues:
+                print('  .venv/bin/pip install -e ".[dev,all]"')
+        # CI/global installation
+        elif "not_editable" in issues:
+            print('  pip install -e ".[dev,all]"')
         return False
     print("✅ Environment is in sync")
     return True
@@ -95,7 +104,7 @@ def sync_environment() -> bool:
 
     root = get_project_root()
 
-    # Ensure venv exists
+    # For local development: Ensure venv exists
     if not check_venv_exists():
         print("📦 Creating virtual environment...")
         result = subprocess.run(
@@ -108,10 +117,11 @@ def sync_environment() -> bool:
             return False
         print("✓ Virtual environment created")
 
-    # Install in editable mode
+    # Install in editable mode (use venv if available, otherwise global)
+    python_cmd = ".venv/bin/pip" if check_venv_exists() else "pip"
     print("📥 Installing package in editable mode...")
     result = subprocess.run(
-        [".venv/bin/pip", "install", "-e", ".[dev,all]"],
+        [python_cmd, "install", "-e", ".[dev,all]"],
         cwd=root,
         check=False,
     )
