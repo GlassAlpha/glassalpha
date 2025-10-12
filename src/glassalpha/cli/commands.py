@@ -489,7 +489,7 @@ def _run_audit_pipeline(
         typer.echo("\nThe audit report is ready for review and regulatory submission.")
 
         # Regulatory compliance message
-        if config.strict_mode:
+        if getattr(getattr(config, "runtime", None), "strict_mode", False):
             typer.secho(
                 "\nStrict mode: Report meets regulatory compliance requirements",
                 fg=typer.colors.YELLOW,

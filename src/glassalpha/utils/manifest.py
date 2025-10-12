@@ -277,7 +277,7 @@ class ManifestGenerator:
         self.manifest.config = config
         self.manifest.config_hash = self.config_hash
         self.manifest.audit_profile = config.get("audit_profile")
-        self.manifest.strict_mode = config.get("strict_mode", False)
+        self.manifest.strict_mode = config.get("runtime", {}).get("strict_mode", False)
 
         logger.debug("Added configuration to manifest")
 

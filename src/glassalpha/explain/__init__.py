@@ -113,7 +113,11 @@ def _available(explainer_name: str) -> bool:
     return True
 
 
+# Import noop explainer for CLI registration
+from glassalpha.explain.noop import noop as _noop
+
 __all__ = [
     "_available",
+    "noop",
     "select_explainer",
 ]

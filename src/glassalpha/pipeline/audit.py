@@ -298,7 +298,7 @@ class AuditPipeline:
         # Create progress bar (auto-detects notebook, respects strict mode)
         from glassalpha.utils.progress import get_progress_bar  # noqa: PLC0415
 
-        show_progress = not audit_config.strict_mode
+        show_progress = not getattr(getattr(audit_config, "runtime", None), "strict_mode", False)
 
         with get_progress_bar(total=100, desc="Audit", disable=not show_progress, leave=False) as pbar:
 
@@ -788,9 +788,12 @@ class AuditPipeline:
         from glassalpha.explain import select_explainer
 
         # Use pre-selected explainer if provided, otherwise select based on config
+        explainer_class = None
         if self.selected_explainer:
-            explainer_instance = self.selected_explainer
-            selected_name = type(explainer_instance).__name__
+            # selected_explainer is a string (explainer name), not an instance
+            selected_name = self.selected_explainer
+            explainer_class = self._get_explainer_class(selected_name)
+            explainer_instance = explainer_class()
         else:
             explainer_name = select_explainer(
                 model_type=self.config.model.type,
@@ -805,7 +808,8 @@ class AuditPipeline:
         logger.info(f"Selected explainer: {selected_name}")
 
         # If no explainer found, raise error (required by tests)
-        if not explainer_class:
+        # Only check explainer_class when it was actually assigned
+        if explainer_class is not None and not explainer_class:
             msg = "No compatible explainer found"
             raise RuntimeError(msg)
 
@@ -866,10 +870,10 @@ class AuditPipeline:
 
             # Get strict mode from config for progress bar control
             strict_mode = False
-            if hasattr(self.config, "strict_mode"):
-                strict_mode = self.config.strict_mode
+            if hasattr(self.config, "runtime") and hasattr(self.config.runtime, "strict_mode"):
+                strict_mode = self.config.runtime.strict_mode
             elif isinstance(self.config, dict):
-                strict_mode = self.config.get("strict_mode", False)
+                strict_mode = self.config.get("runtime", {}).get("strict_mode", False)
 
             # Generate explanations with progress settings
             # Note: Different explainers have different signatures:
@@ -2100,10 +2104,10 @@ class AuditPipeline:
         # Validate runtime versions
         try:
             # Handle both dict and Pydantic configs
-            if hasattr(self.config, "strict_mode"):
-                strict_mode = self.config.strict_mode
+            if hasattr(self.config, "runtime") and hasattr(self.config.runtime, "strict_mode"):
+                strict_mode = self.config.runtime.strict_mode
             elif isinstance(self.config, dict):
-                strict_mode = self.config.get("strict_mode", False)
+                strict_mode = self.config.get("runtime", {}).get("strict_mode", False)
             else:
                 strict_mode = False
 
