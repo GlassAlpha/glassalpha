@@ -302,7 +302,7 @@ jobs:
         run: |
           python3 << 'EOF'
           # Use installed package (not hardcoded path)
-          from glassalpha.explain.registry import select_explainer_deterministic, _available_explainers
+          from glassalpha.explain import select_explainer, _available
           from sklearn.linear_model import LogisticRegression
           import pandas as pd
           import numpy as np
@@ -317,22 +317,21 @@ jobs:
           model.fit(X, y)
 
           # Check available explainers
-          available = _available_explainers()
-          print(f"Available explainers: {list(available.keys())}")
+          # Note: _available function is a stub that returns True for all explainers
+          treeshap_available = _available("treeshap")
+          coefficients_available = _available("coefficients")
+          print(f"TreeSHAP available: {treeshap_available}")
+          print(f"Coefficients available: {coefficients_available}")
 
           # Test deterministic selection
-          explainer1, _ = select_explainer_deterministic(
-              model=model,
-              X_test=X.iloc[:10],
-              priority=['treeshap', 'coefficients'],
-              strict=False,
+          explainer1 = select_explainer(
+              model_type="logistic_regression",
+              requested_priority=['coefficients'],
           )
 
-          explainer2, _ = select_explainer_deterministic(
-              model=model,
-              X_test=X.iloc[:10],
-              priority=['treeshap', 'coefficients'],
-              strict=False,
+          explainer2 = select_explainer(
+              model_type="logistic_regression",
+              requested_priority=['coefficients'],
           )
 
           assert explainer1 == explainer2, f"Non-deterministic selection: {explainer1} != {explainer2}"

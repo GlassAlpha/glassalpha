@@ -36,6 +36,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install macOS system dependencies (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gobject-introspection cairo pango gdk-pixbuf libffi
+          brew install libomp
+
       - name: Cache pip dependencies
         uses: actions/cache@v4
         with:
