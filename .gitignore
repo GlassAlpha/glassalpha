@@ -227,6 +227,10 @@ logs/
 /*_simple_audit.manifest.json
 /malformed.yaml
 
+# Generated model artifacts (from audit runs with save_path)
+models/quickstart_model.pkl
+models/*_model.pkl
+
 # Test config outputs in root (but allow tests/fixtures/*.yaml)
 /adult_config.yaml
 /custom_config.yaml
