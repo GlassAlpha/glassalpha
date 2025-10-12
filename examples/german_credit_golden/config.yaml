@@ -83,8 +83,11 @@ reproducibility:
   # Master random seed for all randomness sources
   random_seed: 42
 
-  # Enforce deterministic behavior
-  deterministic: true
+  # Enforce strict determinism controls (thread control, advanced seeding)
+  strict: true
+
+  # Control thread counts for deterministic parallel processing
+  thread_control: true
 
 # =============================================================================
 # REPORT CONFIGURATION

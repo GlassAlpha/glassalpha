@@ -1,9 +1,9 @@
 {
   "glassalpha_version": "0.2.0",
   "schema_version": "0.2.0",
-  "timestamp": "2025-10-12T14:13:38.268929+00:00",
+  "timestamp": "2025-10-12T17:19:03.616251+00:00",
   "random_seed": 42,
-  "model_fingerprint": "xgboost:5570964235386328362",
+  "model_fingerprint": "xgboost:362145615923260583",
   "model_type": "xgboost",
   "n_samples": 300,
   "n_features": 53,

@@ -35,10 +35,11 @@ metrics:
     - demographic_parity
     - equal_opportunity
 
-# Reproducibility: Basic
+# Reproducibility: Strict determinism for CI/production
 reproducibility:
   random_seed: 42
-  deterministic: true
+  strict: true
+  thread_control: true
 
 # Report: HTML for speed
 report:

@@ -48,6 +48,7 @@ jobs:
         run: |
           brew update
           brew install \
+            libomp \
             cairo \
             pango \
             gobject-introspection \
@@ -211,6 +212,17 @@ jobs:
             cut -d'|' -f3 /tmp/hashes.txt | sort | uniq -c
             exit 1
           fi
+
+      - name: Upload failed PDFs for debugging
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: determinism-failure-cross-platform
+          path: |
+            artifacts/**/*.pdf
+            artifacts/**/*.html
+            /tmp/hashes.txt
+          retention-days: 7
 
   validate-determinism-framework:
     name: Test Determinism Framework

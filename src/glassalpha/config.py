@@ -59,6 +59,18 @@ class ReproducibilityConfig(BaseModel):
     """Reproducibility configuration for determinism."""
 
     random_seed: int = Field(42, description="Random seed for reproducibility")
+    strict: bool = Field(
+        False,
+        description="Enable strict determinism controls (thread control, advanced seeding)",
+    )
+    thread_control: bool = Field(
+        True,
+        description="Control thread counts for deterministic parallel processing",
+    )
+    warn_on_failure: bool = Field(
+        True,
+        description="Warn if some determinism controls fail to apply",
+    )
 
 
 class ReportConfig(BaseModel):

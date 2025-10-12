@@ -192,6 +192,25 @@ Found a bug? Want to add a model type? PRs welcome! Check the [contributing guid
 
 The architecture is designed to be extensible. Adding new models, explainers, or metrics shouldn't require touching core code.
 
+### Testing Determinism Locally
+
+Before pushing changes that affect audit generation, verify determinism:
+
+```bash
+# Quick check (30 seconds) - run 3 audits and verify identical hashes
+./scripts/check-determinism-quick.sh
+
+# Full CI mirror (5 minutes) - comprehensive determinism suite
+./scripts/test_determinism_local.sh
+```
+
+If determinism breaks, check:
+
+1. All configs have `reproducibility.strict: true`
+2. SHAP operations use single threading
+3. Models trained with `random_state` parameter
+4. Environment variables set: `OMP_NUM_THREADS=1`, `TZ=UTC`, `MPLBACKEND=Agg`
+
 ## Supply Chain Security
 
 Every GlassAlpha release includes verifiable supply chain artifacts for enterprise and regulatory use:

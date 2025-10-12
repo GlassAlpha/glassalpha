@@ -121,7 +121,7 @@ jobs:
         run: |
           echo "=== Generate Software Bill of Materials ==="
           python -m pip install cyclonedx-bom
-          cyclonedx-py environment --format json --outfile dist/sbom.json
+          cyclonedx-py environment -o dist/sbom.json
           echo "✅ Generated SBOM: $(ls -lh dist/sbom.json)"
 
       - name: Install cosign

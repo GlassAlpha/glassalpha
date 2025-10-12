@@ -75,6 +75,8 @@ Pre-generated, byte-identical audit packages for trust-building and verification
 
 ## 🔐 Verification
 
+### Verify Golden Packages
+
 To verify the integrity of these golden packages:
 
 ```bash
@@ -87,6 +89,17 @@ sha256sum -c SHA256SUMS.txt
 
 # Should show all files match (except timestamps in manifest)
 ```
+
+### Golden Fixture Contents
+
+Each golden package contains:
+
+- **`audit_report.html`** - Byte-identical reference output
+- **`manifest.json`** - Full lineage and provenance
+- **`config.yaml`** - Exact config (with `strict: true` for determinism)
+- **`SHA256SUMS.txt`** - Hash for verification
+
+**Critical for determinism**: All configs include `reproducibility.strict: true` and `thread_control: true` to ensure byte-identical outputs across runs.
 
 ## 🚀 Usage
 
