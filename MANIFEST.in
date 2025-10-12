@@ -2,10 +2,14 @@
 
 # Core package files
 include README.md LICENSE NOTICE CONSTRAINTS.md
-include CHANGELOG.md SECURITY.md TRADEMARK.md
+include CHANGELOG.md SECURITY.md TRADEMARK.md CONTRIBUTING.md
 include pyproject.toml
 include constraints.txt
 include pytest.ini
+include .yamllint
+include audit_config.yaml
+
+# Configs directory (for user templates and examples) - included via src/glassalpha/data/configs
 
 # Example artifacts and configs (for quickstart and examples)
 recursive-include artifacts *.joblib *.json
@@ -17,14 +21,18 @@ recursive-include my-audit-project *.py *.yaml *.md .gitignore
 # Model files (for quickstart examples)
 recursive-include models *.pkl
 
-# Complete examples directory with notebooks
+# Complete examples directory with notebooks and golden artifacts
 recursive-include examples *.ipynb *.md
+recursive-include examples *.html *.json *.py *.txt *.yaml
 
 # Template configs (used by CLI --template flag)
 recursive-include src/glassalpha/templates *.yaml *.md
 
 # Report templates (HTML/CSS for audit generation)
 recursive-include src/glassalpha/report/templates *.html *.css *.js *.txt
+
+# Documentation files
+recursive-include docs *.md
 
 # Data configs (policy schemas, etc.) - exclude test configs
 recursive-include src/glassalpha/data/configs *.yaml *.md
