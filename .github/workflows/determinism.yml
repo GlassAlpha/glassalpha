@@ -114,16 +114,7 @@ jobs:
             echo "⚠️  OMP_NUM_THREADS should be 1 for determinism (currently: ${OMP_NUM_THREADS:-not set})"
           fi
 
-          python -c "
-          import os
-          from glassalpha.config import load_config
-          cfg = load_config('/tmp/test_config.yaml')
-          print(f'Config strict mode: {cfg.reproducibility.strict}')
-          print(f'Config thread_control: {cfg.reproducibility.thread_control}')
-          assert cfg.reproducibility.strict == True, 'strict must be True'
-          assert cfg.reproducibility.thread_control == True, 'thread_control must be True'
-          print('✅ Determinism config validated')
-          "
+          echo "✅ Environment validation passed"
 
       - name: Run determinism regression test
         run: |
@@ -156,6 +147,18 @@ jobs:
             strict: true
             thread_control: true
           EOF
+
+          # Validate config has correct determinism settings
+          echo "=== Validating determinism config ==="
+          python -c "
+          from glassalpha.config import load_config
+          cfg = load_config('/tmp/test_config.yaml')
+          print(f'Config strict mode: {cfg.reproducibility.strict}')
+          print(f'Config thread_control: {cfg.reproducibility.thread_control}')
+          assert cfg.reproducibility.strict == True, 'strict must be True'
+          assert cfg.reproducibility.thread_control == True, 'thread_control must be True'
+          print('✅ Determinism config validated')
+          "
 
           # Run audit twice (seed is set in config file)
           echo "=== Running first audit ==="
