@@ -58,11 +58,6 @@ def full_audit_results():
             },
             "local": [],
         },
-        calibration_analysis={
-            "ece": 0.0234,
-            "mce": 0.0456,
-            "brier_score": 0.0823,
-        },
         data_summary={
             "rows": 10000,
             "columns": 25,

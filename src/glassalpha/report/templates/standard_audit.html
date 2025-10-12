@@ -713,9 +713,10 @@
             <td>{{ generation_date }}</td>
             <td>Execution Time:</td>
             <td>
-              {{ "%.2f seconds" | format(manifest.execution.duration_seconds) if
-              manifest and manifest.execution and
-              manifest.execution.duration_seconds else "N/A" }}
+              {{ "%.2f seconds" | format(manifest.get('execution',
+              {}).get('duration_seconds', 0)) if manifest and
+              manifest.get('execution', {}).get('duration_seconds') else "N/A"
+              }}
             </td>
           </tr>
         </table>
@@ -2826,17 +2827,18 @@
 
           <span class="info-label">Duration:</span>
           <span class="info-value">
-            {{ "%.2f seconds" | format(manifest.execution.duration_seconds) if
-            manifest.execution and manifest.execution.duration_seconds else
-            "N/A" }}
+            {{ "%.2f seconds" | format(manifest.get('execution',
+            {}).get('duration_seconds', 0)) if manifest.get('execution',
+            {}).get('duration_seconds') else "N/A" }}
           </span>
 
           <span class="info-label">Status:</span>
           <span class="info-value">
             <span
-              class="status-indicator status-{{ 'pass' if manifest.execution.status == 'completed' else 'fail' }}"
+              class="status-indicator status-{{ 'pass' if manifest.get('execution', {}).get('status') == 'completed' else 'fail' }}"
             >
-              {{ manifest.execution.status | default("Unknown") | title }}
+              {{ manifest.get('execution', {}).get('status', 'Unknown') | title
+              }}
             </span>
           </span>
           {% endif %}
