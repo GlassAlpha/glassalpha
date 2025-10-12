@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Result**: Clean, maintainable codebase ready for PyPI launch and enterprise extension.
 
-### Architecture Simplification (Breaking)
+### Architecture Simplification (Breaking Changes)
+
+**Note**: v0.2.0 is the first production release. Prior versions were internal development only with no external users, so migration guides are not provided.
 
 - **Replaced Dynamic Registries with Explicit Dispatch**
 
@@ -31,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed `src/glassalpha/profiles/` (97 lines) - profile abstraction layer
   - Removed `src/glassalpha/core/interfaces.py` (156 lines) - interface declarations
   - Implemented explicit dispatch in `models/__init__.py`, `explain/__init__.py`, `metrics/__init__.py`
-  - **Migration**: Update imports to use `load_model()`, `select_explainer()`, `compute_metrics()` directly
+  - Imports now use `load_model()`, `select_explainer()`, `compute_metrics()` directly
 
 - **Flattened Directory Structure**
 
@@ -45,19 +47,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed profile-based configuration (`audit_profile` parameter)
   - Simplified YAML config to direct model/explainer/metric specification
   - Removed `src/glassalpha/config/strict.py` validation layer
-  - **Migration**: Specify `model.type`, `explainers.strategy`, `metrics.*` directly in config
+  - Config now specifies `model.type`, `explainers.strategy`, `metrics.*` directly
 
 - **Consolidated Similar Code**
 
   - Tree models (XGBoost, LightGBM) share 90% logic → single file
   - SHAP explainers (TreeSHAP, KernelSHAP) share patterns → single file
   - Fairness metrics share computation patterns → single file
-  - **Result**: AI can trace patterns across similar functionality in one place
+  - Result: Easier to maintain and understand related functionality
 
 - **Clear Error Messages for Extension Points**
   - `ValueError(f"Unknown model_type: {model_type}")` instead of registry lookup failures
   - `ImportError` with specific installation instructions for optional dependencies
-  - **Result**: Users get actionable error messages, AI finds extension points with Ctrl+F
+  - Result: Users get actionable error messages with clear fixes
 
 ### Changed
 
@@ -68,21 +70,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Moved `model.save_path` to config (was `--save-model` flag)
   - Auto-detect CI environment for reproduction mode (no manual flag needed)
   - Deleted debug flags: `--show-defaults`, `--check-output`, `--override`
-  - **Migration**: Move CLI flags to config file `runtime:` section
 
 - **Strict Mode Consolidation (Breaking)**
 
   - Consolidated 3 modes (`strict`, `strict_full`, `quick_mode`) into single `--strict` flag
   - New semantics: `--strict` requires artifact preprocessing and explicit schemas
   - Default mode allows built-in datasets with implicit schemas
-  - **Migration**: Replace `--strict-full` with `--strict` in scripts
 
 - **Configuration Validation (Breaking)**
 
   - Moved all validation from `strict.py` to Pydantic validators in `schema.py`
   - Deleted `src/glassalpha/config/strict.py` (279 lines removed)
   - Validation now automatic on config construction
-  - **Migration**: Remove `validate_strict_mode()` calls - Pydantic handles it
 
 - **Exception Hierarchy (Breaking)**
 
@@ -90,13 +89,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added error codes: `ConfigError` (GAE5001), `ModelError` (GAE3001), `ExplainerError` (GAE3002), `MetricError` (GAE3003), `DeterminismError` (GAE6001), `BootstrapError` (GAE6002)
   - All exceptions now include: code, message, fix suggestion, docs link
   - `StrictModeError` removed (now raises `ValueError` from Pydantic)
-  - **Migration**: Catch `ValueError` instead of `StrictModeError` for config errors
 
 - **Utils Package Organization**
   - Comprehensive `__init__.py` with 13 commonly-used utilities exported
   - Documented module responsibilities (12 modules)
   - Cleaner imports: `from glassalpha.utils import hash_dataframe, set_global_seed`
-  - **Migration**: Import common utilities from package level, not submodules
 
 ### Removed
 

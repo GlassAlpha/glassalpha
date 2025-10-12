@@ -1,8 +1,12 @@
-# Determinism in GlassAlpha
+# Determinism Implementation Guide for Contributors
+
+> **User-facing documentation**: See https://glassalpha.com/guides/determinism/
+>
+> This document explains determinism implementation details for GlassAlpha contributors and CI maintainers.
 
 ## Overview
 
-GlassAlpha is a compliance tool that must produce reproducible outputs for regulatory verification. This document explains what determinism means in GlassAlpha, what's guaranteed, and what differences are expected.
+GlassAlpha is a compliance tool that must produce reproducible outputs for regulatory verification. This document covers the technical implementation details, CI validation strategy, and cross-platform behavior that contributors need to understand.
 
 ## Determinism Guarantees
 
@@ -13,6 +17,7 @@ GlassAlpha is a compliance tool that must produce reproducible outputs for regul
 This is our core guarantee. If you run the same audit twice on the same machine with the same Python version, you will get **exactly the same output**.
 
 **Example**:
+
 ```bash
 # Ubuntu 22.04, Python 3.11
 glassalpha audit -c config.yaml -o audit1.pdf
@@ -31,11 +36,13 @@ sha256sum audit1.pdf audit2.pdf
 Running the same audit on Ubuntu vs macOS will produce **different hashes**, but each platform is deterministic within itself.
 
 **Why**: Platform-specific differences in:
+
 - **Font rendering**: macOS and Ubuntu use different font engines (CoreText vs FreeType)
 - **Image processing**: Different compression algorithms and anti-aliasing
 - **PDF generation**: WeasyPrint interacts with system libraries differently
 
 **Example**:
+
 ```bash
 # Ubuntu 22.04, Python 3.11
 glassalpha audit -c config.yaml -o audit.pdf
@@ -48,7 +55,7 @@ sha256sum audit.pdf
 # f11ff1c8...  (272KB file)
 ```
 
-**This is acceptable**: Both audits contain the same *information* (metrics, decisions, explanations), just rendered differently. For compliance purposes, what matters is that each platform is reproducible.
+**This is acceptable**: Both audits contain the same _information_ (metrics, decisions, explanations), just rendered differently. For compliance purposes, what matters is that each platform is reproducible.
 
 ### ⚠️ Python Version Differences (EXPECTED)
 
@@ -57,12 +64,14 @@ sha256sum audit.pdf
 Python 3.11 and 3.12 have different implementations that affect deterministic outputs.
 
 **Why**: Python version changes affect:
+
 - **Hash algorithms**: `hash()` behavior changed between versions
 - **Dict ordering**: Subtle differences in dict iteration
 - **NumPy/BLAS**: Different versions interact with numerical libraries differently
 - **Pickle format**: Serialization differences
 
 **Example**:
+
 ```bash
 # Ubuntu 22.04, Python 3.11
 sha256sum audit.pdf
@@ -107,8 +116,8 @@ Enable strict determinism in your config:
 ```yaml
 reproducibility:
   random_seed: 42
-  strict: true           # Enforces all determinism controls
-  thread_control: true   # Single-threaded execution
+  strict: true # Enforces all determinism controls
+  thread_control: true # Single-threaded execution
 ```
 
 ### Random Seed Management
@@ -153,19 +162,21 @@ Cross-platform hashes may differ, but each combo is internally consistent.
 For regulatory verification:
 
 1. **Document your environment**:
+
    - Operating system (Ubuntu 22.04, macOS 14, etc.)
    - Python version (3.11.4)
    - GlassAlpha version (0.2.0)
    - System dependencies (see `glassalpha doctor`)
 
 2. **Provide verification script**:
+
    ```bash
    #!/bin/bash
    # Reproduce audit exactly
    pip install glassalpha==0.2.0
    source scripts/setup-determinism-env.sh
    glassalpha audit -c config.yaml -o audit.pdf
-   
+
    # Verify hash
    echo "Expected: 986411a8e24939c4731d5d2d4644b1cca1248d84d8041d8dca2b33566ce077e0"
    sha256sum audit.pdf
@@ -184,12 +195,14 @@ For regulatory verification:
 **Symptom**: Two runs on same machine produce different hashes
 
 **Likely causes**:
+
 - `strict: true` not set in config
 - `thread_control: false` (allows parallel execution)
 - Environment variables not set
 - Parallel testing (pytest-xdist)
 
 **Fix**:
+
 ```yaml
 # config.yaml
 reproducibility:
@@ -212,6 +225,7 @@ reproducibility:
 **Likely cause**: Dependency version change (numpy, matplotlib, weasyprint)
 
 **Fix**: Pin dependencies using `constraints.txt`:
+
 ```bash
 pip freeze > constraints.txt
 pip install -c constraints.txt glassalpha
@@ -224,10 +238,11 @@ pip install -c constraints.txt glassalpha
 When contributing to GlassAlpha:
 
 1. **Always seed randomness**:
+
    ```python
    # ❌ Don't do this
    np.random.shuffle(data)
-   
+
    # ✅ Do this
    from glassalpha.utils.seeds import get_rng
    rng = get_rng("my_operation")
@@ -235,31 +250,34 @@ When contributing to GlassAlpha:
    ```
 
 2. **Avoid system time**:
+
    ```python
    # ❌ Don't do this
    timestamp = datetime.now()
-   
+
    # ✅ Do this
    from glassalpha.utils.determinism import get_deterministic_timestamp
    timestamp = get_deterministic_timestamp()
    ```
 
 3. **Control threading**:
+
    ```python
    # ❌ Don't do this
    import multiprocessing as mp
    pool = mp.Pool()
-   
+
    # ✅ Do this
    # Single-threaded only (or check config.reproducibility.thread_control)
    ```
 
 4. **Sort non-deterministic collections**:
+
    ```python
    # ❌ Don't do this (dict iteration order can vary)
    for key in some_dict:
        ...
-   
+
    # ✅ Do this
    for key in sorted(some_dict.keys()):
        ...
@@ -295,6 +313,7 @@ source scripts/setup-determinism-env.sh
 ### Q: How do I verify an audit from 6 months ago?
 
 **A**: Use the exact environment documented in the audit manifest:
+
 1. Same Python version
 2. Same GlassAlpha version
 3. Same platform (or accept cross-platform differences)
@@ -308,28 +327,43 @@ source scripts/setup-determinism-env.sh
 
 **A**: Yes. Determinism is a core compliance requirement. All features that produce outputs (audits, reports, metrics) must be deterministic when `strict: true`.
 
-## Summary
+## Summary for Contributors
 
 ### What's Guaranteed ✅
+
 - Same platform + same Python + same config = **byte-identical output**
 - Within-combo determinism validated in CI on every commit
 - All randomness is seeded and reproducible
 
 ### What's Expected ⚠️
+
 - Different platforms produce different PDFs (but each is internally consistent)
 - Different Python versions produce different outputs
 - Dependency updates may change outputs (use `constraints.txt`)
 
-### Best Practices 📋
-1. Pin Python version in production
-2. Use `constraints.txt` for dependencies
-3. Enable `strict: true` in config
-4. Verify determinism locally before pushing
-5. Document environment in audit manifest
-6. Provide verification script with audit package
+### Best Practices for Contributors 📋
 
-For more details, see:
+1. Always seed randomness using `glassalpha.utils.seeds.get_rng()`
+2. Sort dict keys when serializing JSON
+3. Avoid system time (use `get_deterministic_timestamp()`)
+4. Test determinism locally before pushing
+5. Run `./scripts/check-determinism-quick.sh` before submitting PRs
+6. Update constraints.txt when adding new dependencies
+
+### Implementation Reference
+
 - Environment setup: `scripts/setup-determinism-env.sh`
 - Determinism testing: `scripts/check-determinism-quick.sh`
 - CI validation: `.github/workflows/determinism.yml`
+- User guide: https://glassalpha.com/guides/determinism/
 
+### For Users
+
+See the comprehensive user guide for:
+
+- Setting up deterministic environments
+- Troubleshooting non-determinism
+- Production deployment practices
+- Regulatory verification workflows
+
+📖 **User Guide**: https://glassalpha.com/guides/determinism/

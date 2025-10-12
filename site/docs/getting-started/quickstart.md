@@ -78,6 +78,7 @@ git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha && pip install -e .
 
 # 2. Generate audit (lightning fast with --fast flag!)
+# Note: configs/german_credit_simple.yaml is in the cloned repository
 glassalpha audit --config configs/german_credit_simple.yaml --output audit.html --fast
 
 # 3. Done! Open your professional report
@@ -85,6 +86,8 @@ open audit.html  # macOS
 # xdg-open audit.html  # Linux
 # start audit.html  # Windows
 ```
+
+**Config path note**: When running from the cloned repository, example configs are in `configs/` at the repo root. For your own projects, create configs anywhere and use relative or absolute paths.
 
 **What you get**: A comprehensive audit report with:
 

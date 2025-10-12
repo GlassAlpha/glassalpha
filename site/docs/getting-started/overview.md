@@ -57,26 +57,28 @@ GlassAlpha capabilities and where to learn more:
 
 ### How GlassAlpha compares
 
-| Feature                   | GlassAlpha                      | Fairlearn        | AIF360               | Commercial Tools     |
-| ------------------------- | ------------------------------- | ---------------- | -------------------- | -------------------- |
-| **Audit PDFs**            | ✅ Professional, byte-identical | ❌ No reports    | ❌ No reports        | ✅ $$$               |
-| **Custom Data in 5 min**  | ✅ Yes                          | ⚠️ Complex setup | ⚠️ Complex setup     | ⚠️ Support needed    |
-| **Built-in Datasets**     | ✅ 10+ ready to use             | ❌ None          | ⚠️ Few               | ✅ Limited           |
-| **Model Support**         | ✅ XGBoost, LightGBM, sklearn   | ⚠️ sklearn only  | ⚠️ Limited           | ✅ Varies            |
-| **Deterministic Results** | ✅ Byte-identical PDFs          | ⚠️ Partial       | ❌ No                | ⚠️ Varies            |
-| **Offline/Air-gapped**    | ✅ 100% offline                 | ✅ Yes           | ✅ Yes               | ❌ Requires internet |
-| **Cost**                  | ✅ Free (Apache 2.0)            | ✅ Free (MIT)    | ✅ Free (Apache 2.0) | 💰 $5K-$50K+         |
-| **Regulatory Ready**      | ✅ Audit trails + manifests     | ❌ No trails     | ❌ No trails         | ✅ $$$               |
-| **Learning Curve**        | ✅ 60-second start              | ⚠️ Steep         | ⚠️ Steep             | ⚠️ Training needed   |
+| Feature                   | GlassAlpha                               | Fairlearn        | AIF360               | Commercial Tools     |
+| ------------------------- | ---------------------------------------- | ---------------- | -------------------- | -------------------- |
+| **Audit PDFs**            | ✅ Professional, deterministic           | ❌ No reports    | ❌ No reports        | ✅ $$$               |
+| **Custom Data in 5 min**  | ✅ Yes                                   | ⚠️ Complex setup | ⚠️ Complex setup     | ⚠️ Support needed    |
+| **Built-in Datasets**     | ✅ Multiple ready to use                 | ❌ None          | ⚠️ Few               | ✅ Limited           |
+| **Model Support**         | ✅ XGBoost, LightGBM, sklearn            | ⚠️ sklearn only  | ⚠️ Limited           | ✅ Varies            |
+| **Deterministic Results** | ✅ Byte-identical (same platform+Python) | ⚠️ Partial       | ❌ No                | ⚠️ Varies            |
+| **Offline/Air-gapped**    | ✅ 100% offline                          | ✅ Yes           | ✅ Yes               | ❌ Requires internet |
+| **Cost**                  | ✅ Free (Apache 2.0)                     | ✅ Free (MIT)    | ✅ Free (Apache 2.0) | 💰 $5K-$50K+         |
+| **Regulatory Ready**      | ✅ Audit trails + manifests              | ❌ No trails     | ❌ No trails         | ✅ $$$               |
+| **Learning Curve**        | ✅ Quick start available                 | ⚠️ Steep         | ⚠️ Steep             | ⚠️ Training needed   |
 
-**Bottom line**: GlassAlpha is the only OSS tool that combines professional audit PDFs, easy custom data support, and complete regulatory compliance—all in a 60-second setup.
+**Bottom line**: GlassAlpha is the only OSS tool that combines professional audit PDFs, easy custom data support, and complete regulatory compliance.
 
 ## Designed for regulatory compliance
 
-- **Deterministic outputs** - Identical PDFs on same seed/data/model
+- **Deterministic outputs** - Byte-identical PDFs on same platform+Python+config
 - **Complete lineage** - Git SHA, config hash, data hash, seeds recorded
 - **Professional formatting** - Publication-quality reports with visualizations
 - **Audit trails** - Immutable run manifests for regulatory submission
+
+**Note**: Different platforms (Ubuntu vs macOS) or Python versions produce different PDFs, but each combination is internally consistent. See [determinism guide](../guides/determinism.md) for details.
 
 [See compliance mapping →](../compliance/sr-11-7-mapping.md)
 

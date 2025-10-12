@@ -36,10 +36,11 @@ graph TB
 1. **Configuration** - Define model, data, protected attributes, policy gates
 2. **Execution** - Run audit with `--strict` mode for regulatory compliance
 3. **Review** - Analyze results, address failed gates, document warnings
-4. **Evidence** - Export tamper-evident evidence pack with checksums
-5. **Validation** - Independent review by validator or compliance officer
-6. **Submission** - Submit to regulator with cover letter and verification instructions
-7. **Archive** - Retain all artifacts per regulatory requirements (typically 7 years)
+4. **Stress Testing** - Test model robustness under demographic shifts ([see shift testing guide](../guides/shift-testing.md))
+5. **Evidence** - Export tamper-evident evidence pack with checksums (coming in v0.3.0)
+6. **Validation** - Independent review by validator or compliance officer
+7. **Submission** - Submit to regulator with cover letter and verification instructions
+8. **Archive** - Retain all artifacts per regulatory requirements (typically 7 years)
 
 **Quick links:**
 
@@ -97,8 +98,8 @@ Use this table to determine which regulations govern your ML system based on geo
 - Model risk management framework
 - Independent validation
 - Conceptual soundness documentation
-- Ongoing monitoring
-- **GlassAlpha provides**: Audit reports, policy gates, manifest provenance, validator workflow
+- Ongoing monitoring and stress testing
+- **GlassAlpha provides**: Audit reports, demographic shift testing, manifest provenance, validator workflow
 
 **Credit (ECOA/FCRA)**:
 

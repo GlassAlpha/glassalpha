@@ -679,11 +679,29 @@ docker run -v $(pwd):/data glassalpha \
   audit --config /data/config.yaml --output /data/audit.pdf
 ```
 
+## Understanding configuration paths
+
+Throughout the documentation, you'll see two types of config path references:
+
+**Repository examples** (when running from cloned repo):
+
+```bash
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.html
+```
+
+**Custom configs** (when using your own):
+
+```bash
+glassalpha audit --config my_config.yaml --output audit.html
+```
+
+**Tip**: After cloning the repository, example configs are in the `configs/` directory at the repo root. For your own projects, create configs anywhere and reference them with relative or absolute paths.
+
 ## Next steps
 
 After successful installation:
 
-1. **Try the Quick Start** - [Generate your first audit in 5 minutes](quickstart.md)
+1. **Try the Quick Start** - [Generate your first audit](quickstart.md)
 2. **Use Your Own Data** - [Custom data tutorial](custom-data.md) with step-by-step guidance
 3. **Browse Example Datasets** - [Freely available data sources](data-sources.md) for testing
 4. **Explore Examples** - [German Credit tutorial](../examples/german-credit-audit.md)

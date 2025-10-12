@@ -507,6 +507,14 @@ sha256sum linux.pdf macos.pdf
 - [API Reference: Deterministic Explainer Selection](../reference/explain/registry.md)
 - [Troubleshooting Guide](../reference/troubleshooting.md)
 
+## For Contributors
+
+Implementation details and CI setup for GlassAlpha developers:
+
+- [Determinism Implementation Guide](https://github.com/GlassAlpha/glassalpha/blob/main/docs/DETERMINISM.md) - Technical details on within-combo vs cross-platform determinism
+- [Environment Sync Flow](https://github.com/GlassAlpha/glassalpha/blob/main/docs/environment-sync-flow.md) - CI/CD determinism validation
+- [Development Guidelines](../reference/contributing.md) - Contributing to GlassAlpha
+
 ---
 
 ## Summary
@@ -524,4 +532,4 @@ sha256sum linux.pdf macos.pdf
 - Same config + same data + same environment = byte-identical PDF
 - Hash verification works offline
 - Auditors can reproduce results years later
-- No platform-specific differences
+- No platform-specific differences (within same platform+Python combo)

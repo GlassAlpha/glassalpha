@@ -7,7 +7,7 @@ hide:
 
 GlassAlpha makes **deterministic, regulator-ready PDF audit reports** for tabular ML models. It's an open-source ([Apache 2.0](reference/trust-deployment.md#licensing-dependencies)) toolkit for reproducible, audit-ready model documentation.
 
-_Note: GlassAlpha is currently pre-alpha while I'm still making significant changes. I'll cut the first official release and publish it on PyPI once things stabilize. The audits do run and the package works, so feel free to try it out, feedback welcome!_
+_Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable with 1000+ passing tests and comprehensive documentation. Breaking API changes may occur before v1.0. First stable release expected Q1 2025._
 
 ## How it works
 
@@ -49,12 +49,17 @@ graph TB
 
 ## Quick links
 
-- [**Quick start guide**](getting-started/quickstart.md): Run an audit in 60 seconds
+**New users:**
+
+- [**Quick start guide**](getting-started/quickstart.md): Generate your first audit
 - [**Interactive notebook**](https://colab.research.google.com/github/GlassAlpha/glassalpha/blob/main/examples/notebooks/quickstart_colab.ipynb): Try in Colab (zero setup)
+- [**Using your own data**](getting-started/custom-data.md): Audit your models with custom CSV files
+
+**Key features:**
+
 - [**Python API reference**](reference/api/index.md): `from_model()` API for notebooks and programmatic use
 - [**Feature overview**](getting-started/overview.md): Why choose GlassAlpha and how it compares
-- [**Using your own data**](getting-started/custom-data.md): Audit your models with custom CSV files
-- [**Examples**](examples/german-credit-audit.md): Walkthrough ML audits on credit, healthcare bias and fraud detection
+- [**Examples**](examples/german-credit-audit.md): Walkthrough ML audits on credit, healthcare, and fraud detection
 
 ## Run your first audit in 60 seconds
 
@@ -88,20 +93,42 @@ glassalpha audit --config configs/german_credit_simple.yaml --output audit.html 
 Every GlassAlpha audit includes:
 
 - ✅ Model performance metrics (accuracy, precision, recall, F1, AUC)
-- ✅ Fairness analysis (bias detection across demographic groups)
-- ✅ Feature importance (coefficient-based explanations for linear models, SHAP for tree models)
-- ✅ Individual explanations (why specific decisions were made)
-- ✅ Reason codes (ECOA-compliant adverse action notices for credit decisions)
-- ✅ Preprocessing verification (production artifact validation)
-- ✅ Complete audit trail (reproducibility manifest with all seeds and hashes)
+- ✅ Group fairness with confidence intervals (demographic parity, equal opportunity, predictive parity)
+- ✅ Intersectional fairness (bias at demographic intersections like gender×race)
+- ✅ Individual fairness (consistency testing, matched pairs, counterfactual analysis)
+- ✅ Dataset bias detection (proxy correlations, distribution drift, sampling power)
+- ✅ Calibration analysis with confidence intervals (ECE, Brier score, calibration curves)
+- ✅ Robustness testing (adversarial perturbations, demographic shift simulation)
+- ✅ Feature importance (coefficient-based for linear models, TreeSHAP for gradient boosting)
+- ✅ Individual explanations (SHAP values for specific predictions)
+- ✅ Preprocessing verification (production artifact validation with dual hash system)
+- ✅ Complete audit trail (reproducibility manifest with all seeds, versions, and hashes)
 
 [See complete audit contents →](reference/audit-contents.md)
 
+**Additional commands available:**
+
+- **Reason codes**: Generate ECOA-compliant adverse action notices via `glassalpha reasons` (separate from audit report)
+- **Recourse recommendations**: Generate counterfactual explanations via `glassalpha recourse` (separate from audit report)
+
+[See CLI reference for all commands →](reference/cli.md)
+
+## Current limitations
+
+GlassAlpha is beta software. Current limitations:
+
+- **Tabular data only** - No text, image, or time series support yet
+- **Classification focus** - Limited regression support
+- **Cross-platform PDF differences** - Byte-identical PDFs within same platform+Python version, but not across Ubuntu/macOS due to font rendering and library differences. Regulators can reproduce audits on their infrastructure. See [determinism guide](guides/determinism.md) for details
+- **Single machine** - No distributed computing support
+
+[See complete limitations and roadmap →](reference/faq.md#are-there-any-limitations-i-should-know-about)
+
 ## Why choose GlassAlpha?
 
-GlassAlpha is the only OSS tool that combines professional audit PDFs, easy custom data support, and complete regulatory compliance—all in a 60-second setup.
+GlassAlpha is the only OSS tool that combines professional audit PDFs, easy custom data support, and complete regulatory compliance.
 
-- **Deterministic outputs** - Identical PDFs on same seed/data/model
+- **Deterministic outputs** - Byte-identical PDFs on same platform+Python+config
 - **Complete lineage** - Git SHA, config hash, data hash, seeds recorded
 - **Professional formatting** - Publication-quality reports with visualizations
 - **No external dependencies** - Runs completely offline

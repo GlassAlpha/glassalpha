@@ -4,9 +4,9 @@
 
 GlassAlpha is an ([open source](https://glassalpha.com/reference/trust-deployment/#licensing-dependencies)) ML compliance toolkit that makes tabular models **transparent, auditable, and regulator-ready**.
 
-Generate deterministic PDF audit reports with statistical confidence intervals, fairness analysis, and policy-as-code compliance gates. No dashboards. No black boxes. Just byte-stable evidence packs you can submit to regulators.
+Generate deterministic PDF audit reports with statistical confidence intervals, fairness analysis, and deployment gates for CI/CD. No dashboards. No black boxes. Byte-stable outputs for regulatory reproducibility.
 
-_Note: GlassAlpha is currently pre-alpha while I'm actively developing. The audits work and tests pass, so feel free to try it out—feedback welcome! First stable release coming soon._
+_Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable with 1000+ passing tests and comprehensive documentation. Breaking API changes may occur before v1.0. First stable release expected Q1 2025._
 
 ## Installation
 
@@ -122,50 +122,50 @@ Use `source scripts/setup-determinism-env.sh` to match CI environment locally.
 
 ## What Makes GlassAlpha Different
 
-**Policy-as-code, not dashboards.** Define compliance rules in YAML, get PASS/FAIL gates automatically.
+**CI/CD deployment gates, not dashboards.** Use shift testing to block deployments if models degrade under demographic changes.
 
-```yaml
-# policy.yaml
-immutables: [age, race, gender] # Can't change
-monotone:
-  debt_to_income: increase_only # Fairness constraint
-degradation_threshold: 0.05 # Max 5pp metric drop under demographic shifts
+```bash
+# Block deployment if fairness degrades under demographic shifts
+glassalpha audit --config audit.yaml \
+  --check-shift gender:+0.1 \
+  --fail-on-degradation 0.05
+# Exit code 1 if degradation exceeds 5 percentage points
 ```
 
-**Byte-identical reproducibility.** Same audit config → same PDF, every time. SHA256-verified evidence packs for regulatory submission.
+**Byte-identical reproducibility.** Same audit config → same PDF, every time (on same platform+Python). SHA256 hashes in manifests for verification.
 
-**Statistical rigor.** Not just point estimates—95% confidence intervals on everything (fairness, calibration, performance).
+**Statistical rigor.** Not just point estimates—95% confidence intervals on fairness and calibration metrics with bootstrap resampling.
+
+**Note**: Policy-as-code gates (E1) and evidence pack export (E3) are coming in v0.3.0. Current version supports shift testing gates for CI/CD.
 
 ## Core Capabilities
 
 ### Supported Models
 
-### Compliance & Fairness
+**Every audit includes:**
 
-- **Group Fairness** (E5): Demographic parity, TPR/FPR, with [statistical confidence intervals](site/docs/reference/fairness-metrics.md)
-- **Intersectional Fairness** (E5.1): Hidden bias detection in demographic combinations (e.g., race×gender)
-- **Individual Fairness** (E11): [Consistency score](site/docs/reference/fairness-metrics.md#individual-fairness)—similar applicants get similar decisions
-- **[Dataset Bias Audit](site/docs/guides/dataset-bias.md)** (E12): Proxy feature detection, distribution drift, sampling bias power
-- **Statistical Confidence** (E10): Bootstrap CIs for all fairness metrics, sample size warnings
+- **Group fairness** with 95% confidence intervals (demographic parity, equal opportunity, predictive parity)
+- **Intersectional fairness** for bias at demographic intersections (e.g., gender×race, age×income)
+- **Individual fairness** with consistency testing, matched pairs analysis, and counterfactual flip tests
+- **Dataset bias detection** before model training (proxy correlations, distribution drift, sampling power analysis)
+- **Calibration analysis** with confidence intervals (ECE, Brier score, bin-wise calibration curves)
+- **Robustness testing** via adversarial perturbations (ε-sweeps) and demographic shift simulation
+- **Feature importance** (coefficient-based for linear models, TreeSHAP for gradient boosting)
+- **Individual explanations** via SHAP values for specific predictions
+- **Preprocessing verification** with dual hash system (file + params integrity)
+- **Complete audit trail** with reproducibility manifest (seeds, versions, git SHA, hashes)
 
-### Explainability & Outcomes
+**Separate commands available:**
 
-- **TreeSHAP Explanations**: Feature importance with individual prediction breakdowns
-- **Reason Codes** (E2): ECOA-compliant adverse action notices
-- **Actionable Recourse** (E2.5): "Change X to improve outcome" recommendations with policy constraints
-
-### Robustness & Stability
-
-- **[Calibration Analysis](site/docs/reference/calibration.md)** (E10+): ECE with confidence intervals, bin-wise calibration curves
-- **[Adversarial Perturbation](site/docs/reference/robustness.md)** (E6+): ε-perturbation sweeps, robustness score
-- **[Demographic Shift Testing](site/docs/guides/shift-testing.md)** (E6.5): Simulate population changes, detect degradation before deployment
+- **Reason codes** (E2): Generate ECOA-compliant adverse action notices via `glassalpha reasons`
+- **Actionable recourse** (E2.5): Generate counterfactual recommendations via `glassalpha recourse`
 
 ### Regulatory Compliance
 
 - **[SR 11-7 Mapping](site/docs/compliance/sr-11-7-mapping.md)**: Complete Federal Reserve guidance coverage (banking)
-- **Evidence Packs**: SHA256-verified bundles (PDF + manifest + gates + policy)
-- **Reproducibility**: Deterministic execution, version pinning, byte-identical PDFs
-- **CI/CD Gates**: Exit code 1 if compliance fails, JSON output for automation
+- **Evidence Packs** (coming in v0.3.0): SHA256-verified bundles for regulatory submission
+- **Reproducibility**: Deterministic execution, version pinning, byte-identical PDFs (same platform+Python)
+- **CI/CD Gates**: Shift testing with `--fail-on-degradation` blocks deployments on metric degradation
 
 - XGBoost, LightGBM, Logistic Regression (more coming)
 - **Everything runs locally** - your data never leaves your machine

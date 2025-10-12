@@ -70,7 +70,8 @@ result = ga.audit.from_config(config)
 # Export audit report
 result.to_pdf("audit.pdf")
 
-# Note: Policy gates and evidence pack export planned for future release
+# Note: Automated policy gates (E1) and evidence pack export (E3) coming in v0.3.0
+# For now, check metrics manually or use --check-shift with --fail-on-degradation
 ```
 
 **YAML Configuration:**
@@ -171,10 +172,15 @@ Start with `from_model()` for exploration, then export config for production:
 # Step 1: Explore in notebook
 result = ga.audit.from_model(model, X_test, y_test, random_seed=42)
 
-# Step 2: Export configuration
-result.to_config("audit_config.yaml")
+# Step 2: Export configuration dictionary
+config_dict = result.to_config()
 
-# Step 3: Use in CI/CD
+# Step 3: Save to YAML for CI/CD
+import yaml
+with open("audit_config.yaml", "w") as f:
+    yaml.dump(config_dict, f)
+
+# Step 4: Use in CI/CD
 # $ glassalpha audit --config audit_config.yaml --output report.pdf
 ```
 
@@ -222,7 +228,8 @@ if result.fairness['demographic_parity_max_diff'] > bias_threshold:
 print("✅ All checks passed")
 result.to_pdf("audit_report.pdf")
 
-# Note: Automated policy gates planned for future release
+# Note: Automated policy gates (E1) coming in v0.3.0
+# For now, check metrics manually or use CLI with --check-shift
 ```
 
 **GitHub Actions:**
