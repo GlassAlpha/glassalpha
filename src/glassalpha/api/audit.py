@@ -47,7 +47,7 @@ def _validate_sklearn_compatible(X: pd.DataFrame) -> None:
         raise CategoricalDataError(categorical_cols)
 
 
-def from_model(  # noqa: PLR0913
+def from_model(
     model: Any,
     X: pd.DataFrame | np.ndarray,
     y: pd.Series | np.ndarray,
@@ -58,9 +58,9 @@ def from_model(  # noqa: PLR0913
     feature_names: Sequence[str] | None = None,
     class_names: Sequence[str] | None = None,
     explain: bool = True,
-    recourse: bool = False,  # noqa: ARG001
+    recourse: bool = False,
     calibration: bool = True,
-    stability: bool = False,  # noqa: ARG001
+    stability: bool = False,
 ) -> AuditResult:
     """Generate audit from fitted model.
 
@@ -894,10 +894,10 @@ def _compute_performance_metrics(
 
 
 def _compute_fairness_metrics(
-    y_true: np.ndarray,  # noqa: ARG001
+    y_true: np.ndarray,
     y_pred: np.ndarray,
     protected_attributes: dict[str, np.ndarray],
-    random_seed: int,  # noqa: ARG001
+    random_seed: int,
 ) -> dict[str, Any]:
     """Compute fairness metrics.
 

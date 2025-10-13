@@ -3,7 +3,6 @@
 These tests verify that the plotting methods work with stored metrics data.
 """
 
-import numpy as np
 import pytest
 
 from glassalpha.api.metrics import CalibrationMetrics, FairnessMetrics, PerformanceMetrics

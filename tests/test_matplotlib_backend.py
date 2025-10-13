@@ -41,7 +41,6 @@ def test_plots_module_forces_headless_on_macos():
     # Only run on macOS without explicit backend override
     if sys.platform == "darwin" and not os.environ.get("MPLBACKEND"):
         # Import plots module which should force Agg
-        from glassalpha.report import plots
 
         backend = matplotlib.get_backend()
         assert backend.lower() == "agg", f"Expected Agg backend on macOS, got {backend}"

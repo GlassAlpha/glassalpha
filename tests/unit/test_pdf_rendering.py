@@ -8,7 +8,6 @@ platform-specific WeasyPrint issues. For full PDF integration tests,
 see test_pdf_generation_linux.py (Linux CI only).
 """
 
-import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch

@@ -33,10 +33,10 @@ def _cleanup_threads():
     for thread in threading.enumerate():
         if thread is not threading.main_thread() and thread.is_alive():
             if hasattr(thread, "_stop"):
-                thread._stop()  # noqa: SLF001
+                thread._stop()
 
 
-def _signal_handler(signum, frame):  # noqa: ARG001
+def _signal_handler(signum, frame):
     """Signal handler for graceful shutdown."""
     _cleanup_threads()
     # Re-raise signal for normal handling
@@ -54,7 +54,7 @@ signal.signal(signal.SIGTERM, _signal_handler)  # Kill signal
 # ============================================================================
 
 
-def pytest_sessionstart(session):  # noqa: ARG001
+def pytest_sessionstart(session):
     """Set up deterministic environment for all tests.
 
     This enforces reproducible test behavior by pinning all sources of entropy

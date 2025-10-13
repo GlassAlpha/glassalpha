@@ -8,17 +8,11 @@ Tests cover:
 5. Train/test split imbalance detection
 """
 
-from typing import Dict, List
-
 import numpy as np
 import pandas as pd
 import pytest
 
 from glassalpha.metrics.fairness.dataset import (
-    DatasetBiasMetrics,
-    DistributionDriftResult,
-    ProxyCorrelationResult,
-    SamplingBiasResult,
     bin_continuous_attribute,
     compute_dataset_bias_metrics,
     compute_distribution_drift,

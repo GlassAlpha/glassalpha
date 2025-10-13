@@ -19,9 +19,9 @@ def test_pipeline_init_logger_exact_contract() -> None:
     That requires a single string argument, not printf-style formatting.
     """
     # Import after potential wheel installation
-    import glassalpha.pipeline.audit as audit_module  # noqa: PLC0415
-    from glassalpha.constants import INIT_LOG_TEMPLATE  # noqa: PLC0415
-    from glassalpha.pipeline.audit import AuditPipeline  # noqa: PLC0415
+    import glassalpha.pipeline.audit as audit_module
+    from glassalpha.constants import INIT_LOG_TEMPLATE
+    from glassalpha.pipeline.audit import AuditPipeline
 
     # Spy the exact logger the CI test spies
     with patch.object(audit_module, "logger") as logger_spy:

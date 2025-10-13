@@ -126,7 +126,7 @@ def run_fairness_metrics(
                 )
                 results[f"{metric_name}_ci"] = ci_results
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.warning(f"Failed to compute {metric_class.__name__}: {e}")
             results[metric_class.__name__.lower().replace("metric", "")] = {"error": str(e)}
 
@@ -152,7 +152,7 @@ def run_fairness_metrics(
                 # Store under intersection spec key
                 intersectional_results[intersection_spec] = intersectional_metrics
 
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.warning(f"Failed to compute intersectional metrics for {intersection_spec}: {e}")
                 intersectional_results[intersection_spec] = {"error": str(e)}
 
@@ -233,7 +233,7 @@ def _compute_metric_confidence_intervals(
     y_true: np.ndarray,
     y_pred: np.ndarray,
     sensitive_df: pd.DataFrame,
-    metric_name: str,  # noqa: ARG001
+    metric_name: str,
     metric_result: dict[str, Any],
     n_bootstrap: int = 1000,
     confidence_level: float = 0.95,
@@ -299,7 +299,7 @@ def _compute_metric_confidence_intervals(
 
             ci_results[key] = ci.to_dict()
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.debug(f"Could not compute CI for {key}: {e}")
             continue
 
@@ -313,7 +313,7 @@ def _make_tpr_metric(key: str, sensitive_df: pd.DataFrame) -> Callable:
     attr_name = parts[0]
     group_value = "_".join(parts[1:])  # Handle multi-part group names
 
-    def tpr_metric(yt, yp, sens):  # noqa: ARG001
+    def tpr_metric(yt, yp, sens):
         # Filter to specific group
         attr_values = sensitive_df[attr_name].values
         mask = attr_values.astype(str) == str(group_value)
@@ -338,7 +338,7 @@ def _make_fpr_metric(key: str, sensitive_df: pd.DataFrame) -> Callable:
     attr_name = parts[0]
     group_value = "_".join(parts[1:])
 
-    def fpr_metric(yt, yp, sens):  # noqa: ARG001
+    def fpr_metric(yt, yp, sens):
         attr_values = sensitive_df[attr_name].values
         mask = attr_values.astype(str) == str(group_value)
 
@@ -362,7 +362,7 @@ def _make_ppv_metric(key: str, sensitive_df: pd.DataFrame) -> Callable:
     attr_name = parts[0]
     group_value = "_".join(parts[1:])
 
-    def ppv_metric(yt, yp, sens):  # noqa: ARG001
+    def ppv_metric(yt, yp, sens):
         attr_values = sensitive_df[attr_name].values
         mask = attr_values.astype(str) == str(group_value)
 
@@ -387,7 +387,7 @@ def _make_selection_rate_metric(key: str, sensitive_df: pd.DataFrame) -> Callabl
     attr_name = parts[0]
     group_value = "_".join(parts[1:])
 
-    def selection_rate_metric(yt, yp, sens):  # noqa: ARG001
+    def selection_rate_metric(yt, yp, sens):
         attr_values = sensitive_df[attr_name].values
         mask = attr_values.astype(str) == str(group_value)
 

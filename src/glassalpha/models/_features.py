@@ -15,7 +15,7 @@ except ImportError:
     PANDAS_AVAILABLE = False
 
 
-def align_features(X: Any, feature_names: list[str] | None) -> Any:  # noqa: ANN401
+def align_features(X: Any, feature_names: list[str] | None) -> Any:
     """Align DataFrame features to match training feature names.
 
     Contract compliance: Implements the exact feature drift handling
@@ -43,7 +43,7 @@ def align_features(X: Any, feature_names: list[str] | None) -> Any:  # noqa: ANN
     return X.reindex(columns=feature_names, fill_value=0)
 
 
-def extract_feature_names(X: Any) -> list[str] | None:  # noqa: ANN401
+def extract_feature_names(X: Any) -> list[str] | None:
     """Extract feature names from input data.
 
     Args:
@@ -58,7 +58,7 @@ def extract_feature_names(X: Any) -> list[str] | None:  # noqa: ANN401
     return None
 
 
-def validate_feature_alignment(X: Any, expected_features: list[str] | None) -> bool:  # noqa: ANN401
+def validate_feature_alignment(X: Any, expected_features: list[str] | None) -> bool:
     """Validate if features are properly aligned.
 
     Args:

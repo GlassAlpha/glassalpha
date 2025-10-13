@@ -74,7 +74,7 @@ class CoefficientsExplainer(ExplainerBase):
                 extracted_type = model_info.get("model_type", "")
                 if extracted_type:
                     return extracted_type.lower() in linear_models
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
             # Fallback: check if model has coef_ attribute (indicator of linear model)

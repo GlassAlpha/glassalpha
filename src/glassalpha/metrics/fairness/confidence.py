@@ -270,7 +270,7 @@ def _bca_ci(
         try:
             jack_est = metric_fn(y_true[mask], y_pred[mask], sensitive[mask])
             jackknife_estimates.append(jack_est)
-        except Exception:  # noqa: BLE001
+        except Exception:
             continue
 
     if len(jackknife_estimates) < n_samples // 2:

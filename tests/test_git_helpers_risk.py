@@ -61,7 +61,6 @@ class TestGitHelpersRisk:
     def test_git_not_available_returns_none(self):
         """When git is not available, must return None gracefully."""
         # This is now tested via _collect_git_info which handles FileNotFoundError
-        import subprocess
         from unittest.mock import patch
 
         from glassalpha.utils.manifest import ManifestGenerator

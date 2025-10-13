@@ -58,7 +58,7 @@ class PerturbationResult:
 
 
 def run_perturbation_sweep(
-    model: Any,  # noqa: ANN401
+    model: Any,
     X_test: pd.DataFrame,
     protected_features: list[str],
     epsilon_values: list[float] | None = None,

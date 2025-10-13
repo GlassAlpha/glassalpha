@@ -392,7 +392,7 @@ class XGBoostWrapper(BaseTabularWrapper):
             # Try to get feature names
             try:
                 self.feature_names = self.model.feature_names
-            except Exception:  # noqa: BLE001
+            except Exception:
                 # Graceful fallback - some models don't have feature names
                 logger.debug("Could not extract feature names from model")
 
@@ -409,7 +409,7 @@ class XGBoostWrapper(BaseTabularWrapper):
                     self.n_classes_ = max(2, int(num_class))
                 else:
                     self.n_classes_ = 2  # Default to binary
-            except Exception:  # noqa: BLE001
+            except Exception:
                 # Graceful fallback - config parsing can fail for various reasons
                 logger.debug("Could not determine number of classes, defaulting to binary")
                 self.n_classes_ = 2

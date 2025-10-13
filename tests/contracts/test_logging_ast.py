@@ -97,7 +97,7 @@ def test_logging_utils_compliance() -> None:
     visitor.visit(tree)
 
     # logging_utils should never use printf-style logging
-    assert not visitor.violations, f"logging_utils.py contains printf-style logging: {visitor.violations}"  # noqa: S101
+    assert not visitor.violations, f"logging_utils.py contains printf-style logging: {visitor.violations}"
 
 
 def test_pipeline_audit_compliance() -> None:
@@ -115,7 +115,7 @@ def test_pipeline_audit_compliance() -> None:
     visitor.visit(tree)
 
     # Pipeline should use centralized logging helpers
-    assert not visitor.violations, f"pipeline/audit.py contains printf-style logging: {visitor.violations}"  # noqa: S101
+    assert not visitor.violations, f"pipeline/audit.py contains printf-style logging: {visitor.violations}"
 
 
 def test_ast_visitor_catches_violations() -> None:
@@ -136,9 +136,9 @@ def bad_function():
     visitor.visit(tree)
 
     # Should detect 2 violations
-    assert len(visitor.violations) == 2  # noqa: PLR2004, S101
-    assert "Multi-argument logging call" in visitor.violations[0]  # noqa: S101
-    assert "Multi-argument logging call" in visitor.violations[1]  # noqa: S101
+    assert len(visitor.violations) == 2
+    assert "Multi-argument logging call" in visitor.violations[0]
+    assert "Multi-argument logging call" in visitor.violations[1]
 
 
 def test_ast_visitor_allows_single_arg() -> None:
@@ -159,4 +159,4 @@ def good_function():
     visitor.visit(tree)
 
     # Should detect no violations
-    assert len(visitor.violations) == 0  # noqa: S101
+    assert len(visitor.violations) == 0

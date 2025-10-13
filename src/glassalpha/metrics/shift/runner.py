@@ -294,7 +294,7 @@ def _compute_all_metrics(
             sensitive,
             weights,
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.warning(f"Failed to compute fairness metrics: {e}")
         metrics["fairness"] = {}
 
@@ -306,7 +306,7 @@ def _compute_all_metrics(
                 y_proba,
                 weights,
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.warning(f"Failed to compute calibration metrics: {e}")
             metrics["calibration"] = {}
     else:
@@ -319,7 +319,7 @@ def _compute_all_metrics(
             y_pred,
             weights,
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.warning(f"Failed to compute performance metrics: {e}")
         metrics["performance"] = {}
 

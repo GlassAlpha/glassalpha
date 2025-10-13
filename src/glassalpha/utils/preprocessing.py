@@ -24,8 +24,8 @@ def preprocess_auto(X: pd.DataFrame) -> pd.DataFrame:
         Processed features DataFrame suitable for training
 
     """
-    from sklearn.compose import ColumnTransformer  # noqa: PLC0415
-    from sklearn.preprocessing import OneHotEncoder  # noqa: PLC0415
+    from sklearn.compose import ColumnTransformer
+    from sklearn.preprocessing import OneHotEncoder
 
     # Log at appropriate level based on context
     # In development/testing, this is INFO (expected behavior)

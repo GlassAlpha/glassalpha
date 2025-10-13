@@ -115,7 +115,7 @@ def _get_glassalpha_version() -> str:
     """Get GlassAlpha version information."""
     try:
         # Try to get version from package metadata
-        import importlib.metadata  # noqa: PLC0415
+        import importlib.metadata
 
         return importlib.metadata.version("glassalpha")
     except Exception:
@@ -343,7 +343,7 @@ def _get_dependency_provenance() -> dict[str, Any]:
 
     for package in core_packages:
         try:
-            import importlib.metadata  # noqa: PLC0415
+            import importlib.metadata
 
             dependencies[package] = importlib.metadata.version(package)
         except Exception:
@@ -432,7 +432,7 @@ def _get_relevant_env_vars() -> dict[str, str]:
 def _sanitize_config_for_hash(config: dict[str, Any]) -> dict[str, Any]:
     """Remove sensitive information from config before hashing."""
     # Create deep copy and remove sensitive paths/keys
-    import copy  # noqa: PLC0415
+    import copy
 
     clean_config = copy.deepcopy(config)
 

@@ -25,7 +25,6 @@ except ImportError as e:
 # Skip all tests in this module if XGBoost is not available
 pytestmark = pytest.mark.skipif(not XGBOOST_AVAILABLE, reason=XGBOOST_SKIP_REASON or "XGBoost not available")
 
-from glassalpha.models import load_model
 
 # Conditional XGBoost import - already has conditional imports in source module
 try:

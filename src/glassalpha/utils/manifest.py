@@ -283,7 +283,7 @@ class ManifestGenerator:
 
     def add_seeds(self) -> None:
         """Add seed information to manifest."""
-        from .seeds import validate_deterministic_environment  # noqa: PLC0415
+        from .seeds import validate_deterministic_environment
 
         # Update direct attribute for test compatibility
         seeds_data = get_seeds_manifest()
@@ -299,10 +299,10 @@ class ManifestGenerator:
         self,
         name: str,
         implementation: str,
-        obj: Any = None,  # noqa: ANN401
+        obj: Any = None,
         *,
         details: dict | None = None,
-        **kwargs: Any,  # noqa: ANN401
+        **kwargs: Any,
     ) -> None:
         """Add component to manifest with flexible details and kwargs.
 
@@ -538,7 +538,7 @@ class ManifestGenerator:
             Git information if available, None otherwise
 
         """
-        import subprocess  # noqa: PLC0415
+        import subprocess
 
         def _run_git(*args: str) -> str | None:
             """Run git command and return output or None if unavailable."""

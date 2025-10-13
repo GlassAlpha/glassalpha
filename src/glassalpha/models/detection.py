@@ -20,7 +20,7 @@ MODEL_TYPE_MAP = {
 }
 
 
-def detect_model_type(model: Any) -> str:  # noqa: ANN401
+def detect_model_type(model: Any) -> str:
     """Detect model type from instance.
 
     Args:

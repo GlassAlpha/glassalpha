@@ -25,7 +25,7 @@ force verbose test structures.
 from typing import Any
 
 
-def normalize_metrics(metrics: Any) -> dict[str, Any]:  # noqa: ANN401
+def normalize_metrics(metrics: Any) -> dict[str, Any]:
     """Normalize metrics for template compatibility.
 
     Contract compliance: Handle metrics that may be numbers or dicts.
@@ -59,7 +59,7 @@ def normalize_metrics(metrics: Any) -> dict[str, Any]:  # noqa: ANN401
     return normalized
 
 
-def normalize_audit_context(audit_results: Any, *, compact: bool = False) -> dict[str, Any]:  # noqa: ANN401
+def normalize_audit_context(audit_results: Any, *, compact: bool = False) -> dict[str, Any]:
     """Normalize complete audit results for template rendering.
 
     Args:
@@ -213,7 +213,7 @@ def normalize_audit_context(audit_results: Any, *, compact: bool = False) -> dic
     return context
 
 
-def safe_get_nested(data: Any, *keys: str, default: Any = None) -> Any:  # noqa: ANN401
+def safe_get_nested(data: Any, *keys: str, default: Any = None) -> Any:
     """Safely get nested dictionary/object values for templates.
 
     Args:

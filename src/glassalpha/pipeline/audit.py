@@ -76,7 +76,7 @@ class AuditResults:
         """
         try:
             # Lazy import to avoid circular dependency
-            from glassalpha.report.renderer import AuditReportRenderer  # noqa: PLC0415
+            from glassalpha.report.renderer import AuditReportRenderer
 
             renderer = AuditReportRenderer()
             return renderer.render_audit_report(
@@ -84,7 +84,7 @@ class AuditResults:
                 template_name="inline_summary.html",
                 embed_plots=False,  # No plots in inline view (keep it fast)
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             # Return visible error card (not silent fallback)
             error_type = type(e).__name__
             error_msg = str(e)
@@ -170,7 +170,7 @@ class AuditPipeline:
     @classmethod
     def from_model(
         cls,
-        model: Any,  # noqa: ANN401
+        model: Any,
         X_test: pd.DataFrame | np.ndarray,
         y_test: pd.Series | np.ndarray,
         protected_attributes: list[str],
@@ -252,7 +252,7 @@ class AuditPipeline:
             ... )
 
         """
-        from ..config.builder import build_config_from_model  # noqa: PLC0415
+        from ..config.builder import build_config_from_model
 
         logger.info("Building audit configuration from in-memory model and data")
 
@@ -296,7 +296,7 @@ class AuditPipeline:
         logger.info("Running audit pipeline with in-memory model and data")
 
         # Create progress bar (auto-detects notebook, respects strict mode)
-        from glassalpha.utils.progress import get_progress_bar  # noqa: PLC0415
+        from glassalpha.utils.progress import get_progress_bar
 
         show_progress = not getattr(getattr(audit_config, "runtime", None), "strict_mode", False)
 
@@ -323,7 +323,7 @@ class AuditPipeline:
             Comprehensive audit results
 
         """
-        from datetime import datetime  # noqa: PLC0415
+        from datetime import datetime
 
         # Store progress callback for use in nested methods
         self._progress_callback = progress_callback
@@ -415,7 +415,7 @@ class AuditPipeline:
             and hasattr(self.config.reproducibility, "strict")
             and self.config.reproducibility.strict
         ):
-            from ..runtime import set_repro  # noqa: PLC0415
+            from ..runtime import set_repro
 
             logger.info("Applying advanced deterministic reproduction controls")
             repro_status = set_repro(
@@ -494,7 +494,7 @@ class AuditPipeline:
         schema = None
         if self.config.data.schema_path:
             # For now, create schema from config
-            # TODO(dev): Implement schema loading from file  # noqa: TD003, FIX002
+            # TODO(dev): Implement schema loading from file
             pass
 
         # Create schema from data config
@@ -519,7 +519,7 @@ class AuditPipeline:
         data = self.data_loader.load(data_path, schema)
 
         # First-class schema validation before proceeding
-        from ..data.schema import get_schema_summary, validate_config_schema, validate_data_quality  # noqa: PLC0415
+        from ..data.schema import get_schema_summary, validate_config_schema, validate_data_quality
 
         try:
             # Convert config to dict for schema validation
@@ -588,7 +588,7 @@ class AuditPipeline:
 
         return data, schema
 
-    def _load_model(self, data: pd.DataFrame, schema: TabularDataSchema) -> Any:  # noqa: ANN401
+    def _load_model(self, data: pd.DataFrame, schema: TabularDataSchema) -> Any:
         """Load or train model.
 
         Args:
@@ -620,7 +620,7 @@ class AuditPipeline:
                         feature_importance = importance
                     else:
                         feature_importance = dict(importance) if importance is not None else {}
-                except Exception as e:  # noqa: BLE001
+                except Exception as e:
                     logger.warning(f"Could not extract feature importance: {e}")
 
             self.results.model_info = {
@@ -648,7 +648,7 @@ class AuditPipeline:
             logger.info("Using default trainable model: LogisticRegressionWrapper")
 
             # Create default config for LogisticRegression
-            from types import SimpleNamespace  # noqa: PLC0415
+            from types import SimpleNamespace
 
             default_model_config = SimpleNamespace()
             default_model_config.type = "logistic_regression"
@@ -664,7 +664,7 @@ class AuditPipeline:
             X_processed = self._preprocess_for_training(X)
 
             # Use train_from_config for consistency
-            from .train import train_from_config  # noqa: PLC0415
+            from .train import train_from_config
 
             model = train_from_config(temp_config, X_processed, y)
             logger.info("Default model training completed using configuration")
@@ -715,7 +715,7 @@ class AuditPipeline:
             X_processed = self._preprocess_for_training(X)
 
             # Use the new train_from_config function
-            from .train import train_from_config  # noqa: PLC0415
+            from .train import train_from_config
 
             model = train_from_config(self.config, X_processed, y)
             logger.info("Model training completed using configuration")
@@ -724,13 +724,13 @@ class AuditPipeline:
             model_save_path = getattr(self.config.model, "save_path", None)
             if model_save_path:
                 try:
-                    import joblib  # noqa: PLC0415
+                    import joblib
 
                     save_path = Path(model_save_path)
                     save_path.parent.mkdir(parents=True, exist_ok=True)
                     joblib.dump(model, save_path)
                     logger.info(f"Model auto-saved to: {save_path}")
-                except Exception as e:  # noqa: BLE001
+                except Exception as e:
                     logger.warning(f"Failed to auto-save model to {model_save_path}: {e}")
 
         # Store model information
@@ -744,7 +744,7 @@ class AuditPipeline:
                     feature_importance = importance
                 else:
                     feature_importance = dict(importance) if importance is not None else {}
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.warning(f"Could not extract feature importance: {e}")
                 feature_importance = {}
 
@@ -775,7 +775,7 @@ class AuditPipeline:
 
         return model
 
-    def _select_explainer(self) -> Any:  # noqa: ANN401
+    def _select_explainer(self) -> Any:
         """Select best explainer based on model capabilities and configuration.
 
         Returns:
@@ -924,7 +924,7 @@ class AuditPipeline:
 
         return explanation_results
 
-    def _normalize_explanations(self, explanations: Any, X: pd.DataFrame, feature_names: list[str]) -> dict[str, Any]:  # noqa: ANN401
+    def _normalize_explanations(self, explanations: Any, X: pd.DataFrame, feature_names: list[str]) -> dict[str, Any]:
         """Normalize explainer outputs to canonical format.
 
         Args:
@@ -1103,7 +1103,7 @@ class AuditPipeline:
             "ranking": ranking,
         }
 
-    def _compute_metrics(self, data: pd.DataFrame, schema: TabularDataSchema) -> None:  # noqa: C901
+    def _compute_metrics(self, data: pd.DataFrame, schema: TabularDataSchema) -> None:
         """Compute all configured metrics.
 
         Args:
@@ -1193,7 +1193,7 @@ class AuditPipeline:
                 y_proba = self.model.predict_proba(X_processed)
                 # Keep full probability matrix for multiclass, don't extract single column
                 logger.debug(f"Generated probability predictions with shape: {y_proba.shape}")
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.warning(f"Could not get prediction probabilities: {e}")
                 # Try fallback preprocessing if feature name mismatch
                 if "feature names" in str(e).lower():
@@ -1243,7 +1243,7 @@ class AuditPipeline:
 
         # Friend's spec: Ensure accuracy is always computed for each model type
         try:
-            from sklearn.metrics import accuracy_score  # noqa: PLC0415
+            from sklearn.metrics import accuracy_score
 
             acc = float(accuracy_score(y_true, y_pred))
             if not hasattr(self.results, "model_performance") or self.results.model_performance is None:
@@ -1285,7 +1285,7 @@ class AuditPipeline:
             Tuple of (predictions, threshold_info)
 
         """
-        from ..metrics.thresholds import pick_threshold, validate_threshold_config  # noqa: PLC0415
+        from ..metrics.thresholds import pick_threshold, validate_threshold_config
 
         # Get threshold configuration from report config
         threshold_config = {}
@@ -1310,7 +1310,7 @@ class AuditPipeline:
 
     def _generate_provenance_manifest(self) -> None:
         """Generate comprehensive provenance manifest for audit reproducibility."""
-        from ..provenance import generate_run_manifest  # noqa: PLC0415
+        from ..provenance import generate_run_manifest
 
         logger.info("Generating comprehensive provenance manifest")
 
@@ -1371,7 +1371,7 @@ class AuditPipeline:
             return None
 
         try:
-            from ..models.calibration import get_calibration_info  # noqa: PLC0415
+            from ..models.calibration import get_calibration_info
 
             base_estimator = getattr(self.model, "model", self.model)
             return get_calibration_info(base_estimator)
@@ -1387,7 +1387,7 @@ class AuditPipeline:
             y_proba: Prediction probabilities
 
         """
-        from ..metrics.core import compute_classification_metrics  # noqa: PLC0415
+        from ..metrics.core import compute_classification_metrics
 
         logger.debug("Computing performance metrics with auto-detection engine")
 
@@ -1483,8 +1483,8 @@ class AuditPipeline:
         # E10+: Compute calibration with confidence intervals
         if y_proba is not None and y_proba.shape[1] == 2:  # Binary classification with probabilities
             try:
-                from ..metrics.calibration.quality import assess_calibration_quality  # noqa: PLC0415
-                from ..utils.seeds import get_component_seed  # noqa: PLC0415
+                from ..metrics.calibration.quality import assess_calibration_quality
+                from ..utils.seeds import get_component_seed
 
                 logger.debug("Computing E10+: Calibration with confidence intervals")
 
@@ -1517,7 +1517,7 @@ class AuditPipeline:
 
                 logger.info("E10+: Calibration metrics with CIs computed successfully")
 
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.warning(f"E10+: Failed to compute calibration with CIs: {e}")
                 # Don't fail entire performance analysis if calibration CIs fail
                 self.results.model_performance["calibration_ci"] = {
@@ -1551,7 +1551,7 @@ class AuditPipeline:
         # E12: Compute dataset-level bias metrics first (foundational check)
         logger.debug("Computing E12: Dataset-level bias metrics")
         try:
-            from ..metrics.fairness.dataset import compute_dataset_bias_metrics  # noqa: PLC0415
+            from ..metrics.fairness.dataset import compute_dataset_bias_metrics
 
             # Prepare full dataset with protected attributes
             data = X.copy()
@@ -1582,7 +1582,7 @@ class AuditPipeline:
             self._dataset_bias_results = dataset_bias.to_dict()
             logger.info("E12: Dataset bias metrics computed successfully")
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.warning(f"E12: Failed to compute dataset bias metrics: {e}")
             # Don't fail entire fairness analysis if dataset bias fails
             self._dataset_bias_results = {
@@ -1627,7 +1627,7 @@ class AuditPipeline:
             return
 
         # Use the new fairness runner with E10 confidence intervals
-        from ..metrics.fairness.runner import run_fairness_metrics  # noqa: PLC0415
+        from ..metrics.fairness.runner import run_fairness_metrics
 
         # Get seed for deterministic bootstrap CIs (global seed already set in _setup_reproducibility)
         seed = get_component_seed("fairness_ci")
@@ -1704,7 +1704,7 @@ class AuditPipeline:
             if individual_fairness_enabled:
                 logger.debug("Computing E11: Individual fairness metrics")
                 try:
-                    from ..metrics.fairness.individual import IndividualFairnessMetrics  # noqa: PLC0415
+                    from ..metrics.fairness.individual import IndividualFairnessMetrics
 
                     # Get protected attribute names
                     protected_attrs = list(sensitive_features.columns)
@@ -1770,7 +1770,7 @@ class AuditPipeline:
                     fairness_results["individual_fairness"] = individual_results
                     logger.info("E11: Individual fairness metrics computed successfully")
 
-                except Exception as e:  # noqa: BLE001
+                except Exception as e:
                     logger.warning(f"E11: Failed to compute individual fairness metrics: {e}")
                     # Don't fail entire fairness analysis if individual fairness fails
                     fairness_results["individual_fairness"] = {
@@ -1820,7 +1820,7 @@ class AuditPipeline:
         logger.debug("Computing stability metrics (E6+ perturbation sweeps)")
 
         try:
-            from ..metrics.stability import run_perturbation_sweep  # noqa: PLC0415
+            from ..metrics.stability import run_perturbation_sweep
 
             # Get protected feature names
             protected_features = []
@@ -1864,7 +1864,7 @@ class AuditPipeline:
                 "status": "failed",
             }
 
-    def _compute_drift_metrics(self, X: pd.DataFrame, y: np.ndarray) -> None:  # noqa: ARG002
+    def _compute_drift_metrics(self, X: pd.DataFrame, y: np.ndarray) -> None:
         """Compute drift metrics (placeholder implementation).
 
         Args:
@@ -1910,7 +1910,7 @@ class AuditPipeline:
         )
 
         # Add result hashes to manifest
-        from glassalpha.utils import hash_object  # noqa: PLC0415
+        from glassalpha.utils import hash_object
 
         if self.results.model_performance:
             self.manifest_generator.add_result_hash("performance_metrics", hash_object(self.results.model_performance))
@@ -1928,7 +1928,7 @@ class AuditPipeline:
         self.manifest_generator.mark_completed("success")
 
         # Record end time for provenance
-        from glassalpha.utils.determinism import get_deterministic_timestamp  # noqa: PLC0415
+        from glassalpha.utils.determinism import get_deterministic_timestamp
 
         # Use deterministic timestamp for reproducibility
         seed = self.results.execution_info.get("random_seed") if self.results.execution_info else None
@@ -1957,7 +1957,7 @@ class AuditPipeline:
 
         """
 
-        def _to_scalar(v: Any) -> float:  # noqa: ANN401
+        def _to_scalar(v: Any) -> float:
             """Convert value to scalar, handling lists/arrays as specified by friend."""
             if isinstance(v, (list, tuple, np.ndarray)):
                 return float(np.mean(np.abs(v)))
@@ -1978,7 +1978,7 @@ class AuditPipeline:
 
         return stats
 
-    def _get_seeded_context(self, component_name: str) -> Any:  # noqa: ANN401
+    def _get_seeded_context(self, component_name: str) -> Any:
         """Get seeded context manager for component.
 
         Args:
@@ -1988,7 +1988,7 @@ class AuditPipeline:
             Context manager with component seed
 
         """
-        from glassalpha.utils import with_component_seed  # noqa: PLC0415
+        from glassalpha.utils import with_component_seed
 
         return with_component_seed(component_name)
 
@@ -2038,7 +2038,7 @@ class AuditPipeline:
             Processed features DataFrame with label encoding
 
         """
-        from sklearn.preprocessing import LabelEncoder  # noqa: PLC0415
+        from sklearn.preprocessing import LabelEncoder
 
         logger.info("Using fallback label encoding preprocessing for feature name compatibility")
 
@@ -2074,7 +2074,7 @@ class AuditPipeline:
             ValueError: If artifact validation fails
 
         """
-        from glassalpha.preprocessing import (  # noqa: PLC0415
+        from glassalpha.preprocessing import (
             assert_runtime_versions,
             compute_file_hash,
             compute_params_hash,
@@ -2204,7 +2204,7 @@ class AuditPipeline:
             if hasattr(artifact, "get_feature_names_out"):
                 try:
                     feature_names = artifact.get_feature_names_out()
-                except Exception:  # noqa: S110, BLE001
+                except Exception:
                     pass
 
             if feature_names is None:
@@ -2245,7 +2245,7 @@ class AuditPipeline:
             if hasattr(artifact, "get_feature_names_out"):
                 try:
                     feature_names = artifact.get_feature_names_out()
-                except Exception:  # noqa: S110, BLE001
+                except Exception:
                     pass
 
             if feature_names is None:
@@ -2296,17 +2296,17 @@ class AuditPipeline:
         """Ensure all required components are imported and registered."""
         try:
             # Import explainer modules to trigger registration
-            from glassalpha.explain import coefficients  # noqa: F401, PLC0415
+            from glassalpha.explain import coefficients  # noqa: F401
 
             # Import SHAP explainers (may not be available)
             try:
-                from glassalpha.explain.shap import kernel, tree  # noqa: F401, PLC0415
+                from glassalpha.explain.shap import kernel, tree  # noqa: F401
             except ImportError:
                 pass  # SHAP is optional
 
             # Import metrics modules
-            from glassalpha.metrics.fairness import bias_detection  # noqa: F401, PLC0415
-            from glassalpha.metrics.performance import classification  # noqa: F401, PLC0415
+            from glassalpha.metrics.fairness import bias_detection  # noqa: F401
+            from glassalpha.metrics.performance import classification  # noqa: F401
 
             logger.debug("All component modules imported and registered")
         except ImportError as e:

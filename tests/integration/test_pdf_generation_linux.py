@@ -7,7 +7,6 @@ validation of PDF output quality and determinism.
 
 import hashlib
 import sys
-from pathlib import Path
 
 import pytest
 

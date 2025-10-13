@@ -33,13 +33,13 @@ class TestFeatureDriftContract:
         aligned = align_features(test_data, original_features)
 
         # Contract: Should return DataFrame with correct column names
-        assert isinstance(aligned, pd.DataFrame)  # noqa: S101
-        assert list(aligned.columns) == original_features  # noqa: S101
-        assert aligned.shape == test_data.shape  # noqa: S101
+        assert isinstance(aligned, pd.DataFrame)
+        assert list(aligned.columns) == original_features
+        assert aligned.shape == test_data.shape
 
         # Values should be preserved (positional mapping)
         np.testing.assert_array_equal(aligned.values, test_data.values)
-        assert aligned.index.equals(test_data.index)  # noqa: S101
+        assert aligned.index.equals(test_data.index)
 
     def test_missing_columns_filled_with_zero(self) -> None:
         """Test missing columns → filled with 0 contract."""
@@ -57,17 +57,17 @@ class TestFeatureDriftContract:
         aligned = align_features(test_data, expected_features)
 
         # Contract: Should reindex with fill_value=0
-        assert isinstance(aligned, pd.DataFrame)  # noqa: S101
-        assert list(aligned.columns) == expected_features  # noqa: S101
-        assert aligned.shape == (2, 4)  # noqa: S101
+        assert isinstance(aligned, pd.DataFrame)
+        assert list(aligned.columns) == expected_features
+        assert aligned.shape == (2, 4)
 
         # Existing values preserved
-        assert aligned["age"].tolist() == [25, 35]  # noqa: S101
-        assert aligned["income"].tolist() == [50000, 75000]  # noqa: S101
+        assert aligned["age"].tolist() == [25, 35]
+        assert aligned["income"].tolist() == [50000, 75000]
 
         # Missing columns filled with 0
-        assert aligned["credit_score"].tolist() == [0, 0]  # noqa: S101
-        assert aligned["employment_years"].tolist() == [0, 0]  # noqa: S101
+        assert aligned["credit_score"].tolist() == [0, 0]
+        assert aligned["employment_years"].tolist() == [0, 0]
 
     def test_extra_columns_dropped(self) -> None:
         """Test extra columns → dropped contract."""
@@ -86,13 +86,13 @@ class TestFeatureDriftContract:
         aligned = align_features(test_data, expected_features)
 
         # Contract: Should drop extra columns
-        assert isinstance(aligned, pd.DataFrame)  # noqa: S101
-        assert list(aligned.columns) == expected_features  # noqa: S101
-        assert aligned.shape == (2, 2)  # noqa: S101
+        assert isinstance(aligned, pd.DataFrame)
+        assert list(aligned.columns) == expected_features
+        assert aligned.shape == (2, 2)
 
         # Expected values preserved
-        assert aligned["age"].tolist() == [25, 35]  # noqa: S101
-        assert aligned["income"].tolist() == [50000, 75000]  # noqa: S101
+        assert aligned["age"].tolist() == [25, 35]
+        assert aligned["income"].tolist() == [50000, 75000]
 
     def test_exact_match_unchanged(self) -> None:
         """Test exact feature match → unchanged."""
@@ -122,7 +122,7 @@ class TestFeatureDriftContract:
 
         for test_input in test_cases:
             result = align_features(test_input, ["a", "b", "c"])
-            assert result is test_input  # Should be identical object  # noqa: S101
+            assert result is test_input  # Should be identical object
 
     def test_no_feature_names_pass_through(self) -> None:
         """Test no feature_names → pass through."""
@@ -145,18 +145,18 @@ class TestFeatureDriftContract:
         This is the main regression test for the original problem:
         "ValueError: The feature names should match those that were passed during fit"
         """
-        from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+        from glassalpha.models.sklearn import LogisticRegressionWrapper
 
         # Skip if sklearn not available
         try:
-            import sklearn  # noqa: PLC0415
+            import sklearn
         except ImportError:
             pytest.skip("sklearn not available")
 
         wrapper = LogisticRegressionWrapper()
 
         # Training data
-        X_train = pd.DataFrame(  # noqa: N806
+        X_train = pd.DataFrame(
             {
                 "feature_a": [1, 2, 3, 4],
                 "feature_b": [5, 6, 7, 8],
@@ -168,7 +168,7 @@ class TestFeatureDriftContract:
         wrapper.fit(X_train, y_train)
 
         # Test data with renamed but same-width columns
-        X_test_renamed = pd.DataFrame(  # noqa: N806
+        X_test_renamed = pd.DataFrame(
             {
                 "renamed_a": [1.5, 2.5],
                 "renamed_b": [5.5, 6.5],
@@ -178,11 +178,11 @@ class TestFeatureDriftContract:
         # This should NOT raise sklearn feature name errors
         try:
             predictions = wrapper.predict(X_test_renamed)
-            assert len(predictions) == 2  # noqa: PLR2004, S101
-            assert isinstance(predictions, np.ndarray)  # noqa: S101
+            assert len(predictions) == 2
+            assert isinstance(predictions, np.ndarray)
 
             probabilities = wrapper.predict_proba(X_test_renamed)
-            assert probabilities.shape == (2, 2)  # 2 samples, 2 classes  # noqa: S101
+            assert probabilities.shape == (2, 2)  # 2 samples, 2 classes
 
         except ValueError as e:
             if "feature names should match" in str(e):
@@ -201,7 +201,7 @@ class TestFeatureDriftContract:
         """Test that all wrappers properly handle feature drift."""
         # Import wrapper class by name
         if wrapper_class_name == "LogisticRegressionWrapper":
-            from glassalpha.models.sklearn import LogisticRegressionWrapper as WrapperClass  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper as WrapperClass
         else:
             pytest.skip(f"Wrapper {wrapper_class_name} not implemented in test")
 
@@ -212,7 +212,7 @@ class TestFeatureDriftContract:
             pytest.skip(f"Dependencies for {wrapper_class_name} not available")
 
         # Simple training data
-        X_train = pd.DataFrame({"x1": [1, 2], "x2": [3, 4]})  # noqa: N806
+        X_train = pd.DataFrame({"x1": [1, 2], "x2": [3, 4]})
         y_train = [0, 1]
 
         wrapper.fit(X_train, y_train)
@@ -227,9 +227,9 @@ class TestFeatureDriftContract:
             pd.DataFrame({"x1": [1.5]}),
         ]
 
-        for i, X_test in enumerate(test_cases):  # noqa: N806
+        for i, X_test in enumerate(test_cases):
             try:
                 predictions = wrapper.predict(X_test)
-                assert len(predictions) == 1, f"Test case {i} failed shape check"  # noqa: S101
-            except Exception as e:  # noqa: BLE001
+                assert len(predictions) == 1, f"Test case {i} failed shape check"
+            except Exception as e:
                 pytest.fail(f"Test case {i} failed: {e}")

@@ -271,7 +271,7 @@ def main():
             sys.exit(0)
         else:
             print("✗ CLI documentation is out of date", file=sys.stderr)
-            print(f"Run: python scripts/generate_cli_docs.py --output site/docs/reference/cli.md", file=sys.stderr)
+            print("Run: python scripts/generate_cli_docs.py --output site/docs/reference/cli.md", file=sys.stderr)
             sys.exit(1)
 
     # Output mode

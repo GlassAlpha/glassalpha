@@ -352,7 +352,7 @@ def _compute_intersectional_cis(
                 ci_key = f"{group_key}_{metric_type}"
                 ci_results[ci_key] = ci.to_dict()
 
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.debug(f"Could not compute CI for {group_key}_{metric_type}: {e}")
                 continue
 

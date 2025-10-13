@@ -86,7 +86,7 @@ def train_from_config(cfg: Any, X: pd.DataFrame, y: Any) -> Any:
         # Check for missing value errors
         if "NaN" in error_msg or "missing" in error_msg.lower():
             # Detect which columns have missing values
-            import pandas as pd  # noqa: PLC0415
+            import pandas as pd
 
             missing_info = {}
             if isinstance(X, pd.DataFrame):
@@ -127,7 +127,7 @@ def train_from_config(cfg: Any, X: pd.DataFrame, y: Any) -> Any:
 
     # Apply calibration if requested
     if calibration_config and calibration_config.method:
-        from ..models.calibration import maybe_calibrate  # noqa: PLC0415
+        from ..models.calibration import maybe_calibrate
 
         logger.info("Applying probability calibration")
 

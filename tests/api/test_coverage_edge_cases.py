@@ -5,7 +5,6 @@ Additional tests to achieve 95%+ coverage for implemented code.
 
 import pickle
 
-import numpy as np
 import pandas as pd
 import pytest
 

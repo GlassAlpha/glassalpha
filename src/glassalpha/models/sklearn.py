@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 class SklearnGenericWrapper:
     """Generic wrapper for scikit-learn models."""
 
-    def __init__(self, model: Any, feature_names: Sequence[str] | None = None) -> None:  # noqa: ANN401
+    def __init__(self, model: Any, feature_names: Sequence[str] | None = None) -> None:
         """Initialize sklearn model wrapper.
 
         Args:
@@ -61,7 +61,7 @@ class SklearnGenericWrapper:
 class LogisticRegressionWrapper(SklearnGenericWrapper):
     """Stub wrapper for LogisticRegression (real implementation below)."""
 
-    def predict(self, x: Any) -> Any:  # noqa: ANN401
+    def predict(self, x: Any) -> Any:
         """Make predictions using the underlying model."""
         if self.model is None:
             msg = "No model loaded"
@@ -71,7 +71,7 @@ class LogisticRegressionWrapper(SklearnGenericWrapper):
             raise AttributeError(msg)
         return self.model.predict(x)
 
-    def predict_proba(self, x: Any) -> Any:  # noqa: ANN401
+    def predict_proba(self, x: Any) -> Any:
         """Get prediction probabilities using the underlying model."""
         if self.model is None:
             msg = "No model loaded"
@@ -123,7 +123,7 @@ if SKLEARN_AVAILABLE:
         version = "1.0.0"
         model_type = "logistic_regression"
 
-        def __init__(self, model: Any = None, feature_names: list[str] | None = None, **kwargs: Any) -> None:  # noqa: ANN401
+        def __init__(self, model: Any = None, feature_names: list[str] | None = None, **kwargs: Any) -> None:
             """Initialize LogisticRegression wrapper.
 
             Args:
@@ -159,7 +159,7 @@ if SKLEARN_AVAILABLE:
                 self.model = LogisticRegression(**kwargs)
                 self.n_classes = None
 
-    def predict(self, x: Any) -> Any:  # noqa: ANN401
+    def predict(self, x: Any) -> Any:
         """Make predictions using the underlying model.
 
         Args:
@@ -174,7 +174,7 @@ if SKLEARN_AVAILABLE:
             raise AttributeError(msg)
         return self.model.predict(x)
 
-    def predict_proba(self, x: Any) -> Any:  # noqa: ANN401
+    def predict_proba(self, x: Any) -> Any:
         """Get prediction probabilities using the underlying model.
 
         Args:
@@ -235,9 +235,9 @@ if SKLEARN_AVAILABLE:
             path: Path to save the model
 
         """
-        from pathlib import Path  # noqa: PLC0415
+        from pathlib import Path
 
-        from glassalpha.constants import ERR_NOT_FITTED  # noqa: PLC0415
+        from glassalpha.constants import ERR_NOT_FITTED
 
         if self.model is None:
             raise ValueError(ERR_NOT_FITTED)
@@ -324,7 +324,7 @@ if SKLEARN_AVAILABLE:
         version = "1.0.0"
         model_type = "logistic_regression"
 
-        def __init__(self, model: Any = None, feature_names: list[str] | None = None, **kwargs: Any) -> None:  # noqa: ANN401
+        def __init__(self, model: Any = None, feature_names: list[str] | None = None, **kwargs: Any) -> None:
             """Initialize LogisticRegression wrapper.
 
             Args:
@@ -369,7 +369,7 @@ if SKLEARN_AVAILABLE:
 
             logger.info("LogisticRegressionWrapper initialized")
 
-        def fit(self, X, y=None, **kwargs: Any) -> LogisticRegressionWrapper:  # noqa: ANN401
+        def fit(self, X, y=None, **kwargs: Any) -> LogisticRegressionWrapper:
             """Fit the logistic regression model.
 
             Args:
@@ -403,7 +403,7 @@ if SKLEARN_AVAILABLE:
                     self.model.set_params(**update_params)
 
             # Capture feature names from DataFrame
-            import pandas as pd  # noqa: PLC0415
+            import pandas as pd
 
             if isinstance(X, pd.DataFrame):
                 self.feature_names_ = list(X.columns)
@@ -420,7 +420,7 @@ if SKLEARN_AVAILABLE:
 
             return self
 
-        def predict(self, X) -> Any:  # noqa: ANN401
+        def predict(self, X) -> Any:
             """Make predictions using base class error handling."""
             self._ensure_fitted()
 
@@ -431,7 +431,7 @@ if SKLEARN_AVAILABLE:
             # Ensure 1D numpy array output
             return np.array(predictions).flatten()
 
-        def predict_proba(self, X) -> Any:  # noqa: ANN401
+        def predict_proba(self, X) -> Any:
             """Get prediction probabilities using base class error handling."""
             self._ensure_fitted()
 
@@ -439,7 +439,7 @@ if SKLEARN_AVAILABLE:
             X_processed = self._prepare_x(X)
             return self.model.predict_proba(X_processed)
 
-        def _validate_and_reorder_features(self, X) -> Any:  # noqa: ANN401
+        def _validate_and_reorder_features(self, X) -> Any:
             """Validate and reorder features to match training data per friend's spec."""
             # If no stored feature names, return as-is
             if self.feature_names_ is None:
@@ -478,19 +478,19 @@ if SKLEARN_AVAILABLE:
             """Get model parameters."""
             return self.model.get_params(deep=deep)
 
-        def set_params(self, **params: Any) -> Any:  # noqa: ANN401
+        def set_params(self, **params: Any) -> Any:
             """Set model parameters."""
             return self.model.set_params(**params)
 
         @property
-        def classes_(self) -> Any:  # noqa: ANN401
+        def classes_(self) -> Any:
             """Get fitted classes."""
             if hasattr(self.model, "classes_"):
                 return self.model.classes_
             return None
 
         @classes_.setter
-        def classes_(self, value: Any) -> None:  # noqa: ANN401
+        def classes_(self, value: Any) -> None:
             """Set classes (for compatibility)."""
             if hasattr(self.model, "classes_"):
                 self.model.classes_ = value
@@ -564,11 +564,11 @@ if SKLEARN_AVAILABLE:
 
         def save(self, path: str | Path) -> None:
             """Save model to file with versioned JSON format for forward compatibility."""
-            import base64  # noqa: PLC0415
-            import json  # noqa: PLC0415
-            import pickle  # noqa: PLC0415
+            import base64
+            import json
+            import pickle
 
-            from glassalpha.constants import ERR_NOT_FITTED  # noqa: PLC0415
+            from glassalpha.constants import ERR_NOT_FITTED
 
             if self.model is None:
                 raise ValueError(ERR_NOT_FITTED)
@@ -598,9 +598,9 @@ if SKLEARN_AVAILABLE:
 
         def load(self, path: str | Path) -> LogisticRegressionWrapper:
             """Load model from file in current JSON format."""
-            import base64  # noqa: PLC0415
-            import json  # noqa: PLC0415
-            import pickle  # noqa: PLC0415
+            import base64
+            import json
+            import pickle
 
             path_obj = Path(path)
 
@@ -673,7 +673,7 @@ if SKLEARN_AVAILABLE:
         version = "1.0.0"
         model_type = "sklearn_generic"
 
-        def __init__(self, model: Any = None, feature_names: list[str] | None = None, **kwargs: Any) -> None:  # noqa: ANN401
+        def __init__(self, model: Any = None, feature_names: list[str] | None = None, **kwargs: Any) -> None:
             """Initialize generic sklearn wrapper.
 
             Args:
@@ -695,14 +695,14 @@ if SKLEARN_AVAILABLE:
 
             logger.info("SklearnGenericWrapper initialized")
 
-        def predict(self, X) -> Any:  # noqa: ANN401
+        def predict(self, X) -> Any:
             """Make predictions."""
             if self.model is None:
                 msg = "No model loaded"
                 raise AttributeError(msg)
             return self.model.predict(X)
 
-        def predict_proba(self, X) -> Any:  # noqa: ANN401
+        def predict_proba(self, X) -> Any:
             """Get prediction probabilities if supported."""
             if self.model is None:
                 msg = "No model loaded"
@@ -752,7 +752,7 @@ if SKLEARN_AVAILABLE:
 
         def load(self, path: str) -> SklearnGenericWrapper:
             """Load model from file."""
-            import joblib  # noqa: PLC0415
+            import joblib
 
             model_data = joblib.load(path)
             wrapper = self()
@@ -766,7 +766,7 @@ else:
     class LogisticRegressionWrapper:
         """Stub class when scikit-learn is unavailable."""
 
-        def __init__(self, *args, **kwargs) -> None:  # noqa: ARG002, ANN002, ANN003
+        def __init__(self, *args, **kwargs) -> None:
             """Initialize stub - raises ImportError."""
             msg = "scikit-learn not available - install sklearn or fix CI environment"
             raise ImportError(msg)

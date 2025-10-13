@@ -28,10 +28,10 @@ class TestMetricsNormalization:
 
         # Contract: Each float should be wrapped with "value" key
         for metric_name, metric_value in raw_metrics.items():
-            assert metric_name in normalized  # noqa: S101
-            assert isinstance(normalized[metric_name], dict)  # noqa: S101
-            assert "value" in normalized[metric_name]  # noqa: S101
-            assert normalized[metric_name]["value"] == float(metric_value)  # noqa: S101
+            assert metric_name in normalized
+            assert isinstance(normalized[metric_name], dict)
+            assert "value" in normalized[metric_name]
+            assert normalized[metric_name]["value"] == float(metric_value)
 
     def test_dict_metrics_preserved(self) -> None:
         """Ensure existing dict metrics are preserved unchanged."""
@@ -44,11 +44,11 @@ class TestMetricsNormalization:
         normalized = normalize_metrics(raw_metrics)
 
         # Dict values should be preserved
-        assert normalized["accuracy"] == raw_metrics["accuracy"]  # noqa: S101
-        assert normalized["confusion_matrix"] == raw_metrics["confusion_matrix"]  # noqa: S101
+        assert normalized["accuracy"] == raw_metrics["accuracy"]
+        assert normalized["confusion_matrix"] == raw_metrics["confusion_matrix"]
 
         # Float should be wrapped
-        assert normalized["precision"] == {"value": 0.82}  # noqa: S101
+        assert normalized["precision"] == {"value": 0.82}
 
     def test_empty_metrics_handled(self) -> None:
         """Ensure empty/None metrics don't cause errors."""
@@ -56,16 +56,16 @@ class TestMetricsNormalization:
 
         for empty_case in test_cases:
             result = normalize_metrics(empty_case)
-            assert isinstance(result, dict)  # noqa: S101
-            assert len(result) == 0  # noqa: S101
+            assert isinstance(result, dict)
+            assert len(result) == 0
 
     def test_html_renderer_uses_normalized_metrics(self) -> None:
         """Test that HTML renderer properly normalizes metrics.
 
         This prevents the specific error: "PDF generation failed: 'float' has no attribute 'accuracy'".
         """
-        from glassalpha.pipeline.audit import AuditResults  # noqa: PLC0415
-        from glassalpha.report.renderer import AuditReportRenderer  # noqa: PLC0415
+        from glassalpha.pipeline.audit import AuditResults
+        from glassalpha.report.renderer import AuditReportRenderer
 
         # Create mock audit results with float metrics
         mock_results = AuditResults()
@@ -80,13 +80,13 @@ class TestMetricsNormalization:
 
         # This should not raise "float has no attribute" errors
         try:
-            context = renderer._prepare_template_context(mock_results, embed_plots=False)  # noqa: SLF001
+            context = renderer._prepare_template_context(mock_results, embed_plots=False)
 
             # Verify metrics are properly normalized
             model_performance = context["model_performance"]
-            assert isinstance(model_performance["accuracy"], dict)  # noqa: S101
-            assert "value" in model_performance["accuracy"]  # noqa: S101
-            assert model_performance["accuracy"]["value"] == 0.87  # noqa: PLR2004, S101
+            assert isinstance(model_performance["accuracy"], dict)
+            assert "value" in model_performance["accuracy"]
+            assert model_performance["accuracy"]["value"] == 0.87
 
         except (TypeError, AttributeError) as e:
             pytest.fail(f"Metrics normalization failed: {e}")
@@ -96,8 +96,8 @@ class TestMetricsNormalization:
 
         Ensures the full rendering pipeline handles normalized metrics correctly.
         """
-        from glassalpha.pipeline.audit import AuditResults  # noqa: PLC0415
-        from glassalpha.report.renderer import AuditReportRenderer  # noqa: PLC0415
+        from glassalpha.pipeline.audit import AuditResults
+        from glassalpha.report.renderer import AuditReportRenderer
 
         # Mock audit results
         mock_results = AuditResults()
@@ -115,10 +115,10 @@ class TestMetricsNormalization:
             )
 
             # Verify the metric value appears in rendered HTML
-            assert "0.87" in html_content or "87" in html_content  # noqa: S101
-            assert "<html" in html_content.lower()  # noqa: S101
+            assert "0.87" in html_content or "87" in html_content
+            assert "<html" in html_content.lower()
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             pytest.fail(f"Template rendering failed with normalized metrics: {e}")
 
     @pytest.mark.parametrize(
@@ -137,5 +137,5 @@ class TestMetricsNormalization:
         metrics = {"test_metric": metric_value}
         normalized = normalize_metrics(metrics)
 
-        assert "test_metric" in normalized  # noqa: S101
-        assert normalized["test_metric"]["value"] == float(metric_value)  # noqa: S101
+        assert "test_metric" in normalized
+        assert normalized["test_metric"]["value"] == float(metric_value)

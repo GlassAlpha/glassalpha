@@ -31,7 +31,7 @@ class TabularDataSchema(DataSchema):
     categorical_features: list[str] | None = Field(None, description="Columns that should be treated as categorical")
     numeric_features: list[str] | None = Field(None, description="Columns that should be treated as numeric")
 
-    def model_post_init(self, __context: Any, /) -> None:  # noqa: ANN401
+    def model_post_init(self, __context: Any, /) -> None:
         """Validate schema constraints after initialization."""
         # Target cannot be in features
         if self.target in self.features:
@@ -86,12 +86,12 @@ class TabularDataLoader(DataInterface):
             elif path.suffix == ".parquet":
                 data = pd.read_parquet(path)
             elif path.suffix == ".pkl":
-                data = pd.read_pickle(path)  # noqa: S301
+                data = pd.read_pickle(path)
             elif path.suffix == ".feather":
                 data = pd.read_feather(path)
             else:
                 msg = f"Format {path.suffix} not implemented"
-                raise ValueError(msg)  # noqa: TRY301
+                raise ValueError(msg)
 
         except Exception as e:
             msg = f"Failed to load data from {path}: {e}"
@@ -138,7 +138,7 @@ class TabularDataLoader(DataInterface):
 
         return data
 
-    def validate_schema(self, data: pd.DataFrame, schema: DataSchema) -> None:  # noqa: C901
+    def validate_schema(self, data: pd.DataFrame, schema: DataSchema) -> None:
         """Validate DataFrame against schema.
 
         Args:
@@ -399,7 +399,7 @@ class TabularDataLoader(DataInterface):
         X: pd.DataFrame,
         schema: TabularDataSchema,
         *,
-        fit_preprocessor: bool = True,  # noqa: ARG002
+        fit_preprocessor: bool = True,
     ) -> pd.DataFrame:
         """Basic preprocessing for tabular features with automatic categorical encoding.
 

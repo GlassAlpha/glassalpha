@@ -31,7 +31,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def _ensure_fitted(obj: Any, attr: str = "_fitted_", message: str = ERR_NOT_FITTED) -> None:  # noqa: ANN401
+def _ensure_fitted(obj: Any, attr: str = "_fitted_", message: str = ERR_NOT_FITTED) -> None:
     """Ensure object is fitted, raise if not.
 
     Args:
@@ -68,7 +68,7 @@ class BaseTabularWrapper:
         if self.model is None:
             raise ValueError(ERR_NOT_FITTED)
 
-    def _prepare_x(self, X: Any) -> Any:  # noqa: ANN401
+    def _prepare_x(self, X: Any) -> Any:
         """Robust DataFrame column handling - uses centralized feature alignment.
 
         Contract compliance: Uses shared align_features function for consistent
@@ -83,7 +83,7 @@ class BaseTabularWrapper:
         """
         return self._align_features(X)
 
-    def _align_features(self, X: Any) -> Any:  # noqa: ANN401
+    def _align_features(self, X: Any) -> Any:
         """Shared feature alignment helper - contract compliance.
 
         Implements the exact feature drift contract:

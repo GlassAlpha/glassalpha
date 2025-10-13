@@ -88,7 +88,7 @@ def generate_insurance_risk_dataset(
     df = df[cols]
 
     # Perform health checks on generated dataset
-    from ..data.gen_utils import assert_dataset_health  # noqa: PLC0415
+    from ..data.gen_utils import assert_dataset_health
 
     required_cols = [
         "claim_outcome",
@@ -161,7 +161,7 @@ def _transform_features(df: pd.DataFrame) -> pd.DataFrame:
 
 def _add_demographic_features(df: pd.DataFrame, random_state: int) -> pd.DataFrame:
     """Add demographic features for fairness analysis using safe utilities."""
-    from ..data.gen_utils import safe_categorical_select  # noqa: PLC0415
+    from ..data.gen_utils import safe_categorical_select
 
     np.random.seed(random_state)
 

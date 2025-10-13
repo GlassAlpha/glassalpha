@@ -16,30 +16,30 @@ from glassalpha.constants import (
 def test_primary_constants_exist_and_values() -> None:
     """Test that primary contract constants exist with exact expected values."""
     # Exact strings that tests assert against
-    assert NO_MODEL_MSG == "Model not loaded. Load a model first."  # noqa: S101
-    assert NO_EXPLAINER_MSG == "No compatible explainer found"  # noqa: S101
-    assert "{profile}" in INIT_LOG_MESSAGE  # noqa: S101
-    assert INIT_LOG_MESSAGE == "Initialized audit pipeline with profile: {profile}"  # noqa: S101
+    assert NO_MODEL_MSG == "Model not loaded. Load a model first."
+    assert NO_EXPLAINER_MSG == "No compatible explainer found"
+    assert "{profile}" in INIT_LOG_MESSAGE
+    assert INIT_LOG_MESSAGE == "Initialized audit pipeline with profile: {profile}"
 
 
 def test_backward_compatible_aliases() -> None:
     """Test that backward-compatible aliases point to same values."""
     # Aliases should match primary constants
-    assert NO_MODEL_MSG == NO_MODEL_MSG  # noqa: S101
-    assert NO_EXPLAINER_MSG == NO_EXPLAINER_MSG  # noqa: S101
-    assert INIT_LOG_TEMPLATE == INIT_LOG_MESSAGE  # noqa: S101
+    assert NO_MODEL_MSG == NO_MODEL_MSG
+    assert NO_EXPLAINER_MSG == NO_EXPLAINER_MSG
+    assert INIT_LOG_TEMPLATE == INIT_LOG_MESSAGE
 
 
 def test_constants_are_strings() -> None:
     """Test that all constants are properly typed as strings."""
-    assert isinstance(NO_MODEL_MSG, str)  # noqa: S101
-    assert isinstance(NO_EXPLAINER_MSG, str)  # noqa: S101
-    assert isinstance(INIT_LOG_MESSAGE, str)  # noqa: S101
+    assert isinstance(NO_MODEL_MSG, str)
+    assert isinstance(NO_EXPLAINER_MSG, str)
+    assert isinstance(INIT_LOG_MESSAGE, str)
 
     # Backward-compatible aliases should also be strings
-    assert isinstance(NO_MODEL_MSG, str)  # noqa: S101
-    assert isinstance(NO_EXPLAINER_MSG, str)  # noqa: S101
-    assert isinstance(INIT_LOG_TEMPLATE, str)  # noqa: S101
+    assert isinstance(NO_MODEL_MSG, str)
+    assert isinstance(NO_EXPLAINER_MSG, str)
+    assert isinstance(INIT_LOG_TEMPLATE, str)
 
 
 def test_constants_not_empty() -> None:
@@ -54,7 +54,7 @@ def test_constants_not_empty() -> None:
     ]
 
     for constant in constants_to_check:
-        assert len(constant.strip()) > 0, f"Constant should not be empty: {constant!r}"  # noqa: S101
+        assert len(constant.strip()) > 0, f"Constant should not be empty: {constant!r}"
 
 
 def test_log_message_template_format() -> None:
@@ -62,11 +62,11 @@ def test_log_message_template_format() -> None:
     # Should be able to format with profile name
     formatted = INIT_LOG_MESSAGE.format(profile="test_profile")
     expected = "Initialized audit pipeline with profile: test_profile"
-    assert formatted == expected  # noqa: S101
+    assert formatted == expected
 
     # Backward-compatible alias should work the same way
     formatted_alias = INIT_LOG_TEMPLATE.format(profile="test_profile")
-    assert formatted_alias == expected  # noqa: S101
+    assert formatted_alias == expected
 
 
 def test_constants_importable_from_module() -> None:
@@ -74,7 +74,7 @@ def test_constants_importable_from_module() -> None:
     # This test mainly validates that the __all__ export works correctly
     # and that there are no import-time issues
 
-    from glassalpha.constants import (  # noqa: PLC0415
+    from glassalpha.constants import (
         BINARY_CLASSES,
         BINARY_THRESHOLD,
         ERR_NOT_FITTED,
@@ -87,12 +87,12 @@ def test_constants_importable_from_module() -> None:
     )
 
     # Just verify they exist and have expected types
-    assert isinstance(BINARY_CLASSES, int)  # noqa: S101
-    assert isinstance(BINARY_THRESHOLD, (int, float))  # noqa: S101
-    assert isinstance(ERR_NOT_FITTED, str)  # noqa: S101
-    assert isinstance(NO_MODEL_MSG, str)  # noqa: S101
-    assert isinstance(STANDARD_AUDIT_TEMPLATE, str)  # noqa: S101
-    assert isinstance(STATUS_CLEAN, str)  # noqa: S101
-    assert isinstance(STATUS_DIRTY, str)  # noqa: S101
-    assert isinstance(STATUS_NO_GIT, str)  # noqa: S101
-    assert isinstance(TEMPLATES_PACKAGE, str)  # noqa: S101
+    assert isinstance(BINARY_CLASSES, int)
+    assert isinstance(BINARY_THRESHOLD, (int, float))
+    assert isinstance(ERR_NOT_FITTED, str)
+    assert isinstance(NO_MODEL_MSG, str)
+    assert isinstance(STANDARD_AUDIT_TEMPLATE, str)
+    assert isinstance(STATUS_CLEAN, str)
+    assert isinstance(STATUS_DIRTY, str)
+    assert isinstance(STATUS_NO_GIT, str)
+    assert isinstance(TEMPLATES_PACKAGE, str)

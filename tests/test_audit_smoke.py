@@ -4,12 +4,6 @@ This module provides smoke tests that verify the complete audit pipeline
 works without crashing, with focus on explainer selection and PDF generation.
 """
 
-import subprocess
-import sys
-from pathlib import Path
-
-import pytest
-
 
 def test_audit_german_credit_simple_works(tmp_path):
     """Smoke test: full audit should complete without crashing.

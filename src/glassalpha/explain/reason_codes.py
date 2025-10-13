@@ -322,7 +322,7 @@ def format_adverse_action_notice(
     return notice
 
 
-def _format_feature_value(value: Any) -> float | str:  # noqa: ANN401
+def _format_feature_value(value: Any) -> float | str:
     """Format feature value for display."""
     if isinstance(value, (np.integer, int)):
         return int(value)
@@ -342,7 +342,7 @@ def _humanize_feature_name(name: str) -> str:
     return name.replace("_", " ").title()
 
 
-def _explain_contribution(feature: str, contribution: float, value: Any) -> str:  # noqa: ANN401, ARG001
+def _explain_contribution(feature: str, contribution: float, value: Any) -> str:
     """Generate human-readable explanation for contribution.
 
     Args:

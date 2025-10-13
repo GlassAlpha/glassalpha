@@ -132,7 +132,7 @@ class AuditReportRenderer:
         *,
         embed_plots: bool = True,
         compact: bool = False,
-        **template_vars: Any,  # noqa: ANN401
+        **template_vars: Any,
     ) -> str:
         """Render complete audit report from audit results.
 
@@ -265,7 +265,7 @@ class AuditReportRenderer:
             Normalized context dictionary safe for template rendering
 
         """
-        from .context import normalize_audit_context  # noqa: PLC0415
+        from .context import normalize_audit_context
 
         # Get base context with proper normalization
         context = normalize_audit_context(audit_results, compact=compact)
@@ -355,12 +355,12 @@ class AuditReportRenderer:
 
                 logger.debug(f"Generated {len(fairness_figures)} fairness plots")
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.warning(f"Failed to generate some plots: {e}")
 
         return plots
 
-    def _figure_to_base64(self, figure: Any) -> str:  # noqa: ANN401
+    def _figure_to_base64(self, figure: Any) -> str:
         """Convert matplotlib figure to base64 data URL.
 
         Args:
@@ -449,7 +449,7 @@ class AuditReportRenderer:
             "waterfall": "Step-by-step explanation of individual prediction",
         }
 
-    def _format_number(self, value: Any, decimals: int = 3) -> str:  # noqa: ANN401
+    def _format_number(self, value: Any, decimals: int = 3) -> str:
         """Format numeric values for display."""
         if value is None:
             return "N/A"
@@ -461,7 +461,7 @@ class AuditReportRenderer:
 
         return str(value)
 
-    def _format_percentage(self, value: Any, decimals: int = 1) -> str:  # noqa: ANN401
+    def _format_percentage(self, value: Any, decimals: int = 1) -> str:
         """Format values as percentages."""
         if value is None:
             return "N/A"
@@ -471,7 +471,7 @@ class AuditReportRenderer:
 
         return str(value)
 
-    def _format_datetime(self, value: Any, format_string: str = "%Y-%m-%d %H:%M:%S") -> str:  # noqa: ANN401
+    def _format_datetime(self, value: Any, format_string: str = "%Y-%m-%d %H:%M:%S") -> str:
         """Format datetime values."""
         if value is None:
             return "N/A"
@@ -488,7 +488,7 @@ class AuditReportRenderer:
 
         return str(value)
 
-    def _normalize_metrics(self, metrics: Any) -> dict[str, Any]:  # noqa: ANN401
+    def _normalize_metrics(self, metrics: Any) -> dict[str, Any]:
         """Normalize metrics for template compatibility.
 
         Contract compliance: Handle metrics that may be numbers or dicts.
@@ -555,7 +555,7 @@ class AuditReportRenderer:
         for feature, importance in importance_dict.items():
             try:
                 # Convert to numpy array and take mean if it's multi-dimensional
-                import numpy as np  # noqa: PLC0415
+                import numpy as np
 
                 arr = np.asarray(importance)
                 if arr.ndim == 0:
@@ -581,7 +581,7 @@ def render_audit_report(
     output_path: Path | None = None,
     template_name: str = "standard_audit.html",
     compact: bool = False,
-    **template_vars: Any,  # noqa: ANN401
+    **template_vars: Any,
 ) -> str:
     """Convenience function to render audit report.
 

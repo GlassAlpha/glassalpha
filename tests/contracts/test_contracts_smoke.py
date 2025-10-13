@@ -19,8 +19,8 @@ def test_init_logging_exact() -> None:
     CI test expects: assert_called_with("Initialized audit pipeline with profile: tabular_compliance")
     """
     # Import after installation to test the wheel
-    import glassalpha.pipeline.audit as audit_mod  # noqa: PLC0415
-    from glassalpha.pipeline.audit import AuditPipeline  # noqa: PLC0415
+    import glassalpha.pipeline.audit as audit_mod
+    from glassalpha.pipeline.audit import AuditPipeline
 
     with patch.object(audit_mod, "logger") as spy:
         AuditPipeline(config=SimpleNamespace(audit_profile="tabular_compliance"))
@@ -35,7 +35,7 @@ def test_standard_template_packaged() -> None:
     Prevents regression of: TemplateNotFound errors in CI
     Template must be accessible via importlib.resources from installed package.
     """
-    from importlib.resources import files  # noqa: PLC0415
+    from importlib.resources import files
 
     p = files("glassalpha.report.templates").joinpath("standard_audit.html")
     assert p.is_file(), f"Missing template in installed package: {p}"
@@ -51,10 +51,10 @@ def test_lr_roundtrip(tmp_path: Path) -> None:
     Prevents regression of: save/load asymmetry causing "model is None" after load()
     Must handle renamed columns and return self on load().
     """
-    import pandas as pd  # noqa: PLC0415
-    from sklearn.linear_model import LogisticRegression  # noqa: PLC0415
+    import pandas as pd
+    from sklearn.linear_model import LogisticRegression
 
-    from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+    from glassalpha.models.sklearn import LogisticRegressionWrapper
 
     X = pd.DataFrame({"a": [0, 1, 0, 1], "b": [1, 0, 1, 0]})
     y = [0, 1, 0, 1]
@@ -86,7 +86,7 @@ def test_manifest_tracks_model() -> None:
     Prevents regression of: selected_components["model"] missing or wrong format
     E2E tests expect: selected_components["model"] = {"name": "lightgbm", "type": "model"}
     """
-    from glassalpha.utils.manifest import ManifestGenerator  # noqa: PLC0415
+    from glassalpha.utils.manifest import ManifestGenerator
 
     m = ManifestGenerator()
     m.add_component("model", "lightgbm")
@@ -104,7 +104,7 @@ def test_wheel_contains_all_contracts() -> None:
     This runs the same checks as wheel_smoke.sh but as a pytest test.
     Useful for CI validation that doesn't rely on bash scripts.
     """
-    import zipfile  # noqa: PLC0415
+    import zipfile
 
     # Find the wheel (should be built by CI)
     dist_path = Path("dist")

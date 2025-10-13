@@ -408,7 +408,7 @@ def _run_audit_pipeline(
             # Generate manifest sidecar if provenance manifest is available
             manifest_path = None
             if hasattr(audit_results, "execution_info") and "provenance_manifest" in audit_results.execution_info:
-                from ..provenance import write_manifest_sidecar  # noqa: PLC0415
+                from ..provenance import write_manifest_sidecar
 
                 try:
                     manifest_path = write_manifest_sidecar(
@@ -431,7 +431,7 @@ def _run_audit_pipeline(
             # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
 
             # Use deterministic timestamp for reproducibility
-            from glassalpha.utils.determinism import get_deterministic_timestamp  # noqa: PLC0415
+            from glassalpha.utils.determinism import get_deterministic_timestamp
 
             seed = audit_results.execution_info.get("random_seed") if audit_results.execution_info else None
             deterministic_ts = get_deterministic_timestamp(seed=seed)
@@ -452,7 +452,7 @@ def _run_audit_pipeline(
             # Generate manifest sidecar if provenance manifest is available
             manifest_path = None
             if hasattr(audit_results, "execution_info") and "provenance_manifest" in audit_results.execution_info:
-                from ..provenance import write_manifest_sidecar  # noqa: PLC0415
+                from ..provenance import write_manifest_sidecar
 
                 try:
                     manifest_path = write_manifest_sidecar(
@@ -1200,7 +1200,7 @@ def audit(  # pragma: no cover
 
         # Apply repro mode if requested
         if repro:
-            from ..runtime import set_repro  # noqa: PLC0415
+            from ..runtime import set_repro
 
             # Use config seed if available, otherwise default
             seed = (

@@ -4,7 +4,7 @@ Tests for canonicalization, result ID computation, and data hashing.
 """
 
 import base64
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 
 import numpy as np
 import pandas as pd

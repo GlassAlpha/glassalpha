@@ -44,7 +44,6 @@ class TestImportSpeed:
 
         # Time the import
         start = time.time()
-        import glassalpha as ga
 
         duration = time.time() - start
 
@@ -52,10 +51,8 @@ class TestImportSpeed:
 
     def test_import_speed_repeated(self):
         """Repeated imports are instant (cached)"""
-        import glassalpha as ga
 
         start = time.time()
-        import glassalpha as ga2
 
         duration = time.time() - start
 
@@ -73,7 +70,6 @@ class TestLazyLoading:
             del sys.modules[key]
 
         # Import glassalpha
-        import glassalpha as ga
 
         # Check audit not loaded yet
         assert "glassalpha.api" not in sys.modules, "audit module should not be loaded until accessed"

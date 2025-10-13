@@ -1,15 +1,13 @@
 """Tests for from_config() entry point."""
 
 import pickle
-import tempfile
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import glassalpha as ga
-from glassalpha.exceptions import DataHashMismatchError, ResultIDMismatchError
+from glassalpha.exceptions import DataHashMismatchError
 
 
 def test_from_config_basic(tmp_path):

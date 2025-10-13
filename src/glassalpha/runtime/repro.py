@@ -221,7 +221,7 @@ def _set_thread_control(warn_on_failure: bool) -> dict[str, Any]:
 def _set_xgboost_determinism(seed: int, strict: bool, warn_on_failure: bool) -> dict[str, Any]:
     """Set XGBoost deterministic parameters."""
     try:
-        import xgboost as xgb  # noqa: PLC0415
+        import xgboost as xgb
 
         # XGBoost deterministic parameters
         deterministic_params = {
@@ -256,7 +256,7 @@ def _set_xgboost_determinism(seed: int, strict: bool, warn_on_failure: bool) -> 
 def _set_lightgbm_determinism(seed: int, strict: bool, warn_on_failure: bool) -> dict[str, Any]:
     """Set LightGBM deterministic parameters."""
     try:
-        import lightgbm as lgb  # noqa: PLC0415
+        import lightgbm as lgb
 
         # LightGBM deterministic parameters
         deterministic_params = {
@@ -292,7 +292,7 @@ def _set_lightgbm_determinism(seed: int, strict: bool, warn_on_failure: bool) ->
 def _set_sklearn_determinism(warn_on_failure: bool) -> dict[str, Any]:
     """Set scikit-learn deterministic behavior."""
     try:
-        import sklearn  # noqa: PLC0415
+        import sklearn
 
         # Scikit-learn uses random_state parameters in estimators
         # We can't set global defaults, but we can verify the library is available
@@ -313,7 +313,7 @@ def _set_sklearn_determinism(warn_on_failure: bool) -> dict[str, Any]:
 def _set_shap_determinism(seed: int, warn_on_failure: bool) -> dict[str, Any]:
     """Set SHAP deterministic behavior."""
     try:
-        import shap  # noqa: PLC0415
+        import shap
 
         # SHAP uses numpy random, which we've already set
         # Some SHAP explainers have their own random_state parameters
@@ -335,7 +335,7 @@ def _set_shap_determinism(seed: int, warn_on_failure: bool) -> dict[str, Any]:
 def _set_pandas_determinism(warn_on_failure: bool) -> dict[str, Any]:
     """Set pandas deterministic behavior."""
     try:
-        import pandas as pd  # noqa: PLC0415
+        import pandas as pd
 
         # Pandas operations are generally deterministic
         # But we can disable some optimizations that might introduce non-determinism
@@ -369,7 +369,7 @@ def _set_system_determinism(strict: bool, warn_on_failure: bool) -> dict[str, An
 
     # Set locale for consistent string operations
     try:
-        import locale  # noqa: PLC0415
+        import locale
 
         locale.setlocale(locale.LC_ALL, "C")
         controls["locale_set"] = True
@@ -550,7 +550,7 @@ def reset_repro() -> dict[str, Any]:
 
     # Reset random seeds to random values
     try:
-        import time  # noqa: PLC0415
+        import time
 
         new_seed = int(time.time() * 1000000) % 2**32
 

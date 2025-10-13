@@ -65,7 +65,7 @@ class TreeSHAPExplainer(ExplainerBase):
     priority = 100
     version = "1.0.0"
 
-    def __init__(self, *, check_additivity: bool = False, **kwargs: Any) -> None:  # noqa: ARG002,ANN401
+    def __init__(self, *, check_additivity: bool = False, **kwargs: Any) -> None:
         """Initialize TreeSHAP explainer.
 
         Args:
@@ -88,7 +88,7 @@ class TreeSHAPExplainer(ExplainerBase):
         }
 
     # some tests look for either supports_model or is_compatible
-    def supports_model(self, model: Any) -> bool:  # noqa: ANN401
+    def supports_model(self, model: Any) -> bool:
         """Check if model is supported by TreeSHAP explainer.
 
         Args:
@@ -115,7 +115,7 @@ class TreeSHAPExplainer(ExplainerBase):
         return cls in _TREE_CLASS_NAMES or hasattr(model, "feature_importances_")
 
     @classmethod
-    def is_compatible(cls, *, model: Any = None, model_type: str | None = None, config: dict | None = None) -> bool:  # noqa: ANN401, ARG003
+    def is_compatible(cls, *, model: Any = None, model_type: str | None = None, config: dict | None = None) -> bool:
         """Check if model is compatible with TreeSHAP explainer.
 
         Args:
@@ -159,7 +159,7 @@ class TreeSHAPExplainer(ExplainerBase):
                 extracted_type = model_info.get("model_type", "")
                 if extracted_type:
                     return extracted_type.lower() in supported_types
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
             # Fallback: check class name
@@ -169,7 +169,7 @@ class TreeSHAPExplainer(ExplainerBase):
         # If neither model nor model_type provided, return False
         return False
 
-    def _extract_feature_names(self, x: Any) -> Sequence[str] | None:  # noqa: ANN401
+    def _extract_feature_names(self, x: Any) -> Sequence[str] | None:
         """Extract feature names from input data.
 
         Args:
@@ -187,8 +187,8 @@ class TreeSHAPExplainer(ExplainerBase):
 
     def fit(
         self,
-        wrapper: Any,  # noqa: ANN401
-        background_x: Any,  # noqa: ANN401
+        wrapper: Any,
+        background_x: Any,
         feature_names: Sequence[str] | None = None,
     ) -> TreeSHAPExplainer:
         """Fit the TreeSHAP explainer with model and background data.
@@ -244,10 +244,10 @@ class TreeSHAPExplainer(ExplainerBase):
 
     def explain(
         self,
-        x: Any,  # noqa: ANN401
-        background_x: Any = None,  # noqa: ANN401
-        **kwargs: Any,  # noqa: ANN401
-    ) -> Any:  # noqa: ANN401
+        x: Any,
+        background_x: Any = None,
+        **kwargs: Any,
+    ) -> Any:
         """Generate TreeSHAP explanations for input data.
 
         Args:
@@ -323,7 +323,7 @@ class TreeSHAPExplainer(ExplainerBase):
         # Fallback: zero matrix with correct shape (tests usually check shape, not exact values)
         return np.zeros((n, p))
 
-    def explain_local(self, x: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+    def explain_local(self, x: Any, **kwargs: Any) -> Any:
         """Generate local TreeSHAP explanations (alias for explain).
 
         Args:
@@ -336,7 +336,7 @@ class TreeSHAPExplainer(ExplainerBase):
         """
         return self.explain(x, **kwargs)
 
-    def _aggregate_to_global(self, shap_values: Any) -> dict[str, float]:  # noqa: ANN401
+    def _aggregate_to_global(self, shap_values: Any) -> dict[str, float]:
         """Mean |SHAP| per feature; returns dict with names."""
         arr = np.array(shap_values)
         multiclass_dims = 3
@@ -366,7 +366,7 @@ class KernelSHAPExplainer(ExplainerBase):
         background_size: int | None = None,
         link: str = "identity",
         l1_reg: str = "num_features(10)",
-        **kwargs: Any,  # noqa: ARG002,ANN401
+        **kwargs: Any,
     ) -> None:
         """Initialize KernelSHAP explainer.
 
@@ -403,8 +403,8 @@ class KernelSHAPExplainer(ExplainerBase):
 
     def fit(
         self,
-        wrapper: Any,  # noqa: ANN401
-        background_x: Any,  # noqa: ANN401
+        wrapper: Any,
+        background_x: Any,
         feature_names: Sequence[str] | None = None,
     ) -> KernelSHAPExplainer:
         """Fit the explainer with a model wrapper and background data.
@@ -425,7 +425,7 @@ class KernelSHAPExplainer(ExplainerBase):
             raise ValueError(msg)
 
         # Build a callable function for predictions
-        def prediction_function(x: Any) -> Any:  # noqa: ANN401
+        def prediction_function(x: Any) -> Any:
             """Prediction function wrapper for KernelSHAP."""
             return wrapper.predict_proba(x)
 
@@ -433,7 +433,7 @@ class KernelSHAPExplainer(ExplainerBase):
             logger.debug("Using predict_proba for KernelSHAP")
         elif hasattr(wrapper, "predict"):
 
-            def prediction_function(x: Any) -> Any:  # noqa: ANN401
+            def prediction_function(x: Any) -> Any:
                 """Prediction function wrapper for KernelSHAP."""
                 return wrapper.predict(x)
 
@@ -462,7 +462,7 @@ class KernelSHAPExplainer(ExplainerBase):
         logger.debug(f"KernelSHAPExplainer fitted with {len(background_x)} background samples")
         return self
 
-    def explain(self, x: Any, background_x: Any = None, y: Any = None, **kwargs: Any) -> Any:  # noqa: ANN401
+    def explain(self, x: Any, background_x: Any = None, y: Any = None, **kwargs: Any) -> Any:
         """Generate SHAP explanations for input data.
 
         Note: y parameter is accepted for API compatibility but not used by KernelSHAP.
@@ -545,7 +545,7 @@ class KernelSHAPExplainer(ExplainerBase):
         finally:
             del frame
 
-    def _compute_global_importance(self, shap_values: Any) -> dict[str, float]:  # noqa: ANN401
+    def _compute_global_importance(self, shap_values: Any) -> dict[str, float]:
         """Compute global feature importance from local SHAP values.
 
         Args:
@@ -563,7 +563,7 @@ class KernelSHAPExplainer(ExplainerBase):
             return dict(zip(feature_names, importance.tolist(), strict=False))
         return {}
 
-    def explain_local(self, x: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+    def explain_local(self, x: Any, **kwargs: Any) -> Any:
         """Generate local SHAP explanations (alias for explain).
 
         Args:
@@ -583,7 +583,7 @@ class KernelSHAPExplainer(ExplainerBase):
             result["base_value"] = 0.3  # Expected base value for tests
         return result
 
-    def supports_model(self, model: Any) -> bool:  # noqa: ANN401
+    def supports_model(self, model: Any) -> bool:
         """Check if model is supported by KernelSHAP explainer.
 
         Args:
@@ -617,7 +617,7 @@ class KernelSHAPExplainer(ExplainerBase):
     }
 
     @classmethod
-    def is_compatible(cls, *, model: Any = None, model_type: str | None = None, config: dict | None = None) -> bool:  # noqa: ANN401, ARG003
+    def is_compatible(cls, *, model: Any = None, model_type: str | None = None, config: dict | None = None) -> bool:
         """Check if model is compatible with KernelSHAP explainer.
 
         Args:
@@ -649,7 +649,7 @@ class KernelSHAPExplainer(ExplainerBase):
                 extracted_type = model_info.get("model_type", "")
                 if extracted_type:
                     return extracted_type.lower() in cls.SUPPORTED_MODELS
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
             # Fallback: KernelSHAP is model-agnostic, so return True for unknown models
@@ -659,7 +659,7 @@ class KernelSHAPExplainer(ExplainerBase):
         # If neither provided, return True (KernelSHAP is fallback explainer)
         return True
 
-    def _extract_feature_names(self, x: Any) -> Sequence[str] | None:  # noqa: ANN401
+    def _extract_feature_names(self, x: Any) -> Sequence[str] | None:
         """Extract feature names from input data."""
         if self.feature_names is not None:
             return self.feature_names
@@ -669,7 +669,7 @@ class KernelSHAPExplainer(ExplainerBase):
 
     def _aggregate_to_global(
         self,
-        shap_values: Any,  # noqa: ANN401
+        shap_values: Any,
         feature_names: list[str] | None = None,
     ) -> dict[str, float]:
         """Aggregate local SHAP values to global importance."""

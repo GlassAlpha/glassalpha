@@ -25,7 +25,7 @@ def log_pipeline_init(logger: logging.Logger, profile: str) -> None:
     logger.info(INIT_LOG_TEMPLATE.format(profile=profile))
 
 
-def log_info_single_arg(logger: logging.Logger, message: str, **kwargs: Any) -> None:  # noqa: ANN401
+def log_info_single_arg(logger: logging.Logger, message: str, **kwargs: Any) -> None:
     """Log info message with single argument to prevent printf drift.
 
     Args:
@@ -38,7 +38,7 @@ def log_info_single_arg(logger: logging.Logger, message: str, **kwargs: Any) -> 
     logger.info(formatted_msg)
 
 
-def log_debug_single_arg(logger: logging.Logger, message: str, **kwargs: Any) -> None:  # noqa: ANN401
+def log_debug_single_arg(logger: logging.Logger, message: str, **kwargs: Any) -> None:
     """Log debug message with single argument to prevent printf drift.
 
     Args:

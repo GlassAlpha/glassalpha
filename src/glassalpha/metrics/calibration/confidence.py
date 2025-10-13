@@ -327,7 +327,7 @@ def _bootstrap_metric(
                 boot_estimate = metric_fn(y_true_boot, y_prob_boot)
                 if not np.isnan(boot_estimate):
                     bootstrap_estimates.append(boot_estimate)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.debug(f"Bootstrap iteration failed: {e}")
                 continue
 
@@ -413,6 +413,6 @@ def _compute_brier(y_true: np.ndarray, y_prob: np.ndarray) -> float:
         Brier score
 
     """
-    from sklearn.metrics import brier_score_loss  # noqa: PLC0415
+    from sklearn.metrics import brier_score_loss
 
     return float(brier_score_loss(y_true, y_prob))

@@ -9,8 +9,6 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import pytest
-
 
 class TestCriticalRegressions:
     """Tests for critical regressions that must pass in CI."""

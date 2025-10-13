@@ -14,12 +14,8 @@ Tests use subprocess to avoid CLI testing framework issues and ensure
 real exit code behavior is tested.
 """
 
-import subprocess
-import sys
 import tempfile
 from pathlib import Path
-
-import pytest
 
 
 class TestCLIAuditExitCodes:

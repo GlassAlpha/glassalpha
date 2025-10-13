@@ -31,9 +31,9 @@ class HTMLRenderer:
         # Friend's spec: Optional assert for packaging validation
         if os.getenv("GLASSALPHA_ASSERT_PACKAGING") == "1":
             try:
-                from importlib.resources import files  # noqa: PLC0415
+                from importlib.resources import files
 
-                assert files("glassalpha.report.templates").joinpath("standard_audit.html").is_file()  # noqa: S101
+                assert files("glassalpha.report.templates").joinpath("standard_audit.html").is_file()
             except (ImportError, AssertionError) as e:
                 msg = f"Template packaging validation failed: {e}"
                 raise RuntimeError(msg) from e

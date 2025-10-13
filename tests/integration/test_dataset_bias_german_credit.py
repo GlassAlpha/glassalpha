@@ -4,8 +4,6 @@ Tests E12 functionality end-to-end with real data.
 """
 
 import numpy as np
-import pandas as pd
-import pytest
 
 from glassalpha.datasets.german_credit import load_german_credit
 from glassalpha.metrics.fairness.dataset import compute_dataset_bias_metrics

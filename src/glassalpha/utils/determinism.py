@@ -172,7 +172,7 @@ def _enforce_numpy_determinism() -> None:
         # NumPy 2.0+ uses different API
         if hasattr(np, "set_num_threads"):
             np.set_num_threads(1)  # type: ignore[attr-defined]
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.debug(f"Could not set NumPy threads: {e}")
 
 

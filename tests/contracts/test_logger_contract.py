@@ -6,8 +6,6 @@ Prevents drift back to printf-style logging that causes contract test failures.
 from types import SimpleNamespace
 from unittest.mock import patch
 
-import pytest
-
 from glassalpha.constants import INIT_LOG_TEMPLATE
 
 
@@ -19,8 +17,8 @@ class TestLoggerContract:
 
         Prevents regression to printf-style logging that fails contract tests.
         """
-        import glassalpha.pipeline.audit as audit_mod  # noqa: PLC0415
-        from glassalpha.pipeline.audit import AuditPipeline  # noqa: PLC0415
+        import glassalpha.pipeline.audit as audit_mod
+        from glassalpha.pipeline.audit import AuditPipeline
 
         config = SimpleNamespace(audit_profile="tabular_compliance")
 
@@ -38,10 +36,10 @@ class TestLoggerContract:
 
     def test_no_printf_style_logging_in_logging_utils(self) -> None:
         """Ensure logging utilities don't use printf-style internally."""
-        import logging  # noqa: PLC0415
-        from unittest.mock import Mock  # noqa: PLC0415
+        import logging
+        from unittest.mock import Mock
 
-        from glassalpha.logging_utils import log_pipeline_init  # noqa: PLC0415
+        from glassalpha.logging_utils import log_pipeline_init
 
         mock_logger = Mock(spec=logging.Logger)
 

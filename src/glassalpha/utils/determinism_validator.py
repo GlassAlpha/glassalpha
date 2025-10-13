@@ -182,7 +182,7 @@ class DeterminismValidator:
                     "html",  # Use HTML for faster determinism validation
                 ]
 
-                subprocess.run(  # noqa: S603
+                subprocess.run(
                     cmd,
                     env=env,
                     capture_output=True,

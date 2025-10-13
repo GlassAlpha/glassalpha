@@ -16,7 +16,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def _json_serializer(obj: Any) -> Any:  # noqa: ANN401
+def _json_serializer(obj: Any) -> Any:
     """Custom JSON serializer for common non-serializable objects.
 
     Args:
@@ -49,14 +49,14 @@ def _json_serializer(obj: Any) -> Any:  # noqa: ANN401
         # For objects with __dict__, try to serialize their state
         try:
             return obj.__dict__
-        except Exception:  # noqa: BLE001, S110
+        except Exception:
             pass
 
     # Safe fallback for common non-serializables
     return repr(obj)
 
 
-def hash_object(obj: Any, algorithm: str = "sha256") -> str:  # noqa: ANN401
+def hash_object(obj: Any, algorithm: str = "sha256") -> str:
     """Generate deterministic hash of any Python object.
 
     Args:
@@ -204,7 +204,7 @@ def hash_file(file_path: Path, algorithm: str = "sha256", chunk_size: int = 8192
     return file_hash
 
 
-def hash_model(model: Any, algorithm: str = "sha256") -> str:  # noqa: ANN401, C901, PLR0912
+def hash_model(model: Any, algorithm: str = "sha256") -> str:
     """Generate hash of ML model.
 
     Args:
@@ -250,7 +250,7 @@ def hash_model(model: Any, algorithm: str = "sha256") -> str:  # noqa: ANN401, C
 
             return hash_object(model_state, algorithm)
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.warning(f"Model-specific hashing failed: {e}, falling back to object hash")
 
     # Strategy 2: Hash object attributes
@@ -265,19 +265,19 @@ def hash_model(model: Any, algorithm: str = "sha256") -> str:  # noqa: ANN401, C
                         attributes[attr_name] = attr_value.tolist()
                     else:
                         attributes[attr_name] = attr_value
-                except Exception:  # noqa: BLE001, S112
+                except Exception:
                     continue
 
         return hash_object(attributes, algorithm)
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.warning(f"Attribute hashing failed: {e}, using basic object hash")
 
     # Strategy 3: Basic object hash
     return hash_object(str(model), algorithm)
 
 
-def hash_multiple(*objects: Any, algorithm: str = "sha256") -> str:  # noqa: ANN401
+def hash_multiple(*objects: Any, algorithm: str = "sha256") -> str:
     """Generate combined hash of multiple objects.
 
     Args:
@@ -393,7 +393,7 @@ def _sort_dict_recursively(d: dict[str, Any]) -> dict[str, Any]:
     return sorted_dict
 
 
-def verify_hash_consistency(obj: Any, iterations: int = 3) -> bool:  # noqa: ANN401
+def verify_hash_consistency(obj: Any, iterations: int = 3) -> bool:
     """Verify that hashing is deterministic across multiple runs.
 
     Args:

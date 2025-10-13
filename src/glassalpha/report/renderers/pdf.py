@@ -463,9 +463,9 @@ class AuditPDFRenderer:
             try:
                 # Try modern pypdf first, then fall back to older PyPDF2
                 try:
-                    from pypdf import PdfReader, PdfWriter  # pypdf 3.x  # noqa: PLC0415
+                    from pypdf import PdfReader, PdfWriter  # pypdf 3.x
                 except ImportError:
-                    from PyPDF2 import PdfReader, PdfWriter  # pypdf 2.x fallback  # noqa: PLC0415
+                    from PyPDF2 import PdfReader, PdfWriter  # pypdf 2.x fallback
 
                 # Read the PDF
                 with open(pdf_path, "rb") as file:

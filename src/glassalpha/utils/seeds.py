@@ -89,7 +89,7 @@ class SeedManager:
         random.seed(self.master_seed)
 
         # Set NumPy seed (legacy API required for global reproducibility)
-        np.random.seed(self.master_seed)  # noqa: NPY002
+        np.random.seed(self.master_seed)
 
         # Set sklearn seed via environment variable
         os.environ["PYTHONHASHSEED"] = str(self.master_seed)
@@ -144,7 +144,7 @@ class SeedManager:
         """
         self._original_states = {
             "python_random": random.getstate(),
-            "numpy_random": np.random.get_state(),  # noqa: NPY002
+            "numpy_random": np.random.get_state(),
         }
 
         # Save optional framework states using module flags
@@ -166,7 +166,7 @@ class SeedManager:
             random.setstate(self._original_states["python_random"])
 
         if "numpy_random" in self._original_states:
-            np.random.set_state(self._original_states["numpy_random"])  # noqa: NPY002
+            np.random.set_state(self._original_states["numpy_random"])
 
         # Restore optional framework states using module flags
         if torch and _torch is not None:
@@ -322,7 +322,7 @@ def ensure_reproducibility(func: Callable[..., Any]) -> Callable[..., Any]:
 
     """
 
-    def wrapper(*args, **kwargs):  # type: ignore[no-untyped-def] # noqa: ANN002,ANN003,ANN202
+    def wrapper(*args, **kwargs):  # type: ignore[no-untyped-def]
         # Save current state
         _global_seed_manager.save_random_states()
 
@@ -369,16 +369,16 @@ def validate_deterministic_environment() -> dict[str, bool]:
 
     # Test Python random (not for cryptographic use)
     random.seed(42)
-    val1 = random.random()  # noqa: S311
+    val1 = random.random()
     random.seed(42)
-    val2 = random.random()  # noqa: S311
+    val2 = random.random()
     validation_results["python_random"] = val1 == val2
 
     # Test NumPy random (legacy API for reproducibility testing)
-    np.random.seed(42)  # noqa: NPY002
-    arr1 = np.random.rand(5)  # noqa: NPY002
-    np.random.seed(42)  # noqa: NPY002
-    arr2 = np.random.rand(5)  # noqa: NPY002
+    np.random.seed(42)
+    arr1 = np.random.rand(5)
+    np.random.seed(42)
+    arr2 = np.random.rand(5)
     validation_results["numpy_random"] = np.allclose(arr1, arr2)
 
     # Test optional frameworks using module flags

@@ -30,6 +30,8 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+from glassalpha.profiles import TabularComplianceProfile
+
 from glassalpha.config import load_config
 
 # StrictModeError removed - now using ValueError from Pydantic validators
@@ -38,7 +40,6 @@ from glassalpha.core import (
     list_components,
     select_explainer,
 )
-from glassalpha.profiles import TabularComplianceProfile
 
 
 def main():

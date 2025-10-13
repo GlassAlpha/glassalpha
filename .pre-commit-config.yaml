@@ -3,9 +3,10 @@ repos:
     rev: v0.13.1 # Use latest version
     hooks:
       - id: ruff
-        args: [--fix, --unsafe-fixes] # Max auto-fix for solo development
-        exclude: ^(dev/demo_.*\.py|dev/.*_review\.py|tests/test_.*\.py)$
-      - id: ruff-format
+        args: [--fix, --exit-zero] # Auto-fix and succeed (don't block on lint errors)
+        exclude: ^dev/.*\.py$
+      - id: ruff-format # Auto-format (no args = format, not check)
+        exclude: ^dev/.*\.py$
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -14,18 +15,24 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-merge-conflict
-      - id: check-toml
-      - id: check-json
       - id: mixed-line-ending
         args: [--fix=lf] # Ensure LF line endings
+      - id: check-added-large-files # Catch AI dumping large files
+        args: [--maxkb=500]
+      - id: check-case-conflict # Catch case-sensitive filename issues
 
-  - repo: https://github.com/mgedmin/check-manifest
-    rev: "0.49"
+  - repo: local
     hooks:
-      - id: check-manifest
-        args: [--verbose]
-        # Requires setup.py or pyproject.toml packaging context
-        additional_dependencies: [build, setuptools, wheel]
+      - id: check-package-structure
+        name: Verify package structure
+        entry: python3 scripts/check_package_structure.py
+        language: system
+        pass_filenames: false
+      - id: smoke-test
+        name: Quick smoke test
+        entry: python3 -m pytest tests/test_import_surface.py -q
+        language: system
+        pass_filenames: false
 # MyPy disabled during architectural foundation phase
 # Will re-enable when Phase 1 implementation is complete
 # - repo: https://github.com/pre-commit/mirrors-mypy

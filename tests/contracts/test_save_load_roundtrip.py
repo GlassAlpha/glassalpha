@@ -18,16 +18,16 @@ class TestSaveLoadRoundtrip:
     def test_xgboost_wrapper_roundtrip(self) -> None:
         """Test XGBoost wrapper save/load preserves state and functionality."""
         try:
-            import xgboost as xgb  # noqa: PLC0415
+            import xgboost as xgb
 
-            from glassalpha.models.xgboost import XGBoostWrapper  # noqa: PLC0415
+            from glassalpha.models.xgboost import XGBoostWrapper
         except ImportError:
             pytest.skip("XGBoost not available")
 
         # Create and fit wrapper
         wrapper1 = XGBoostWrapper()
 
-        X_train = pd.DataFrame(  # noqa: N806
+        X_train = pd.DataFrame(
             {
                 "feature1": [1, 2, 3, 4, 5],
                 "feature2": [10, 20, 30, 40, 50],
@@ -38,7 +38,7 @@ class TestSaveLoadRoundtrip:
         wrapper1.fit(X_train, y_train, random_state=42)
 
         # Get predictions from original
-        X_test = pd.DataFrame(  # noqa: N806
+        X_test = pd.DataFrame(
             {
                 "feature1": [2.5, 3.5],
                 "feature2": [25, 35],
@@ -58,9 +58,9 @@ class TestSaveLoadRoundtrip:
             wrapper2.load(save_path)
 
             # Contract: After load, state should be preserved
-            assert wrapper2.model is not None, "Model should be loaded"  # noqa: S101
-            assert wrapper2.n_classes == wrapper1.n_classes, "n_classes should match"  # noqa: S101
-            assert wrapper2.feature_names_ == wrapper1.feature_names_, "Feature names should match"  # noqa: S101
+            assert wrapper2.model is not None, "Model should be loaded"
+            assert wrapper2.n_classes == wrapper1.n_classes, "n_classes should match"
+            assert wrapper2.feature_names_ == wrapper1.feature_names_, "Feature names should match"
 
             # Contract: Predictions should be numerically close
             loaded_predictions = wrapper2.predict(X_test)
@@ -87,16 +87,16 @@ class TestSaveLoadRoundtrip:
     def test_sklearn_wrapper_roundtrip(self) -> None:
         """Test sklearn wrapper save/load preserves state and functionality."""
         try:
-            import sklearn  # noqa: PLC0415
+            import sklearn
 
-            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper
         except ImportError:
             pytest.skip("sklearn not available")
 
         # Create and fit wrapper
         wrapper1 = LogisticRegressionWrapper()
 
-        X_train = pd.DataFrame(  # noqa: N806
+        X_train = pd.DataFrame(
             {
                 "x1": [1, 2, 3, 4, 5],
                 "x2": [5, 4, 3, 2, 1],
@@ -107,7 +107,7 @@ class TestSaveLoadRoundtrip:
         wrapper1.fit(X_train, y_train, random_state=42)
 
         # Get predictions from original
-        X_test = pd.DataFrame(  # noqa: N806
+        X_test = pd.DataFrame(
             {
                 "x1": [2.5, 3.5],
                 "x2": [3.5, 2.5],
@@ -127,10 +127,10 @@ class TestSaveLoadRoundtrip:
             wrapper2.load(save_path)
 
             # Contract: After load, state should be preserved
-            assert wrapper2.model is not None, "Model should be loaded"  # noqa: S101
-            assert wrapper2.n_classes == wrapper1.n_classes, "n_classes should match"  # noqa: S101
-            assert wrapper2.feature_names_ == wrapper1.feature_names_, "Feature names should match"  # noqa: S101
-            assert wrapper2._is_fitted == True, "_is_fitted should be True after load"  # noqa: E712, SLF001, S101
+            assert wrapper2.model is not None, "Model should be loaded"
+            assert wrapper2.n_classes == wrapper1.n_classes, "n_classes should match"
+            assert wrapper2.feature_names_ == wrapper1.feature_names_, "Feature names should match"
+            assert wrapper2._is_fitted == True, "_is_fitted should be True after load"  # noqa: E712
 
             # Contract: Predictions should be identical for sklearn
             loaded_predictions = wrapper2.predict(X_test)
@@ -156,16 +156,16 @@ class TestSaveLoadRoundtrip:
     def test_lightgbm_wrapper_roundtrip(self) -> None:
         """Test LightGBM wrapper save/load preserves state and functionality."""
         try:
-            import lightgbm  # noqa: PLC0415
+            import lightgbm
 
-            from glassalpha.models.lightgbm import LightGBMWrapper  # noqa: PLC0415
+            from glassalpha.models.lightgbm import LightGBMWrapper
         except ImportError:
             pytest.skip("LightGBM not available")
 
         # Create and fit wrapper
         wrapper1 = LightGBMWrapper()
 
-        X_train = pd.DataFrame(  # noqa: N806
+        X_train = pd.DataFrame(
             {
                 "feat_a": [1, 2, 3, 4, 5, 6],
                 "feat_b": [10, 20, 30, 40, 50, 60],
@@ -176,7 +176,7 @@ class TestSaveLoadRoundtrip:
         wrapper1.fit(X_train, y_train, random_state=42)
 
         # Get predictions from original
-        X_test = pd.DataFrame(  # noqa: N806
+        X_test = pd.DataFrame(
             {
                 "feat_a": [2.5, 4.5],
                 "feat_b": [25, 45],
@@ -196,9 +196,9 @@ class TestSaveLoadRoundtrip:
             wrapper2.load(save_path)
 
             # Contract: After load, state should be preserved
-            assert wrapper2.model is not None, "Model should be loaded"  # noqa: S101
-            assert wrapper2.n_classes == wrapper1.n_classes, "n_classes should match"  # noqa: S101
-            assert wrapper2.feature_names_ == wrapper1.feature_names_, "Feature names should match"  # noqa: S101
+            assert wrapper2.model is not None, "Model should be loaded"
+            assert wrapper2.n_classes == wrapper1.n_classes, "n_classes should match"
+            assert wrapper2.feature_names_ == wrapper1.feature_names_, "Feature names should match"
 
             # Contract: Predictions should be numerically close
             loaded_predictions = wrapper2.predict(X_test)
@@ -225,13 +225,13 @@ class TestSaveLoadRoundtrip:
     def test_wrapper_load_returns_self(self) -> None:
         """Test that load() methods return self for method chaining."""
         try:
-            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper
         except ImportError:
             pytest.skip("sklearn not available")
 
         # Create, fit, and save wrapper
         wrapper1 = LogisticRegressionWrapper()
-        X_train = pd.DataFrame({"x1": [1, 2, 3], "x2": [4, 5, 6]})  # noqa: N806
+        X_train = pd.DataFrame({"x1": [1, 2, 3], "x2": [4, 5, 6]})
         y_train = [0, 1, 0]
         wrapper1.fit(X_train, y_train)
 
@@ -244,12 +244,12 @@ class TestSaveLoadRoundtrip:
             wrapper2 = LogisticRegressionWrapper()
             result = wrapper2.load(save_path)
 
-            assert result is wrapper2, "load() should return self"  # noqa: S101
+            assert result is wrapper2, "load() should return self"
 
             # Should be able to chain methods
-            X_test = pd.DataFrame({"x1": [1.5], "x2": [4.5]})  # noqa: N806
+            X_test = pd.DataFrame({"x1": [1.5], "x2": [4.5]})
             predictions = wrapper2.load(save_path).predict(X_test)  # Chain load->predict
-            assert len(predictions) == 1  # noqa: S101
+            assert len(predictions) == 1
 
         finally:
             Path(save_path).unlink(missing_ok=True)
@@ -257,12 +257,12 @@ class TestSaveLoadRoundtrip:
     def test_save_creates_parent_directories(self) -> None:
         """Test that save() creates parent directories if needed."""
         try:
-            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper
         except ImportError:
             pytest.skip("sklearn not available")
 
         wrapper = LogisticRegressionWrapper()
-        X_train = pd.DataFrame({"x": [1, 2], "y": [3, 4]})  # noqa: N806
+        X_train = pd.DataFrame({"x": [1, 2], "y": [3, 4]})
         y_train = [0, 1]
         wrapper.fit(X_train, y_train)
 
@@ -274,18 +274,18 @@ class TestSaveLoadRoundtrip:
             wrapper.save(nested_path)
 
             # File should exist
-            assert nested_path.exists()  # noqa: S101
-            assert nested_path.is_file()  # noqa: S101
+            assert nested_path.exists()
+            assert nested_path.is_file()
 
     def test_load_nonexistent_file_raises_error(self) -> None:
         """Test that loading nonexistent file raises proper error."""
         try:
-            from glassalpha.models.sklearn import LogisticRegressionWrapper  # noqa: PLC0415
+            from glassalpha.models.sklearn import LogisticRegressionWrapper
         except ImportError:
             pytest.skip("sklearn not available")
 
         wrapper = LogisticRegressionWrapper()
-        nonexistent_path = "/tmp/nonexistent_model_file.pkl"  # noqa: S108
+        nonexistent_path = "/tmp/nonexistent_model_file.pkl"
 
         with pytest.raises(FileNotFoundError):
             wrapper.load(nonexistent_path)
@@ -301,7 +301,7 @@ class TestSaveLoadRoundtrip:
         """Test that empty/default wrapper states are handled properly."""
         if wrapper_name == "LogisticRegressionWrapper":
             try:
-                from glassalpha.models.sklearn import LogisticRegressionWrapper as WrapperClass  # noqa: PLC0415
+                from glassalpha.models.sklearn import LogisticRegressionWrapper as WrapperClass
             except ImportError:
                 pytest.skip("sklearn not available")
         else:
@@ -311,7 +311,7 @@ class TestSaveLoadRoundtrip:
 
         # Should raise error when trying to save unfitted model
         with tempfile.NamedTemporaryFile(suffix=".pkl") as tmp:
-            from glassalpha.constants import NO_MODEL_MSG  # noqa: PLC0415
+            from glassalpha.constants import NO_MODEL_MSG
 
             with pytest.raises(ValueError, match=NO_MODEL_MSG):
                 wrapper.save(tmp.name)

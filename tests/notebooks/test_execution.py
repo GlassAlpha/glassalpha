@@ -75,7 +75,6 @@ def test_all_example_notebooks_covered():
 
     Prevents accidentally skipping notebooks when new ones are added.
     """
-    import os
     from pathlib import Path
 
     notebooks_dir = Path(__file__).parent.parent.parent.parent / "examples" / "notebooks"

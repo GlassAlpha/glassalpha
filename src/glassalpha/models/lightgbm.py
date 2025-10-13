@@ -176,8 +176,8 @@ class LightGBMWrapper(BaseTabularWrapper):
 
         # Try to load as JSON format first (new format)
         try:
-            import json  # noqa: PLC0415
-            import tempfile  # noqa: PLC0415
+            import json
+            import tempfile
 
             with path.open("r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -206,7 +206,7 @@ class LightGBMWrapper(BaseTabularWrapper):
         self._is_fitted = True  # Loaded model is fitted
         return self
 
-    def fit(self, X: Any, y: Any, **kwargs: Any) -> "LightGBMWrapper":  # noqa: ANN401
+    def fit(self, X: Any, y: Any, **kwargs: Any) -> "LightGBMWrapper":
         """Train LightGBM model on provided data.
 
         Args:
@@ -269,7 +269,7 @@ class LightGBMWrapper(BaseTabularWrapper):
             # Try to get feature names
             try:
                 self.feature_names = self.model.feature_name()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 # Graceful fallback - some models don't have feature names
                 logger.debug("Could not extract feature names from model")
 
@@ -283,7 +283,7 @@ class LightGBMWrapper(BaseTabularWrapper):
                 else:
                     # Binary classification typically has 1 model per iteration
                     self.n_classes = self.BINARY_CLASS_COUNT
-            except Exception:  # noqa: BLE001
+            except Exception:
                 # Graceful fallback - determine from prediction shape later
                 logger.debug("Could not determine number of classes, defaulting to binary")
                 self.n_classes = self.BINARY_CLASS_COUNT
@@ -415,7 +415,7 @@ class LightGBMWrapper(BaseTabularWrapper):
             ValueError: If no trained model exists to save
 
         """
-        from glassalpha.constants import NO_MODEL_MSG  # noqa: PLC0415
+        from glassalpha.constants import NO_MODEL_MSG
 
         if self.model is None:
             raise ValueError(NO_MODEL_MSG)
@@ -424,8 +424,8 @@ class LightGBMWrapper(BaseTabularWrapper):
         path.parent.mkdir(parents=True, exist_ok=True)
 
         # Save model to temp file then read as string
-        import json  # noqa: PLC0415
-        import tempfile  # noqa: PLC0415
+        import json
+        import tempfile
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp:
             self.model.save_model(tmp.name)
