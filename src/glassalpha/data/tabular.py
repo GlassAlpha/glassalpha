@@ -209,8 +209,33 @@ class TabularDataLoader(DataInterface):
             if missing_sensitive:
                 msg = f"❌ Missing sensitive feature columns: {missing_sensitive}\n\n"
 
-                # Find potential matches using fuzzy matching
+                # Check for common dataset-specific issues
                 available_cols = list(data.columns)
+                dataset_hints = []
+
+                # Adult Income dataset specifics
+                if "income_over_50k" in available_cols or "race" in available_cols:
+                    if "gender" in missing_sensitive and "sex" in available_cols:
+                        dataset_hints.append("Adult Income uses 'sex' (not 'gender')")
+                    if not dataset_hints:
+                        dataset_hints.append("Adult Income protected attributes: 'race', 'sex', 'age_group'")
+
+                # German Credit dataset specifics
+                elif "credit_risk" in available_cols:
+                    if "sex" in missing_sensitive and "gender" in available_cols:
+                        dataset_hints.append("German Credit uses 'gender' (not 'sex')")
+                    if not dataset_hints:
+                        dataset_hints.append(
+                            "German Credit protected attributes: 'gender', 'age_group', 'foreign_worker'"
+                        )
+
+                if dataset_hints:
+                    msg += "💡 Dataset-specific hint:\n"
+                    for hint in dataset_hints:
+                        msg += f"   • {hint}\n"
+                    msg += "\n"
+
+                # Find potential matches using fuzzy matching
                 suggestions = {}
                 for missing in missing_sensitive:
                     # Try fuzzy matching

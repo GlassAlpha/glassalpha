@@ -10,40 +10,38 @@ _Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable wi
 
 ## Installation
 
-> ⚠️ **Pre-release Notice**: GlassAlpha is not yet published to PyPI. Use source installation below until official release (expected Q1 2025).
-
-### Option 1: Install from source (recommended)
+### Quick install
 
 ```bash
-git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha
-pip install -e ".[all]"  # Install with all optional features
+# Install with all features
+pip install "glassalpha[all]"
+
+# Or minimal installation (HTML reports only)
+pip install glassalpha
+
+# Verify installation
+glassalpha --version
+glassalpha doctor
 ```
 
 **Base installation** includes LogisticRegression model with coefficient-based explanations (fast, zero extra dependencies).
 
-**For minimal installation** (HTML reports only):
+**Optional features:**
 
 ```bash
-pip install -e .
+pip install "glassalpha[explain]"  # SHAP + XGBoost + LightGBM
+pip install "glassalpha[viz]"      # Enhanced visualizations
+pip install "glassalpha[all]"      # All features (recommended)
 ```
 
-**For advanced models** (XGBoost/LightGBM with SHAP):
+### Install from source
+
+For development or latest features:
 
 ```bash
-pip install -e ".[explain]"  # Adds 5-10 minutes to initial setup
-```
-
-### Option 2: Install from PyPI (coming soon)
-
-Once published to PyPI (expected Q1 2025):
-
-```bash
-# Install with pipx (recommended for CLI tools)
-pipx install glassalpha
-
-# Or with pip
-pip install glassalpha
+git clone https://github.com/GlassAlpha/glassalpha
+cd glassalpha
+pip install -e ".[all]"
 ```
 
 ## Development Setup

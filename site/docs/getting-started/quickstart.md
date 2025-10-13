@@ -53,16 +53,13 @@ glassalpha audit --config your_config.yaml
 
 ## The 5-minute version
 
-> ⚠️ **Pre-release**: Install from source (PyPI coming Q1 2025)
-
 Get your first professional audit report in 5 minutes:
 
 ### Using quickstart generator (easiest)
 
 ```bash
-# 1. Clone and install (1-2 minutes)
-git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha && pip install -e ".[all]"
+# 1. Install (1-2 minutes)
+pip install "glassalpha[all]"
 
 # 2. Generate project (interactive wizard, 30 seconds)
 glassalpha quickstart
@@ -77,26 +74,28 @@ start reports/audit_report.html  # Windows
 ```
 
 **Note**: Base installation uses LogisticRegression model (fast, zero extra dependencies).
-For advanced models only, install with `pip install -e ".[explain]"` instead.
+For advanced models only, install with `pip install "glassalpha[explain]"` instead.
 
-### Using repository example
+### Using example configs
 
 ```bash
-# 1. Clone and install (1-2 minutes)
-git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha && pip install -e .
+# 1. Install
+pip install glassalpha
 
-# 2. Generate audit
-# Note: Example configs are in src/glassalpha/data/configs/
-glassalpha audit --config src/glassalpha/data/configs/german_credit_simple.yaml --output audit.html
+# 2. Create project from example config
+mkdir my-audit && cd my-audit
+glassalpha quickstart --dataset german_credit --model xgboost --no-interactive
 
-# 3. Done! Open your professional report
-open audit.html  # macOS
-# xdg-open audit.html  # Linux
-# start audit.html  # Windows
+# 3. Run audit
+glassalpha audit
+
+# 4. Done! Open your professional report
+open audit_config.html  # macOS (auto-named from config)
+# xdg-open audit_config.html  # Linux
+# start audit_config.html  # Windows
 ```
 
-**Config path note**: Example configs are located in `src/glassalpha/data/configs/` in the repository. For your own projects, create configs anywhere and use relative or absolute paths.
+**Tip**: Example configs are also available in the repository at `src/glassalpha/data/configs/` if you install from source.
 
 **What you get**: A comprehensive audit report with:
 
@@ -299,7 +298,7 @@ Verify installation:
 glassalpha --help
 
 # Check what models are available
-glassalpha models
+glassalpha list
 ```
 
 You should see the CLI help message with available commands.

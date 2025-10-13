@@ -108,8 +108,53 @@ Examples:
     # Basic environment check
     glassalpha doctor
 
-    # Verbose output
+    # Verbose output with package versions
     glassalpha doctor --verbose
+
+**Options:**
+
+- `--verbose, -v`: Show detailed environment information including package versions and paths (default: `False`)
+
+### `glassalpha export-evidence-pack`
+
+Export evidence pack for audit verification.
+
+Creates tamper-evident ZIP with all audit artifacts, checksums,
+and verification instructions for regulatory submission.
+
+The evidence pack includes:
+- Audit report (HTML or PDF)
+- Provenance manifest (hashes, versions, seeds)
+- Policy decision log (stub for v0.3.0)
+- Configuration file (if provided)
+- SHA256 checksums and verification instructions
+
+Requirements:
+    - Completed audit report (HTML or PDF format)
+    - Manifest file (auto-generated during audit)
+
+Examples:
+    # Basic export with auto-generated name
+    glassalpha export-evidence-pack reports/audit_report.html
+
+    # Custom output path
+    glassalpha export-evidence-pack audit.pdf --output compliance/evidence_2024.zip
+
+    # Include original config for reproducibility
+    glassalpha export-evidence-pack audit.html --config audit_config.yaml
+
+    # Skip badge generation (faster)
+    glassalpha export-evidence-pack audit.pdf --no-badge
+
+**Arguments:**
+
+- `report` (path, required): Path to audit report (HTML or PDF)
+
+**Options:**
+
+- `--output`: Output ZIP path (auto-generated if omitted)
+- `--config`: Include original config file
+- `--no-badge`: Skip badge generation (default: `False`)
 
 ### `glassalpha list`
 
@@ -199,7 +244,7 @@ Examples:
 **Options:**
 
 - `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
-- `--data, -d`: Path to test data file (CSV)
+- `--data, -d`: Path to test data file (CSV). Auto-generated if missing using built-in dataset.
 - `--instance, -i`: Row index of instance to explain (0-based)
 - `--config, -c`: Path to reason codes configuration YAML
 - `--output, -o`: Path for output notice file (defaults to stdout)
@@ -244,10 +289,18 @@ Configuration File:
     - data.protected_attributes: list of protected attributes to exclude
     - reproducibility.random_seed: seed for deterministic results
 
+Model Compatibility:
+    Recourse works best with sklearn-compatible models:
+    ✅ logistic_regression, linear_regression, random_forest (sklearn)
+    ⚠️  xgboost, lightgbm (limited support - known issues with feature modification)
+
+    For XGBoost models, consider using 'glassalpha reasons' instead for ECOA-compliant
+    adverse action notices. See: https://glassalpha.com/guides/recourse/#known-limitations
+
 **Options:**
 
 - `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
-- `--data, -d`: Path to test data file (CSV)
+- `--data, -d`: Path to test data file (CSV). Auto-generated if missing using built-in dataset.
 - `--instance, -i`: Row index of instance to explain (0-based)
 - `--config, -c`: Path to recourse configuration YAML
 - `--output, -o`: Path for output recommendations file (JSON, defaults to stdout)
@@ -292,6 +345,44 @@ Examples:
 - `--strict`: Validate for strict mode compliance (default: `False`)
 - `--strict-validation`: Enforce runtime availability checks (recommended for production) (default: `False`)
 - `--check-data`: Load and validate actual dataset (checks if target column exists, file is readable) (default: `False`)
+
+### `glassalpha verify-evidence-pack`
+
+Verify evidence pack integrity.
+
+Confirms all checksums match and pack is tamper-free for regulatory
+verification. Returns exit code 0 if verified, 1 if verification fails.
+
+The verification checks:
+- ZIP file is readable and not corrupted
+- SHA256SUMS.txt is present and valid
+- All file checksums match
+- canonical.jsonl is well-formed
+- Required artifacts are present (audit report, manifest)
+
+Requirements:
+    - Evidence pack ZIP file created with export-evidence-pack command
+
+Examples:
+    # Basic verification
+    glassalpha verify-evidence-pack evidence_pack.zip
+
+    # Verbose output with detailed checksums
+    glassalpha verify-evidence-pack pack.zip --verbose
+
+    # Verify downloaded pack from regulator
+    glassalpha verify-evidence-pack compliance_submission_2024.zip
+
+    # Use in CI/CD pipeline
+    glassalpha verify-evidence-pack evidence.zip || exit 1
+
+**Arguments:**
+
+- `pack` (path, required): Evidence pack ZIP to verify
+
+**Options:**
+
+- `--verbose`: Show detailed verification log (default: `False`)
 
 ## Global Options
 

@@ -143,7 +143,7 @@ check: smoke check-workflows check-sigstore check-packaging check-determinism
 # Check CLI documentation is current
 check-docs:
 	@echo "🔍 Checking CLI documentation..."
-	@python scripts/generate_cli_docs.py --check
+	@python3 scripts/generate_cli_docs.py --check
 
 # Test sigstore signing process locally
 check-sigstore:

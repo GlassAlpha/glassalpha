@@ -267,7 +267,7 @@ def _collect_artifacts(report_path: Path) -> dict[str, Path]:
 
 
 def _generate_pack_name(artifacts: dict[str, Path]) -> str:
-    """Generate deterministic pack name from artifacts."""
+    """Generate short, deterministic pack name from artifacts."""
     # Use SOURCE_DATE_EPOCH for deterministic date
     source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
     if source_date_epoch:
@@ -282,21 +282,38 @@ def _generate_pack_name(artifacts: dict[str, Path]) -> str:
             manifest_path = path
             break
 
+    dataset_name = "audit"  # Default fallback
     if manifest_path:
         try:
             manifest_data = _read_json(manifest_path)
-            # Try multiple possible field names for dataset name
-            dataset_name = (
-                manifest_data.get("dataset_name")
-                or manifest_data.get("data_source")
-                or manifest_data.get("dataset")
-                or "audit"
-            )
-            return f"evidence_{dataset_name}_{date_str}"
-        except (json.JSONDecodeError, KeyError):
-            pass
+            # Handle nested dataset field (dataset.name, dataset.dataset, etc.)
+            dataset_field = manifest_data.get("dataset")
+            if isinstance(dataset_field, dict):
+                # Extract name from nested dict
+                dataset_name = (
+                    dataset_field.get("name")
+                    or dataset_field.get("dataset")
+                    or dataset_field.get("dataset_name")
+                    or "audit"
+                )
+            elif isinstance(dataset_field, str):
+                dataset_name = dataset_field
+            else:
+                # Try top-level fields as fallback
+                dataset_name = manifest_data.get("dataset_name") or manifest_data.get("data_source") or "audit"
 
-    return f"evidence_audit_{date_str}"
+            # Sanitize filename (remove spaces, special chars, limit length)
+            dataset_name = dataset_name.replace(" ", "_").replace("/", "_")
+            # Remove other problematic characters
+            dataset_name = "".join(c for c in dataset_name if c.isalnum() or c in ("_", "-"))
+            # Limit length to prevent filesystem errors
+            if len(dataset_name) > 50:
+                dataset_name = dataset_name[:50]
+
+        except (json.JSONDecodeError, KeyError, AttributeError):
+            dataset_name = "audit"
+
+    return f"evidence_{dataset_name}_{date_str}"
 
 
 def _copy_artifacts_to_pack(artifacts: dict[str, Path], temp_dir: Path) -> dict[str, Path]:

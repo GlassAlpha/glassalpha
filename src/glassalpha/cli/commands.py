@@ -1072,29 +1072,42 @@ def audit(  # pragma: no cover
 
         # Auto-detect config if not provided
         if config is None:
-            # Look for config files in current directory
+            # Search for config files in current and parent directories (up to 3 levels)
             config_candidates = ["glassalpha.yaml", "audit.yaml", "config.yaml"]
             config = None
+            search_start = Path.cwd()
+            current = search_start
+            searched_dirs = []
 
-            for candidate in config_candidates:
-                if Path(candidate).exists():
-                    config = Path(candidate)
+            # Search current and up to 3 parent directories
+            for _ in range(4):
+                searched_dirs.append(str(current))
+                for candidate in config_candidates:
+                    candidate_path = current / candidate
+                    if candidate_path.exists():
+                        config = candidate_path
+                        break
+
+                if config is not None:
                     break
 
+                # Stop at filesystem root
+                if current.parent == current:
+                    break
+                current = current.parent
+
             if config is None:
-                current_dir = Path.cwd()
                 searched_files = ["glassalpha.yaml", "audit.yaml", "config.yaml"]
                 _output_error(
-                    f"Configuration file not found: {config}\n\n"
-                    f"Current directory: {current_dir}\n"
+                    f"Configuration file not found\n\n"
+                    f"Searched directories:\n  {chr(10).join('  ' + d for d in searched_dirs[:3])}\n\n"
                     f"Searched for: {', '.join(searched_files)}\n\n"
                     "Quick fixes:\n"
-                    "  1. Create config: glassalpha init --output audit.yaml\n"
-                    "  2. Use template: glassalpha init --template quickstart\n"
-                    "  3. Specify path: glassalpha audit --config /path/to/config.yaml\n\n"
+                    "  1. Generate project: glassalpha quickstart\n"
+                    "  2. Specify config path: glassalpha audit --config /path/to/config.yaml\n\n"
                     "Examples:\n"
-                    "  glassalpha init --template quickstart --output my-audit.yaml\n"
-                    "  glassalpha audit --config my-audit.yaml --output report.html",
+                    "  glassalpha quickstart  # Creates project with audit_config.yaml\n"
+                    "  glassalpha audit --config audit_config.yaml --output report.html",
                 )
                 raise typer.Exit(ExitCode.USER_ERROR)
 
@@ -1801,8 +1814,8 @@ def validate(  # pragma: no cover
                 typer.echo("\nUsage:")
                 typer.echo("  glassalpha validate config.yaml")
                 typer.echo("  glassalpha validate --config config.yaml")
-                typer.echo("\nOr create a config file in current directory:")
-                typer.echo("  glassalpha init")
+                typer.echo("\nOr create a project with config file:")
+                typer.echo("  glassalpha quickstart")
                 raise typer.Exit(ExitCode.USER_ERROR.value)
 
             typer.echo(f"Auto-detected config: {config_to_validate}")
@@ -2368,41 +2381,39 @@ def reasons(  # pragma: no cover
                 organization = getattr(cfg.reason_codes, "organization", organization)
                 contact_info = getattr(cfg.reason_codes, "contact_info", contact_info)
 
-        # Check if data file exists, auto-generate if missing
+        # Check if data file exists, look for model-compatible test data first
         if not data.exists():
-            typer.echo(f"⚠️  Data file not found: {data}")
-            typer.echo("💡 Auto-generating sample data from built-in dataset...")
-            typer.echo()
+            # Smart path detection: Check if model directory has test_data.csv
+            model_dir = model.parent
+            model_test_data = model_dir / "test_data.csv"
 
-            # Auto-generate sample data
-            try:
-                from ..datasets import load_german_credit
-
-                # Load dataset
-                dataset = load_german_credit()
-                X = dataset.drop("credit_risk", axis=1)
-
-                # Get only numeric columns for simplicity
-                numeric_cols = X.select_dtypes(include=["number"]).columns
-                X_numeric = X[numeric_cols]
-
-                # Save to requested path
-                data.parent.mkdir(parents=True, exist_ok=True)
-                X_numeric.to_csv(data, index=False)
-
-                typer.echo(f"✓ Created sample data: {data}")
-                typer.echo(f"  Columns: {list(X_numeric.columns)}")
+            if model_test_data.exists():
+                typer.echo(f"💡 Using test data from model directory: {model_test_data}")
+                typer.echo("   (This data matches the model's expected feature structure)")
                 typer.echo()
-                typer.echo("📝 Note: This is sample data from German Credit dataset.")
-                typer.echo("   For production, save your actual test data during audit.")
+                data = model_test_data
+            else:
+                # Data file not found - provide clear error with solutions
+                typer.secho(f"❌ Error: Test data file not found: {data}", fg=typer.colors.RED, err=True)
                 typer.echo()
-
-            except Exception as e:
-                typer.echo(f"✗ Could not generate sample data: {e}", err=True)
+                typer.echo("The reason codes/recourse commands require test data that matches")
+                typer.echo("the model's expected feature structure (including preprocessing).")
                 typer.echo()
-                typer.echo("Quick fixes:")
-                typer.echo(f"  1. Check path is correct: {data}")
-                typer.echo("  2. Or create CSV manually with same features as model")
+                typer.echo("📋 Solutions:")
+                typer.echo()
+                typer.echo("  1. Use test data saved during audit generation:")
+                typer.echo(f"     --data {model_test_data}")
+                typer.echo()
+                typer.echo("  2. Run audit to generate and save test data:")
+                typer.echo("     glassalpha audit --config config.yaml")
+                typer.echo("     (Automatically saves to models/test_data.csv)")
+                typer.echo()
+                typer.echo("  3. Provide your own test CSV with same features as training")
+                typer.echo("     (after preprocessing, including one-hot encoding)")
+                typer.echo()
+                typer.echo("📖 For more help:")
+                typer.echo("   https://glassalpha.com/guides/reason-codes/")
+                typer.echo()
                 raise typer.Exit(ExitCode.USER_ERROR)
 
         typer.echo(f"Loading model from: {model}")
@@ -2523,11 +2534,28 @@ def reasons(  # pragma: no cover
                 # Validate that expected columns exist in input data
                 missing_cols = set(categorical_cols + numeric_cols) - set(X.columns)
                 if missing_cols:
+                    expected_cols = sorted(categorical_cols + numeric_cols)
+                    actual_cols = sorted(X.columns)
+                    missing_list = sorted(missing_cols)
+
+                    # Show truncated lists for readability
+                    missing_display = ", ".join(missing_list[:10])
+                    if len(missing_list) > 10:
+                        missing_display += f"... (+{len(missing_list) - 10} more)"
+
+                    expected_display = ", ".join(expected_cols[:10])
+                    if len(expected_cols) > 10:
+                        expected_display += f"... (+{len(expected_cols) - 10} more)"
+
                     raise ValueError(
-                        f"Missing columns in test data: {missing_cols}. "
-                        f"Expected columns: {sorted(categorical_cols + numeric_cols)}. "
-                        f"Actual columns: {sorted(X.columns)}. "
-                        "Ensure test data matches training data structure.",
+                        f"Test data missing {len(missing_cols)} columns.\n\n"
+                        f"Missing columns:\n  {missing_display}\n\n"
+                        f"Expected {len(expected_cols)} columns:\n  {expected_display}\n\n"
+                        f"Actual {len(actual_cols)} columns:\n  {', '.join(actual_cols)}\n\n"
+                        f"Fix options:\n"
+                        f"  1. Use original training data (with all features)\n"
+                        f"  2. Re-run audit and save test data: glassalpha audit --save-test-data\n"
+                        f"  3. Provide config for auto-loading: --config audit_config.yaml"
                     )
 
                 if not categorical_cols and not numeric_cols:
@@ -2615,11 +2643,28 @@ def reasons(  # pragma: no cover
                 # Validate that expected columns exist in input data
                 missing_cols = set(categorical_cols + numeric_cols) - set(X.columns)
                 if missing_cols:
+                    expected_cols = sorted(categorical_cols + numeric_cols)
+                    actual_cols = sorted(X.columns)
+                    missing_list = sorted(missing_cols)
+
+                    # Show truncated lists for readability
+                    missing_display = ", ".join(missing_list[:10])
+                    if len(missing_list) > 10:
+                        missing_display += f"... (+{len(missing_list) - 10} more)"
+
+                    expected_display = ", ".join(expected_cols[:10])
+                    if len(expected_cols) > 10:
+                        expected_display += f"... (+{len(expected_cols) - 10} more)"
+
                     raise ValueError(
-                        f"Missing columns in test data: {missing_cols}. "
-                        f"Expected columns: {sorted(categorical_cols + numeric_cols)}. "
-                        f"Actual columns: {sorted(X.columns)}. "
-                        "Ensure test data matches training data structure.",
+                        f"Test data missing {len(missing_cols)} columns.\n\n"
+                        f"Missing columns:\n  {missing_display}\n\n"
+                        f"Expected {len(expected_cols)} columns:\n  {expected_display}\n\n"
+                        f"Actual {len(actual_cols)} columns:\n  {', '.join(actual_cols)}\n\n"
+                        f"Fix options:\n"
+                        f"  1. Use original training data (with all features)\n"
+                        f"  2. Re-run audit and save test data: glassalpha audit --save-test-data\n"
+                        f"  3. Provide config for auto-loading: --config audit_config.yaml"
                     )
 
                 if not categorical_cols and not numeric_cols:
@@ -2875,7 +2920,23 @@ def reasons(  # pragma: no cover
                     explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_sample, 100))
 
                     typer.echo("    Computing SHAP values...", err=True)
-                    shap_values = explainer.shap_values(X_sample)[0, :, 1]
+                    shap_values_raw = explainer.shap_values(X_sample)
+
+                    # Handle different SHAP output formats for binary classification
+                    # KernelExplainer returns [instances, features, classes] for predict_proba
+                    # We want the positive class SHAP values for the single instance
+                    if isinstance(shap_values_raw, list):
+                        # Multi-output format: list of arrays, one per class
+                        shap_values = shap_values_raw[1][0]  # Positive class, first instance
+                    elif len(shap_values_raw.shape) == 3:
+                        # 3D array format: [instances, features, classes]
+                        shap_values = shap_values_raw[0, :, 1]  # First instance, positive class
+                    elif len(shap_values_raw.shape) == 2:
+                        # 2D array format: [instances, features] - already for single class
+                        shap_values = shap_values_raw[0]  # First instance
+                    else:
+                        # 1D array: already the right format
+                        shap_values = shap_values_raw
 
                     typer.echo("    ✓ KernelSHAP computation complete", err=True)
                 else:
@@ -3142,41 +3203,39 @@ def recourse(  # pragma: no cover
                 fg=typer.colors.YELLOW,
             )
 
-        # Check if data file exists, auto-generate if missing
+        # Check if data file exists, look for model-compatible test data first
         if not data.exists():
-            typer.echo(f"⚠️  Data file not found: {data}")
-            typer.echo("💡 Auto-generating sample data from built-in dataset...")
-            typer.echo()
+            # Smart path detection: Check if model directory has test_data.csv
+            model_dir = model.parent
+            model_test_data = model_dir / "test_data.csv"
 
-            # Auto-generate sample data
-            try:
-                from ..datasets import load_german_credit
-
-                # Load dataset
-                dataset = load_german_credit()
-                X = dataset.drop("credit_risk", axis=1)
-
-                # Get only numeric columns for simplicity
-                numeric_cols = X.select_dtypes(include=["number"]).columns
-                X_numeric = X[numeric_cols]
-
-                # Save to requested path
-                data.parent.mkdir(parents=True, exist_ok=True)
-                X_numeric.to_csv(data, index=False)
-
-                typer.echo(f"✓ Created sample data: {data}")
-                typer.echo(f"  Columns: {list(X_numeric.columns)}")
+            if model_test_data.exists():
+                typer.echo(f"💡 Using test data from model directory: {model_test_data}")
+                typer.echo("   (This data matches the model's expected feature structure)")
                 typer.echo()
-                typer.echo("📝 Note: This is sample data from German Credit dataset.")
-                typer.echo("   For production, save your actual test data during audit.")
+                data = model_test_data
+            else:
+                # Data file not found - provide clear error with solutions
+                typer.secho(f"❌ Error: Test data file not found: {data}", fg=typer.colors.RED, err=True)
                 typer.echo()
-
-            except Exception as e:
-                typer.echo(f"✗ Could not generate sample data: {e}", err=True)
+                typer.echo("The reason codes/recourse commands require test data that matches")
+                typer.echo("the model's expected feature structure (including preprocessing).")
                 typer.echo()
-                typer.echo("Quick fixes:")
-                typer.echo(f"  1. Check path is correct: {data}")
-                typer.echo("  2. Or create CSV manually with same features as model")
+                typer.echo("📋 Solutions:")
+                typer.echo()
+                typer.echo("  1. Use test data saved during audit generation:")
+                typer.echo(f"     --data {model_test_data}")
+                typer.echo()
+                typer.echo("  2. Run audit to generate and save test data:")
+                typer.echo("     glassalpha audit --config config.yaml")
+                typer.echo("     (Automatically saves to models/test_data.csv)")
+                typer.echo()
+                typer.echo("  3. Provide your own test CSV with same features as training")
+                typer.echo("     (after preprocessing, including one-hot encoding)")
+                typer.echo()
+                typer.echo("📖 For more help:")
+                typer.echo("   https://glassalpha.com/guides/reason-codes/")
+                typer.echo()
                 raise typer.Exit(ExitCode.USER_ERROR)
 
         typer.echo(f"Loading model from: {model}")
@@ -3297,11 +3356,28 @@ def recourse(  # pragma: no cover
                 # Validate that expected columns exist in input data
                 missing_cols = set(categorical_cols + numeric_cols) - set(X.columns)
                 if missing_cols:
+                    expected_cols = sorted(categorical_cols + numeric_cols)
+                    actual_cols = sorted(X.columns)
+                    missing_list = sorted(missing_cols)
+
+                    # Show truncated lists for readability
+                    missing_display = ", ".join(missing_list[:10])
+                    if len(missing_list) > 10:
+                        missing_display += f"... (+{len(missing_list) - 10} more)"
+
+                    expected_display = ", ".join(expected_cols[:10])
+                    if len(expected_cols) > 10:
+                        expected_display += f"... (+{len(expected_cols) - 10} more)"
+
                     raise ValueError(
-                        f"Missing columns in test data: {missing_cols}. "
-                        f"Expected columns: {sorted(categorical_cols + numeric_cols)}. "
-                        f"Actual columns: {sorted(X.columns)}. "
-                        "Ensure test data matches training data structure.",
+                        f"Test data missing {len(missing_cols)} columns.\n\n"
+                        f"Missing columns:\n  {missing_display}\n\n"
+                        f"Expected {len(expected_cols)} columns:\n  {expected_display}\n\n"
+                        f"Actual {len(actual_cols)} columns:\n  {', '.join(actual_cols)}\n\n"
+                        f"Fix options:\n"
+                        f"  1. Use original training data (with all features)\n"
+                        f"  2. Re-run audit and save test data: glassalpha audit --save-test-data\n"
+                        f"  3. Provide config for auto-loading: --config audit_config.yaml"
                     )
 
                 if not categorical_cols and not numeric_cols:
@@ -3389,11 +3465,28 @@ def recourse(  # pragma: no cover
                 # Validate that expected columns exist in input data
                 missing_cols = set(categorical_cols + numeric_cols) - set(X.columns)
                 if missing_cols:
+                    expected_cols = sorted(categorical_cols + numeric_cols)
+                    actual_cols = sorted(X.columns)
+                    missing_list = sorted(missing_cols)
+
+                    # Show truncated lists for readability
+                    missing_display = ", ".join(missing_list[:10])
+                    if len(missing_list) > 10:
+                        missing_display += f"... (+{len(missing_list) - 10} more)"
+
+                    expected_display = ", ".join(expected_cols[:10])
+                    if len(expected_cols) > 10:
+                        expected_display += f"... (+{len(expected_cols) - 10} more)"
+
                     raise ValueError(
-                        f"Missing columns in test data: {missing_cols}. "
-                        f"Expected columns: {sorted(categorical_cols + numeric_cols)}. "
-                        f"Actual columns: {sorted(X.columns)}. "
-                        "Ensure test data matches training data structure.",
+                        f"Test data missing {len(missing_cols)} columns.\n\n"
+                        f"Missing columns:\n  {missing_display}\n\n"
+                        f"Expected {len(expected_cols)} columns:\n  {expected_display}\n\n"
+                        f"Actual {len(actual_cols)} columns:\n  {', '.join(actual_cols)}\n\n"
+                        f"Fix options:\n"
+                        f"  1. Use original training data (with all features)\n"
+                        f"  2. Re-run audit and save test data: glassalpha audit --save-test-data\n"
+                        f"  3. Provide config for auto-loading: --config audit_config.yaml"
                     )
 
                 if not categorical_cols and not numeric_cols:
@@ -3597,6 +3690,9 @@ def recourse(  # pragma: no cover
         try:
             import shap
 
+            typer.echo("  Computing TreeSHAP explanations...")
+            typer.echo("    (This may take 10-30 seconds for tree models)")
+
             explainer = shap.TreeExplainer(native_model)
 
             # For XGBoost Booster, need to convert to DMatrix format
@@ -3608,7 +3704,9 @@ def recourse(  # pragma: no cover
                 # Convert DataFrame to numpy for SHAP compatibility
                 X_shap = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
 
+            typer.echo("    Computing SHAP values...")
             shap_values = explainer.shap_values(X_shap)
+            typer.echo("    ✓ SHAP computation complete")
 
             # Handle multi-output case (binary classification)
             if isinstance(shap_values, list):
@@ -3705,6 +3803,10 @@ def recourse(  # pragma: no cover
         # Generate recourse
         from ..explain.recourse import generate_recourse
 
+        typer.echo()
+        typer.echo("  Generating counterfactual recommendations...")
+        typer.echo(f"    (Finding top {top_n} actionable changes)")
+
         result = generate_recourse(
             model=wrapped_model,
             feature_values=feature_values_series,
@@ -3717,6 +3819,9 @@ def recourse(  # pragma: no cover
             top_n=top_n,
             seed=seed,
         )
+
+        typer.echo("    ✓ Recourse generation complete")
+        typer.echo()
 
         # Format output as JSON
         output_dict = {
@@ -3798,19 +3903,32 @@ def export_evidence_pack(
     """Export evidence pack for audit verification.
 
     Creates tamper-evident ZIP with all audit artifacts, checksums,
-    and verification instructions.
+    and verification instructions for regulatory submission.
 
     The evidence pack includes:
     - Audit report (HTML or PDF)
     - Provenance manifest (hashes, versions, seeds)
     - Policy decision log (stub for v0.3.0)
     - Configuration file (if provided)
-    - Checksums and verification instructions
+    - SHA256 checksums and verification instructions
 
-    Example:
-        glassalpha export-evidence-pack audit_report.html
+    Requirements:
+        - Completed audit report (HTML or PDF format)
+        - Manifest file (auto-generated during audit)
 
-        glassalpha export-evidence-pack audit.pdf --output custom_name.zip
+    Examples:
+        # Basic export with auto-generated name
+        glassalpha export-evidence-pack reports/audit_report.html
+
+        # Custom output path
+        glassalpha export-evidence-pack audit.pdf --output compliance/evidence_2024.zip
+
+        # Include original config for reproducibility
+        glassalpha export-evidence-pack audit.html --config audit_config.yaml
+
+        # Skip badge generation (faster)
+        glassalpha export-evidence-pack audit.pdf --no-badge
+
     """
     try:
         # Import version for badge
@@ -3851,20 +3969,32 @@ def verify_evidence_pack(
 ):
     """Verify evidence pack integrity.
 
-    Confirms all checksums match and pack is tamper-free.
-    Exit code 0 = verified, 1 = verification failed.
+    Confirms all checksums match and pack is tamper-free for regulatory
+    verification. Returns exit code 0 if verified, 1 if verification fails.
 
     The verification checks:
     - ZIP file is readable and not corrupted
     - SHA256SUMS.txt is present and valid
     - All file checksums match
     - canonical.jsonl is well-formed
-    - Required artifacts are present
+    - Required artifacts are present (audit report, manifest)
 
-    Example:
+    Requirements:
+        - Evidence pack ZIP file created with export-evidence-pack command
+
+    Examples:
+        # Basic verification
         glassalpha verify-evidence-pack evidence_pack.zip
 
+        # Verbose output with detailed checksums
         glassalpha verify-evidence-pack pack.zip --verbose
+
+        # Verify downloaded pack from regulator
+        glassalpha verify-evidence-pack compliance_submission_2024.zip
+
+        # Use in CI/CD pipeline
+        glassalpha verify-evidence-pack evidence.zip || exit 1
+
     """
     try:
         from glassalpha.evidence import verify_evidence_pack

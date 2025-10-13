@@ -21,9 +21,17 @@ class ModelConfig(BaseModel):
 
     @field_validator("type")
     @classmethod
-    def normalize_type(cls, v: str) -> str:
-        """Ensure model type is lowercase."""
-        return v.lower()
+    def validate_model_type(cls, v: str) -> str:
+        """Validate model type is supported."""
+        v = v.lower()
+        valid_types = ["xgboost", "lightgbm", "logistic_regression", "random_forest"]
+        if v not in valid_types:
+            raise ValueError(
+                f"Invalid model type: '{v}'\n\n"
+                f"Supported types: {', '.join(valid_types)}\n\n"
+                f"Run 'glassalpha list' to see available models with current dependencies."
+            )
+        return v
 
 
 class DataConfig(BaseModel):
@@ -86,6 +94,22 @@ class ExplainerConfig(BaseModel):
     strategy: str = Field("first_compatible", description="Explainer selection strategy")
     priority: list[str] = Field(default_factory=list, description="Priority order for explainer selection")
 
+    @field_validator("strategy")
+    @classmethod
+    def validate_strategy(cls, v: str) -> str:
+        """Validate explainer selection strategy."""
+        valid_strategies = ["first_compatible", "all", "manual"]
+        if v not in valid_strategies:
+            raise ValueError(
+                f"Invalid explainer strategy: '{v}'\n\n"
+                f"Supported strategies:\n"
+                f"  - first_compatible: Use first compatible explainer (recommended)\n"
+                f"  - all: Generate all compatible explanations\n"
+                f"  - manual: Use explicitly specified explainer\n\n"
+                f"Valid values: {', '.join(valid_strategies)}"
+            )
+        return v
+
 
 class PerformanceConfig(BaseModel):
     """Performance metrics configuration."""
@@ -127,6 +151,21 @@ class StabilityConfig(BaseModel):
         description="Epsilon values for perturbation analysis",
     )
     threshold: float = Field(0.05, description="Threshold for stability analysis")
+
+    @field_validator("threshold")
+    @classmethod
+    def validate_threshold(cls, v: float) -> float:
+        """Validate threshold is in valid range."""
+        if not 0.0 <= v <= 1.0:
+            # Check if user provided percentage instead of probability
+            if v > 1.0 and v <= 100.0:
+                raise ValueError(
+                    f"Invalid threshold: {v}\n\n"
+                    f"Threshold must be between 0.0 and 1.0 (probability/decimal format).\n"
+                    f"Did you mean {v / 100:.3f}? (Use decimal 0.{int(v)}, not percentage {v}%)"
+                )
+            raise ValueError(f"Invalid threshold: {v}\n\nThreshold must be between 0.0 and 1.0 (probability format).")
+        return v
 
 
 class MetricsConfig(BaseModel):

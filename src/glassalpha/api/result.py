@@ -33,6 +33,71 @@ def _freeze_array(arr: np.ndarray) -> np.ndarray:
     return arr
 
 
+class MetricsProxy:
+    """Immutable wrapper that supports both dict and attribute access.
+
+    Enables intuitive API usage:
+        result.performance.accuracy  # Attribute access
+        result.performance['accuracy']  # Dict access
+        result.performance.keys()  # Dict methods
+
+    """
+
+    def __init__(self, data: Mapping[str, Any]):
+        """Initialize with immutable data."""
+        object.__setattr__(self, "_data", types.MappingProxyType(dict(data)))
+
+    def __getattr__(self, name: str) -> Any:
+        """Support attribute access for metrics."""
+        if name.startswith("_"):
+            return object.__getattribute__(self, name)
+        try:
+            return self._data[name]
+        except KeyError:
+            available = ", ".join(sorted(self._data.keys())[:5])
+            raise AttributeError(
+                f"Metric '{name}' not found. Available metrics: {available}..."
+                if len(self._data) > 5
+                else f"Metric '{name}' not found. Available metrics: {available}"
+            ) from None
+
+    def __getitem__(self, key: str) -> Any:
+        """Support dict-style access."""
+        return self._data[key]
+
+    def __repr__(self) -> str:
+        """Show available metrics."""
+        return f"MetricsProxy({list(self._data.keys())})"
+
+    def __len__(self) -> int:
+        """Return number of metrics."""
+        return len(self._data)
+
+    def __iter__(self):
+        """Iterate over metric names."""
+        return iter(self._data)
+
+    def keys(self):
+        """Return metric names."""
+        return self._data.keys()
+
+    def values(self):
+        """Return metric values."""
+        return self._data.values()
+
+    def items(self):
+        """Return metric items."""
+        return self._data.items()
+
+    def get(self, key, default=None):
+        """Get metric with default."""
+        return self._data.get(key, default)
+
+    def __contains__(self, key):
+        """Check if metric exists."""
+        return key in self._data
+
+
 @dataclass(frozen=True)
 class AuditResult:
     """Immutable audit result with deterministic ID.
@@ -81,11 +146,11 @@ class AuditResult:
         if not isinstance(self.manifest, types.MappingProxyType):
             object.__setattr__(self, "manifest", types.MappingProxyType(dict(self.manifest)))
 
-        # Freeze metric sections (will be handled by metric wrappers in full impl)
+        # Wrap metrics in MetricsProxy (supports both .attr and ['key'] access)
         for field in ["performance", "fairness", "calibration", "stability", "explanations", "recourse"]:
             value = getattr(self, field)
-            if value is not None and not isinstance(value, types.MappingProxyType):
-                object.__setattr__(self, field, types.MappingProxyType(dict(value)))
+            if value is not None and not isinstance(value, MetricsProxy):
+                object.__setattr__(self, field, MetricsProxy(value))
 
     def __eq__(self, other: object) -> bool:
         """Strict equality via result.id.

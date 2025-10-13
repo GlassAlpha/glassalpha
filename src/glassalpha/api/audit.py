@@ -477,13 +477,13 @@ def from_config(config_path: str | Path) -> AuditResult:
         with open(model_path, "rb") as f:
             model = pickle.load(f)  # nosec: B301
     elif "type" in model_config:
-        # Training config: Use run_audit CLI workflow instead
+        # Training config: Use run_audit_pipeline CLI workflow instead
         # This delegates to the full audit pipeline which handles dataset loading and training
         from glassalpha.config import load_config
-        from glassalpha.pipeline.audit import run_audit
+        from glassalpha.pipeline.audit import run_audit_pipeline
 
         audit_config = load_config(config_path_obj)
-        result = run_audit(audit_config)
+        result = run_audit_pipeline(audit_config)
         return result
     else:
         raise ValueError(
