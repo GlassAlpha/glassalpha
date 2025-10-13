@@ -33,17 +33,18 @@ This is the main command for GlassAlpha. It loads a configuration file,
 runs the audit pipeline, and generates a deterministic audit report.
 
 Smart Defaults:
-If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
-If no --output is provided, uses {config_name}.html
-Strict mode auto-enables for prod*/production* configs
-Repro mode auto-enables in CI environments
+    If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
+    If no --output is provided, uses {config_name}.html
+    Strict mode auto-enables for prod*/production* configs
+    Repro mode auto-enables in CI environments
 
 Configuration:
-Runtime options (fast mode, compact report, fallback behavior) are configured
-in the config file under 'runtime:' section. See documentation for details.
+    Runtime options (fast mode, compact report, fallback behavior) are configured
+    in the config file under 'runtime:' section. See documentation for details.
 
-Examples: # Minimal usage (uses smart defaults)
-glassalpha audit
+Examples:
+    # Minimal usage (uses smart defaults)
+    glassalpha audit
 
     # Explicit paths
     glassalpha audit --config audit.yaml --output report.html
@@ -65,170 +66,73 @@ glassalpha audit
 - `--config, -c`: Path to audit configuration YAML file (auto-detects glassalpha.yaml, audit.yaml, config.yaml)
 - `--output, -o`: Path for output report (defaults to {config_name}.html)
 - `--strict, -s`: Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs)
+- `--profile, -p`: Override audit profile
 - `--dry-run`: Validate configuration without generating report (default: `False`)
 - `--verbose, -v`: Enable verbose logging (default: `False`)
 - `--check-shift`: Test model robustness under demographic shifts (e.g., 'gender:+0.1'). Can specify multiple. (default: `[]`)
 - `--fail-on-degradation`: Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).
 
-### `glassalpha datasets`
-
-Dataset management operations
-
-### `glassalpha datasets cache-dir`
-
-Show the directory where datasets are cached.
-
-### `glassalpha datasets fetch`
-
-Fetch and cache a built-in dataset.
-
-**Arguments:**
-
-- `dataset` (text, required): Dataset key to fetch
-
-**Options:**
-
-- `--force, -f`: Force re-download even if file exists (default: `False`)
-- `--dest`: Custom destination path
-
-### `glassalpha datasets info`
-
-Show detailed information about a specific dataset.
-
-**Arguments:**
-
-- `dataset` (text, required): Dataset key to inspect
-
-### `glassalpha datasets list`
-
-List all available datasets in the registry.
-
-### `glassalpha docs`
-
-Open documentation in browser
-
-**Arguments:**
-
-- `topic` (text, optional): Documentation topic (e.g., 'model-parameters', 'quickstart', 'cli')
-
-**Options:**
-
-- `--open`: Open in browser (default: `True`)
-
 ### `glassalpha doctor`
 
-Check environment and optional features
+Check environment and optional features.
 
-### `glassalpha init`
+This command diagnoses the current environment and shows what optional
+features are available and how to enable them.
 
-Initialize new audit configuration
+Examples:
+    # Basic environment check
+    glassalpha doctor
 
-**Options:**
-
-- `--output, -o`: Output path for generated configuration file (default: `audit_config.yaml`)
-- `--template, -t`: Use a specific template (quickstart, production, development, testing)
-- `--interactive`: Use interactive mode to customize configuration (default: `True`)
+    # Verbose output
+    glassalpha doctor --verbose
 
 ### `glassalpha list`
 
-List available components
+List available components with runtime availability status.
+
+Shows registered models, explainers, metrics, and audit profiles.
+Indicates which components are available vs require additional dependencies.
+
+Examples:
+    # List all components
+    glassalpha list
+
+    # List specific type
+    glassalpha list models
+
+    # Include enterprise components
+    glassalpha list --include-enterprise
 
 **Arguments:**
 
-- `component_type` (text, optional): Component type to list (models, explainers, metrics)
+- `component_type` (text, optional): Component type to list (models, explainers, metrics, profiles)
 
 **Options:**
 
 - `--include-enterprise, -e`: Include enterprise components (default: `False`)
 - `--verbose, -v`: Show component details (default: `False`)
 
-### `glassalpha models`
-
-Show available models.
-
-### `glassalpha prep`
-
-Preprocessing artifact management
-
-### `glassalpha prep hash`
-
-Compute hash(es) for a preprocessing artifact.
-
-This command computes the file hash (SHA256) of a preprocessing artifact.
-Optionally, it can also compute the params hash (canonical hash of learned
-parameters) by loading and introspecting the artifact.
-
-Examples: # Just file hash (fast, no loading)
-glassalpha prep hash artifacts/preprocessor.joblib
-
-    # File and params hash (slower, loads artifact)
-    glassalpha prep hash artifacts/preprocessor.joblib --params
-
-**Arguments:**
-
-- `artifact_path` (file, required): Path to preprocessing artifact (.joblib file)
-
-**Options:**
-
-- `--params, -p`: Also compute and show params hash (default: `False`)
-
-### `glassalpha prep inspect`
-
-Inspect a preprocessing artifact and display its manifest.
-
-This command loads the artifact, extracts all learned parameters,
-and displays a human-readable summary. Optionally saves the full
-manifest to a JSON file.
-
-Examples: # Quick inspection
-glassalpha prep inspect artifacts/preprocessor.joblib
-
-    # Detailed inspection
-    glassalpha prep inspect artifacts/preprocessor.joblib --verbose
-
-    # Save manifest to file
-    glassalpha prep inspect artifacts/preprocessor.joblib --output manifest.json
-
-**Arguments:**
-
-- `artifact_path` (file, required): Path to preprocessing artifact (.joblib file)
-
-**Options:**
-
-- `--output, -o`: Save manifest to JSON file
-- `--verbose, -v`: Show detailed component information (default: `False`)
-
-### `glassalpha prep validate`
-
-Validate a preprocessing artifact.
-
-This command performs comprehensive validation of a preprocessing artifact,
-including hash verification, class allowlisting, and version compatibility.
-
-Examples: # Basic validation (classes + versions)
-glassalpha prep validate artifacts/preprocessor.joblib
-
-    # Validate with expected hashes
-    glassalpha prep validate artifacts/preprocessor.joblib \
-        --file-hash sha256:abc123... \
-        --params-hash sha256:def456...
-
-    # Skip version checks
-    glassalpha prep validate artifacts/preprocessor.joblib --no-check-versions
-
-**Arguments:**
-
-- `artifact_path` (file, required): Path to preprocessing artifact (.joblib file)
-
-**Options:**
-
-- `--file-hash`: Expected file hash (sha256:...)
-- `--params-hash`: Expected params hash (sha256:...)
-- `--check-versions`: Check runtime version compatibility (default: `True`)
-
 ### `glassalpha quickstart`
 
-Generate template audit project
+Generate a complete audit project with config and directory structure.
+
+Creates a project directory with:
+- Configuration file (audit_config.yaml)
+- Directory structure (data/, models/, reports/, configs/)
+- Example run script (run_audit.py)
+- README with next steps
+
+Designed for <60 seconds from install to first audit.
+
+Examples:
+    # Interactive wizard (default)
+    glassalpha quickstart
+
+    # German Credit with XGBoost (non-interactive)
+    glassalpha quickstart --dataset german_credit --model xgboost --no-interactive
+
+    # Custom project name
+    glassalpha quickstart --output credit-audit-2024
 
 **Options:**
 
@@ -237,36 +141,6 @@ Generate template audit project
 - `--model, -m`: Model type (xgboost, lightgbm, logistic_regression)
 - `--interactive`: Use interactive mode to customize project (default: `True`)
 
-### `glassalpha reasons`
-
-Generate ECOA-compliant reason codes
-
-**Options:**
-
-- `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
-- `--data, -d`: Path to test data file (CSV)
-- `--instance, -i`: Row index of instance to explain (0-based)
-- `--config, -c`: Path to reason codes configuration YAML
-- `--output, -o`: Path for output notice file (defaults to stdout)
-- `--threshold, -t`: Decision threshold for approved/denied (default: `0.5`)
-- `--top-n, -n`: Number of reason codes to generate (ECOA typical: 4) (default: `4`)
-- `--format, -f`: Output format: 'text' or 'json' (default: `text`)
-
-### `glassalpha recourse`
-
-Generate counterfactual recourse recommendations
-
-**Options:**
-
-- `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
-- `--data, -d`: Path to test data file (CSV)
-- `--instance, -i`: Row index of instance to explain (0-based)
-- `--config, -c`: Path to recourse configuration YAML
-- `--output, -o`: Path for output recommendations file (JSON, defaults to stdout)
-- `--threshold, -t`: Decision threshold for approved/denied (default: `0.5`)
-- `--top-n, -n`: Number of counterfactual recommendations to generate (default: `5`)
-- `--force-recourse`: Generate recourse recommendations even for approved instances (for testing) (default: `False`)
-
 ### `glassalpha validate`
 
 Validate a configuration file.
@@ -274,14 +148,15 @@ Validate a configuration file.
 This command checks if a configuration file is valid without
 running the audit pipeline.
 
-Examples: # Basic validation (positional argument)
-glassalpha validate config.yaml
+Examples:
+    # Basic validation (positional argument)
+    glassalpha validate config.yaml
 
     # Basic validation (option syntax)
     glassalpha validate --config audit.yaml
 
-    # Validate configuration
-    glassalpha validate -c audit.yaml
+    # Validate for specific profile
+    glassalpha validate -c audit.yaml --profile tabular_compliance
 
     # Check strict mode compliance
     glassalpha validate -c audit.yaml --strict
@@ -299,6 +174,7 @@ glassalpha validate config.yaml
 **Options:**
 
 - `--config, -c`: Path to configuration file to validate (alternative to positional arg)
+- `--profile, -p`: Validate against specific profile
 - `--strict`: Validate for strict mode compliance (default: `False`)
 - `--strict-validation`: Enforce runtime availability checks (recommended for production) (default: `False`)
 - `--check-data`: Load and validate actual dataset (checks if target column exists, file is readable) (default: `False`)
@@ -327,5 +203,5 @@ GlassAlpha uses standard exit codes:
 
 ---
 
-_This documentation is automatically generated from the CLI code._
-_Last updated: See git history for this file._
+*This documentation is automatically generated from the CLI code.*
+*Last updated: See git history for this file.*
