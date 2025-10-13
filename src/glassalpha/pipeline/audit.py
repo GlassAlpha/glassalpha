@@ -2573,7 +2573,20 @@ class AuditPipeline:
 
             # Fetch
             logger.info(f"Fetching dataset {dataset_key} into cache")
-            produced = Path(loader(encoded=True)).resolve()
+            result = loader(encoded=True)
+
+            # Handle both DataFrame (legacy) and Path (new) returns
+            if isinstance(result, Path):
+                # New behavior: loader returns path to encoded file
+                produced = result
+            else:
+                # Legacy behavior: loader returns DataFrame, save to temp file
+                import tempfile
+
+                temp_path = Path(tempfile.mktemp(suffix=".csv"))
+                result.to_csv(temp_path, index=False)
+                produced = temp_path
+
             tmp = cache_path.with_suffix(cache_path.suffix + ".tmp")
 
             if produced != cache_path:
