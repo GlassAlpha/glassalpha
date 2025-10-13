@@ -404,7 +404,7 @@ def _get_model_params(model: str) -> str:
     params_map = {
         "xgboost": "n_estimators: 100\n    max_depth: 6",
         "lightgbm": "n_estimators: 100\n    max_depth: 6\n    learning_rate: 0.1",
-        "logistic_regression": "max_iter: 2000  # Increased to prevent convergence warnings",
+        "logistic_regression": "max_iter: 5000  # Sufficient for most datasets, prevents convergence warnings",
     }
 
     return params_map.get(model, "")

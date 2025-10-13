@@ -17,7 +17,7 @@ model:
   save_path: examples/models/quickstart_model.pkl # Auto-save for reasons/recourse commands
   params:
     random_state: 42
-    max_iter: 1000
+    max_iter: 5000 # Sufficient for most datasets, prevents convergence warnings
 
 # Explainers: Quick methods
 explainers:

@@ -980,6 +980,8 @@ def run_audit(
     strict: bool | None = None,
     profile: str | None = None,
     override_config: Path | str | None = None,
+    progress_callback: Any | None = None,
+    show_progress: bool = True,
 ) -> Path:
     """Run complete audit pipeline from configuration file and generate report.
 
@@ -993,6 +995,8 @@ def run_audit(
         strict: Enable strict mode for regulatory compliance (optional)
         profile: Override audit profile from config (optional)
         override_config: Additional config file to override settings (optional)
+        progress_callback: Optional callback(message, percent) for progress updates
+        show_progress: Show progress messages to console (default: True)
 
     Returns:
         Path: Path to generated report file
@@ -1007,6 +1011,11 @@ def run_audit(
         >>> from glassalpha.api import run_audit
         >>> report_path = run_audit("audit.yaml", "report.pdf")
         >>> print(f"Report generated: {report_path}")
+
+        With custom progress callback:
+        >>> def show_progress(msg, pct):
+        ...     print(f"[{pct:3d}%] {msg}")
+        >>> report_path = run_audit("audit.yaml", "report.pdf", progress_callback=show_progress)
 
         With strict mode:
         >>> report_path = run_audit("prod.yaml", "report.pdf", strict=True)
@@ -1062,8 +1071,21 @@ def run_audit(
         config=audit_config.model_dump(),
     )
 
-    # Run audit pipeline
-    audit_results = run_audit_pipeline(audit_config, selected_explainer=selected_explainer)
+    # Create default progress callback if none provided but show_progress=True
+    if progress_callback is None and show_progress:
+
+        def default_progress(message: str, percent: int) -> None:
+            """Default console progress reporter."""
+            print(f"  [{percent:3d}%] {message}")
+
+        progress_callback = default_progress
+
+    # Run audit pipeline with progress feedback
+    audit_results = run_audit_pipeline(
+        audit_config,
+        selected_explainer=selected_explainer,
+        progress_callback=progress_callback,
+    )
 
     if not audit_results.success:
         raise RuntimeError(f"Audit pipeline failed: {audit_results.error_message}")

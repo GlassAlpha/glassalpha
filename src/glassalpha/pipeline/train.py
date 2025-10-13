@@ -6,6 +6,7 @@ passed to the underlying estimators.
 """
 
 import logging
+import warnings
 from typing import Any
 
 import pandas as pd
@@ -70,7 +71,14 @@ def train_from_config(cfg: Any, X: pd.DataFrame, y: Any) -> Any:
     calibration_config = getattr(cfg.model, "calibration", None)
 
     try:
-        model.fit(X, y, require_proba=require_proba, **params)
+        # Suppress sklearn convergence warnings for better UX
+        # These warnings don't affect audit quality and scare users unnecessarily
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=Warning, message=".*lbfgs failed to converge.*")
+            warnings.filterwarnings("ignore", category=Warning, message=".*TOTAL NO. OF ITERATIONS REACHED LIMIT.*")
+            warnings.filterwarnings("ignore", category=Warning, message=".*Increase the number of iterations.*")
+
+            model.fit(X, y, require_proba=require_proba, **params)
     except ValueError as e:
         # Provide helpful error messages for common issues
         error_msg = str(e)

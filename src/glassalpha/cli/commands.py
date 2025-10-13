@@ -1720,7 +1720,7 @@ def validate(  # pragma: no cover
                 )
 
         # 4. Check model availability
-        from glassalpha.core import ModelRegistry
+        from glassalpha.core import ExplainerRegistry, ModelRegistry
 
         available_models = ModelRegistry.available_plugins()
         if not available_models.get(audit_config.model.type, False):
