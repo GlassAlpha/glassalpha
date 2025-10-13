@@ -234,8 +234,30 @@ class AdultIncomeDataset:
 
         return processed_df
 
+    def save_encoded_data(self, encoded_data: pd.DataFrame, output_path: Path) -> Path:
+        """Save encoded data to file and return the path.
 
-def load_adult_income(cache_dir: Path | None = None, force_reprocess: bool = False) -> pd.DataFrame:
+        Args:
+            encoded_data: DataFrame with encoded categorical columns
+            output_path: Path to save the encoded data
+
+        Returns:
+            Path to the saved file
+        """
+        try:
+            encoded_data.to_csv(output_path, index=False)
+            logger.info(f"Saved encoded data to {output_path}")
+            return output_path
+        except Exception as e:
+            logger.error(f"Failed to save encoded data: {e}")
+            raise
+
+
+def load_adult_income(
+    cache_dir: Path | None = None,
+    force_reprocess: bool = False,
+    encoded: bool = False,
+) -> pd.DataFrame | Path:
     """Load preprocessed Adult Income dataset.
 
     This is the main entry point for loading the Adult Income dataset.
@@ -244,9 +266,10 @@ def load_adult_income(cache_dir: Path | None = None, force_reprocess: bool = Fal
     Args:
         cache_dir: Directory to cache files (default: ~/.glassalpha/data)
         force_reprocess: Force reprocessing even if cached file exists
+        encoded: If True, return file path instead of DataFrame for audit pipeline
 
     Returns:
-        Processed DataFrame ready for ML auditing
+        Processed DataFrame or file path if encoded=True
 
     Example:
         >>> df = load_adult_income()
@@ -255,7 +278,40 @@ def load_adult_income(cache_dir: Path | None = None, force_reprocess: bool = Fal
 
     """
     dataset = AdultIncomeDataset(cache_dir=cache_dir)
-    return dataset.load_processed(force_reprocess=force_reprocess)
+    data = dataset.load_processed(force_reprocess=force_reprocess)
+
+    if encoded:
+        # Encode categorical columns and save to temporary file
+        encoded_data = _encode_categorical_columns(data)
+
+        import tempfile
+
+        output_path = Path(tempfile.mktemp(suffix="_encoded.csv"))
+        return dataset.save_encoded_data(encoded_data, output_path)
+
+    return data
+
+
+def _encode_categorical_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Encode categorical columns using label encoding.
+
+    Args:
+        df: DataFrame with potential categorical columns
+
+    Returns:
+        DataFrame with encoded categorical columns
+    """
+    df_encoded = df.copy()
+
+    # Identify categorical columns (object type)
+    categorical_cols = df_encoded.select_dtypes(include=["object"]).columns
+
+    # Encode each categorical column
+    for col in categorical_cols:
+        if col in df_encoded.columns:
+            df_encoded[col] = df_encoded[col].astype("category").cat.codes
+
+    return df_encoded
 
 
 def get_adult_income_schema() -> dict[str, list[str]]:

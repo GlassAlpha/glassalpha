@@ -350,6 +350,24 @@ class GermanCreditDataset:
 
         return processed_data
 
+    def save_encoded_data(self, encoded_data: pd.DataFrame, output_path: Path) -> Path:
+        """Save encoded data to file and return the path.
+
+        Args:
+            encoded_data: DataFrame with encoded categorical columns
+            output_path: Path to save the encoded data
+
+        Returns:
+            Path to the saved file
+        """
+        try:
+            encoded_data.to_csv(output_path, index=False)
+            logger.info(f"Saved encoded data to {output_path}")
+            return output_path
+        except Exception as e:
+            logger.error(f"Failed to save encoded data: {e}")
+            raise
+
     def get_train_test_split(
         self,
         test_size: float = 0.2,
@@ -469,7 +487,7 @@ def load_german_credit(
     test_size: float = 0.2,
     random_state: int = 42,
     encoded: bool = False,
-) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
+) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame] | Path | tuple[Path, Path]:
     """Convenience function to load German Credit dataset.
 
     Args:
@@ -477,10 +495,10 @@ def load_german_credit(
         train_test_split: Whether to return train/test split
         test_size: Fraction for test set if splitting
         random_state: Random seed for splitting
-        encoded: If True, categorical columns are label-encoded for sklearn compatibility
+        encoded: If True, return file path(s) instead of DataFrame(s) for audit pipeline
 
     Returns:
-        Full dataset or (train_data, test_data) if train_test_split=True
+        Full dataset, (train_data, test_data) if train_test_split=True, or file path(s) if encoded=True
 
     """
     dataset = GermanCreditDataset(cache_dir)
@@ -488,16 +506,34 @@ def load_german_credit(
     if train_test_split:
         data = dataset.get_train_test_split(test_size, random_state)
         if encoded:
-            # Encode both train and test splits
+            # Encode and save both train and test splits to temporary files
             train_data, test_data = data
             train_data = _encode_categorical_columns(train_data)
             test_data = _encode_categorical_columns(test_data)
-            return train_data, test_data
+
+            # Create temporary files
+            import tempfile
+
+            train_path = Path(tempfile.mktemp(suffix="_train.csv"))
+            test_path = Path(tempfile.mktemp(suffix="_test.csv"))
+
+            # Save encoded data to files
+            dataset.save_encoded_data(train_data, train_path)
+            dataset.save_encoded_data(test_data, test_path)
+
+            return train_path, test_path
         return data
 
     data = dataset.load_processed_data()
     if encoded:
-        return _encode_categorical_columns(data)
+        # Encode and save to temporary file
+        encoded_data = _encode_categorical_columns(data)
+
+        import tempfile
+
+        output_path = Path(tempfile.mktemp(suffix="_encoded.csv"))
+        return dataset.save_encoded_data(encoded_data, output_path)
+
     return data
 
 
