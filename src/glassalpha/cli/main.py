@@ -58,9 +58,9 @@ def _show_first_run_tip():
         typer.echo("Quick start:")
         typer.echo("  1. Check environment: glassalpha doctor")
         typer.echo("  2. Generate project: glassalpha quickstart")
-        typer.echo("  3. Run audit: glassalpha audit --fast")
+        typer.echo("  3. Run audit: glassalpha audit")
         typer.echo()
-        typer.echo("Tip: Use --fast flag for lightning-quick demos (2-3s vs 5-7s)")
+        typer.echo("Tip: Enable fast mode in config (runtime.fast_mode: true) for quicker iteration")
         typer.echo()
 
 
@@ -111,17 +111,29 @@ def main_callback(
 
 
 # Import and register core commands
-from .commands import audit, docs, doctor, list_components_cmd, reasons, recourse, validate
+from .commands import (
+    audit,
+    docs,
+    doctor,
+    export_evidence_pack,
+    list_components_cmd,
+    reasons,
+    recourse,
+    validate,
+    verify_evidence_pack,
+)
 from .quickstart import quickstart
 
 # Register commands
 app.command()(audit)
 app.command()(doctor)
 app.command()(docs)
+app.command(name="export-evidence-pack")(export_evidence_pack)
 app.command()(quickstart)
 app.command()(reasons)
 app.command()(recourse)
 app.command()(validate)
+app.command(name="verify-evidence-pack")(verify_evidence_pack)
 app.command(name="list")(list_components_cmd)
 
 

@@ -1,5 +1,5 @@
 # ==============================================================================
-# COMPAS Recidivism Dataset Audit Configuration
+# COMPAS Recidivism Dataset Audit Configuration (TEMPLATE)
 # ==============================================================================
 #
 # Dataset: COMPAS (Correctional Offender Management Profiling for Alternative Sanctions)
@@ -11,6 +11,10 @@
 # This dataset is from ProPublica's landmark investigation into racial bias in
 # criminal risk assessment algorithms. COMPAS scores are used in courts across
 # the US to make bail, sentencing, and parole decisions.
+#
+# ⚠️  REQUIRES EXTERNAL DATA DOWNLOAD ⚠️
+# This config is a template that requires you to download the COMPAS dataset.
+# See instructions below for data preparation.
 #
 # Download Instructions:
 # Option 1 (ProPublica original):

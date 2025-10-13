@@ -18,17 +18,14 @@ import numpy as np
 import pandas as pd
 
 # Import core components
-from glassalpha.core import (
-    ExplainerRegistry,
-    MetricRegistry,
-    ModelRegistry,
-    NoOpExplainer,
-    NoOpMetric,
-    PassThroughModel,
-    is_enterprise,
-    list_components,
-    select_explainer,
-)
+from glassalpha.cli.commands import _check_available_components as list_components
+from glassalpha.explain import select_explainer
+from glassalpha.models.passthrough import PassThroughModel
+
+
+def is_enterprise() -> bool:
+    """Check if enterprise features are available."""
+    return False  # Placeholder for OSS version
 
 
 def main():

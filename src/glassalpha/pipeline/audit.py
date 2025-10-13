@@ -25,6 +25,12 @@ from glassalpha.data import TabularDataLoader, TabularDataSchema
 from glassalpha.utils import ManifestGenerator, get_component_seed, set_global_seed
 from glassalpha.utils.preprocessing import preprocess_auto
 
+# Built-in dataset loaders (lazy imported when needed)
+BUILT_IN_DATASETS = {
+    "german_credit": ("glassalpha.datasets", "load_german_credit"),
+    "adult_income": ("glassalpha.datasets", "load_adult_income"),
+}
+
 logger = logging.getLogger(__name__)
 
 # Suppress sklearn feature name warnings during audit (they're noisy but not errors)
@@ -155,6 +161,7 @@ class AuditPipeline:
         # Component instances (will be populated during execution)
         self.data_loader = TabularDataLoader()
         self.model = None
+        self._preprocessing_artifact_path = None  # Track preprocessing artifact path for model metadata
         self.explainer = None
         self.selected_metrics = {}
 
@@ -724,12 +731,29 @@ class AuditPipeline:
             model_save_path = getattr(self.config.model, "save_path", None)
             if model_save_path:
                 try:
+                    import json
+
                     import joblib
 
                     save_path = Path(model_save_path)
                     save_path.parent.mkdir(parents=True, exist_ok=True)
                     joblib.dump(model, save_path)
                     logger.info(f"Model auto-saved to: {save_path}")
+
+                    # Save metadata for compatibility checks
+                    meta_path = save_path.with_suffix(".meta.json")
+                    metadata = {
+                        "model_type": model_type,
+                        "feature_names": list(X_processed.columns),
+                        "target_column": self.config.data.target_column,
+                        "protected_attributes": self.config.data.protected_attributes or [],
+                        "preprocessing_applied": self._preprocessing_artifact_path is not None,
+                        "n_features": len(X_processed.columns),
+                    }
+                    if self._preprocessing_artifact_path:
+                        metadata["preprocessing_artifact"] = self._preprocessing_artifact_path
+                    meta_path.write_text(json.dumps(metadata, indent=2))
+                    logger.info(f"Model metadata saved to: {meta_path}")
                 except Exception as e:
                     logger.warning(f"Failed to auto-save model to {model_save_path}: {e}")
 
@@ -2088,6 +2112,9 @@ class AuditPipeline:
         config = self.config.preprocessing
         logger.info(f"Loading preprocessing artifact from {config.artifact_path}")
 
+        # Track preprocessing artifact path for model metadata
+        self._preprocessing_artifact_path = str(config.artifact_path)
+
         # Load artifact
         artifact = load_artifact(config.artifact_path)
 
@@ -2431,7 +2458,6 @@ class AuditPipeline:
             ValueError: If configuration is invalid
 
         """
-        from ..datasets.registry import REGISTRY
         from ..utils.cache_dirs import resolve_data_root
 
         cfg = self.config.data
@@ -2461,19 +2487,17 @@ class AuditPipeline:
             )
 
         # Built-in dataset
-        spec = REGISTRY.get(cfg.dataset)
-        if not spec:
-            # P1 fix: issue #9 - Show available datasets in error
-            available = list(REGISTRY.keys())
+        if cfg.dataset not in BUILT_IN_DATASETS:
+            available = list(BUILT_IN_DATASETS.keys())
             raise ValueError(
                 f"Unknown dataset key: {cfg.dataset}\n\n"
                 f"Available datasets:\n  " + ", ".join(available) + "\n\n"
-                "To see details: glassalpha datasets info <dataset_key>\n"
-                "To list all: glassalpha datasets list",
+                "Use 'glassalpha list' to see all available components.",
             )
 
         cache_root = resolve_data_root()
-        cache_path = (cache_root / spec.default_relpath).resolve()
+        # Default cache path based on dataset name
+        cache_path = (cache_root / f"{cfg.dataset}.csv").resolve()
 
         # Check if cached
         if cache_path.exists():
@@ -2510,7 +2534,6 @@ class AuditPipeline:
         import shutil
         import time
 
-        from ..datasets.registry import REGISTRY
         from ..utils.cache_dirs import ensure_dir_writable
         from ..utils.locks import file_lock, get_lock_path
 
@@ -2529,7 +2552,16 @@ class AuditPipeline:
                     sleep_time *= 2
             raise last_error
 
-        spec = REGISTRY[dataset_key]
+        import importlib
+
+        # Get loader function for built-in dataset
+        if dataset_key not in BUILT_IN_DATASETS:
+            raise ValueError(f"Unknown dataset: {dataset_key}")
+
+        module_name, func_name = BUILT_IN_DATASETS[dataset_key]
+        module = importlib.import_module(module_name)
+        loader = getattr(module, func_name)
+
         cache_root = ensure_dir_writable(cache_path.parent)
         cache_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -2541,7 +2573,7 @@ class AuditPipeline:
 
             # Fetch
             logger.info(f"Fetching dataset {dataset_key} into cache")
-            produced = Path(spec.fetch_fn()).resolve()
+            produced = Path(loader(encoded=True)).resolve()
             tmp = cache_path.with_suffix(cache_path.suffix + ".tmp")
 
             if produced != cache_path:
@@ -2570,7 +2602,6 @@ class AuditPipeline:
         import shutil
         import time
 
-        from ..datasets.registry import REGISTRY
         from ..utils.cache_dirs import ensure_dir_writable, resolve_data_root
         from ..utils.locks import file_lock, get_lock_path
 
@@ -2608,9 +2639,8 @@ class AuditPipeline:
             return requested_path
 
         # Built-in dataset: ensure cache exists, then mirror to requested if different
-        spec = REGISTRY[ds_key]  # Should be validated in _resolve_dataset_path
         cache_root = ensure_dir_writable(resolve_data_root())
-        final_cache_path = (cache_root / spec.default_relpath).resolve()
+        final_cache_path = (cache_root / f"{ds_key}.csv").resolve()
         final_cache_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Check if file already exists and fetch policy allows it

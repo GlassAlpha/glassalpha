@@ -178,8 +178,7 @@ class DeterminismValidator:
                     str(run_config_path),
                     "-o",
                     str(output_file),
-                    "--output-format",
-                    "html",  # Use HTML for faster determinism validation
+                    # Note: Output format auto-detected from file extension (.html)
                 ]
 
                 subprocess.run(

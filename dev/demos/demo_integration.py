@@ -32,14 +32,15 @@ logging.basicConfig(level=logging.INFO)
 
 from glassalpha.profiles import TabularComplianceProfile
 
-from glassalpha.config import load_config
-
 # StrictModeError removed - now using ValueError from Pydantic validators
-from glassalpha.core import (
-    is_enterprise,
-    list_components,
-    select_explainer,
-)
+from glassalpha.cli.commands import _check_available_components as list_components
+from glassalpha.config import load_config
+from glassalpha.explain import select_explainer
+
+
+def is_enterprise() -> bool:
+    """Check if enterprise features are available."""
+    return False  # Placeholder for OSS version
 
 
 def main():

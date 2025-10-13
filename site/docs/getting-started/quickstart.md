@@ -37,14 +37,18 @@ python --version
 
 ## ⚡ Lightning-fast development mode
 
-**For development and testing:** Use the `--fast` flag to get instant feedback (2-3 seconds instead of 5-7 seconds):
+**For development and testing:** Enable fast mode in your config for instant feedback (2-3 seconds instead of 5-7 seconds):
+
+```yaml
+# In your audit_config.yaml
+runtime:
+  fast_mode: true # Reduces bootstrap samples from 1000 to 100
+```
+
+Then run your audit normally:
 
 ```bash
-# Lightning-fast audit for development
-glassalpha audit --config your_config.yaml --fast
-
-# Even faster with sample data
-glassalpha audit --config your_config.yaml --fast --sample 1000
+glassalpha audit --config your_config.yaml
 ```
 
 ## The 5-minute version
@@ -77,9 +81,9 @@ For advanced models (XGBoost/LightGBM with SHAP), install with `pip install 'gla
 git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha && pip install -e .
 
-# 2. Generate audit (lightning fast with --fast flag!)
+# 2. Generate audit
 # Note: Example configs are in src/glassalpha/data/configs/
-glassalpha audit --config src/glassalpha/data/configs/german_credit_simple.yaml --output audit.html --fast
+glassalpha audit --config src/glassalpha/data/configs/german_credit_simple.yaml --output audit.html
 
 # 3. Done! Open your professional report
 open audit.html  # macOS
@@ -315,17 +319,16 @@ GlassAlpha comes with a ready-to-use German Credit dataset example that demonstr
 
 ### Run the audit command
 
-Generate audit report (takes ~2-3 seconds with --fast):
+Generate audit report:
 
 ```bash
 glassalpha audit \
   --config german_credit_simple.yaml \
-  --output my_first_audit.html \
-  --fast
+  --output my_first_audit.html
 ```
 
 !!! tip "Fast Mode for Demos"
-The `--fast` flag reduces bootstrap samples from 1000 to 100 for lightning-quick demos (~2-3 seconds vs ~5-7 seconds).
+Enable fast mode in your config (`runtime.fast_mode: true`) to reduce bootstrap samples from 1000 to 100 for lightning-quick demos (~2-3 seconds vs ~5-7 seconds).
 
 **Statistical Impact:**
 
@@ -342,14 +345,14 @@ The `--fast` flag reduces bootstrap samples from 1000 to 100 for lightning-quick
 - When fairness metrics need sub-1% precision
 
 !!! info "Timing Expectations"
-**With --fast flag (recommended for demos):**
+**With fast mode enabled** (`runtime.fast_mode: true`):
 
     - German Credit (LogisticRegression): ~2-3 seconds
     - German Credit (XGBoost): ~3-4 seconds
     - Adult Income (LogisticRegression): ~4-5 seconds
     - Adult Income (XGBoost): ~5-6 seconds
 
-    **Without --fast (production mode):**
+    **Production mode** (fast mode disabled):
 
     - German Credit (LogisticRegression): ~5-7 seconds
     - German Credit (XGBoost): ~7-9 seconds

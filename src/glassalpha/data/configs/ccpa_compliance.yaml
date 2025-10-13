@@ -10,20 +10,17 @@ reproducibility:
 
 # Dataset configuration
 data:
-  dataset: custom
-  path: ~/.glassalpha/data/german_credit_processed.csv
-  target_column: credit_risk
-  feature_columns:
-    - checking_account_status
-    - duration_months
-    - credit_amount
-    - savings_account
-    - employment_duration
-    - age_years
-    - gender
+  dataset: adult_income # Use built-in Adult Income dataset
+  fetch: if_missing
+  offline: false
+  target_column: income_over_50k # Binary target column
+
+  # Protected attributes for fairness analysis (must exist in dataset)
   protected_attributes:
-    - gender
-    - age_years
+    - sex # Primary protected attribute
+    - race # Secondary protected attribute
+    - age_group # Can be used for age discrimination analysis
+    - native_country # National origin discrimination
 
 # XGBoost model for automated decision consent prediction
 model:

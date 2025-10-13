@@ -318,6 +318,14 @@ class AuditResult:
         # Write to file atomically
         output_path.write_text(html_content, encoding="utf-8")
 
+        # Generate manifest sidecar
+        from ..provenance import write_manifest_sidecar
+
+        try:
+            write_manifest_sidecar(dict(self.manifest), output_path)
+        except Exception:
+            pass  # Non-critical
+
         return output_path
 
     def to_pdf(self, path: str | Path, *, overwrite: bool = False) -> Path:
@@ -486,3 +494,61 @@ class AuditResult:
         if path.suffix.lower() in [".html", ".htm"]:
             return self.to_html(path, overwrite=overwrite)
         raise ValueError(f"Unknown format: {path.suffix}. Use .pdf or .html extension")
+
+    def to_evidence_pack(self, output_path: str | Path, *, overwrite: bool = False) -> Path:
+        """Export audit result to evidence pack.
+
+        Creates a tamper-evident ZIP bundle containing:
+        - Audit report (HTML format)
+        - Provenance manifest
+        - Policy decision stub
+        - Verification instructions
+        - Checksums for all artifacts
+
+        Args:
+            output_path: Output ZIP path (.zip extension)
+            overwrite: If True, overwrite existing file
+
+        Returns:
+            Path to generated evidence pack ZIP
+
+        Raises:
+            GlassAlphaError: If file exists and overwrite=False
+            ImportError: If evidence pack dependencies not available
+
+        Example:
+            >>> result = ga.audit.from_model(model, X, y)
+            >>> result.to_evidence_pack("audit_evidence.zip")
+            PosixPath('audit_evidence.zip')
+
+            >>> # Include custom output path
+            >>> result.to_evidence_pack("custom_name.zip")
+        """
+        from pathlib import Path
+
+        output_path = Path(output_path)
+
+        # Check for existing file
+        if output_path.exists() and not overwrite:
+            from ..exceptions import FileExistsError as GAFileExistsError
+
+            raise GAFileExistsError(path=str(output_path))
+
+        # Validate extension
+        if output_path.suffix.lower() != ".zip":
+            raise ValueError(f"Evidence pack must have .zip extension, got {output_path.suffix}")
+
+        # First save as HTML for the evidence pack
+        html_path = output_path.with_suffix(".html")
+        self.to_html(html_path, overwrite=overwrite)
+
+        # Create evidence pack from HTML report
+        from ..evidence import create_evidence_pack
+
+        pack_path = create_evidence_pack(
+            audit_report_path=html_path,
+            output_path=output_path,
+            include_badge=True,
+        )
+
+        return pack_path

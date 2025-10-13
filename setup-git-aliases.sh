@@ -1,4 +1,13 @@
 #!/bin/bash
+# ============================================================================
+# Git Aliases Setup Script (ROOT FILE - DO NOT MOVE)
+# ============================================================================
+# INTENTIONAL LOCATION: This file lives in the repository root
+# WHY: Developer convenience for local git workflow setup
+# NOT DISTRIBUTED: Excluded from PyPI package via MANIFEST.in (line 70)
+# PURPOSE: Creates local git aliases for linting and safe commits
+# USAGE: Run once after cloning: `bash setup-git-aliases.sh`
+# ============================================================================
 # Set up Git aliases to prevent pre-commit hook failures
 
 echo "🔧 Setting up Git aliases for GlassAlpha..."

@@ -1,4 +1,11 @@
-# GlassAlpha Quickstart Configuration
+# ============================================================================
+# GlassAlpha Quickstart Configuration (ROOT FILE - DO NOT MOVE)
+# ============================================================================
+# INTENTIONAL LOCATION: This file lives in the repository root
+# WHY: Referenced by quickstart docs, smoke tests, and user workflows
+# INCLUDED IN: PyPI distribution via MANIFEST.in (line 10)
+# USED BY: `glassalpha audit --config audit_config.yaml` in documentation
+# ============================================================================
 # For rapid testing and exploration with built-in datasets
 # Documentation: https://glassalpha.com/guides/quickstart/
 

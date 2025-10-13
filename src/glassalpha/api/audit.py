@@ -117,8 +117,8 @@ def from_model(
     """
     import pandas as pd
 
-    from glassalpha.core.canonicalization import hash_data_for_manifest
     from glassalpha.models.detection import detect_model_type
+    from glassalpha.utils.canonicalization import hash_data_for_manifest
 
     # Convert inputs to numpy arrays for metrics computation
     X_arr = _to_numpy(X)
@@ -263,7 +263,7 @@ def from_predictions(
     import numpy as np
 
     import glassalpha
-    from glassalpha.core.canonicalization import compute_result_id, hash_data_for_manifest
+    from glassalpha.utils.canonicalization import compute_result_id, hash_data_for_manifest
 
     # Convert inputs to numpy arrays
     y_true_arr = _to_numpy(y_true)
@@ -393,7 +393,7 @@ def from_config(config_path: str | Path) -> AuditResult:
         GlassAlphaError (GAE2003): Data hash mismatch
         FileNotFoundError: Config or referenced files not found
 
-    Config schemas:
+    Config schema:
 
         Training config (model.type):
             model:
@@ -453,7 +453,7 @@ def from_config(config_path: str | Path) -> AuditResult:
     import pandas as pd
     import yaml
 
-    from glassalpha.core.canonicalization import hash_data_for_manifest
+    from glassalpha.utils.canonicalization import hash_data_for_manifest
 
     # Load YAML config
     config_path_obj = PathLib(config_path) if isinstance(config_path, str) else config_path

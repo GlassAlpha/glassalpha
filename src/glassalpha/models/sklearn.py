@@ -27,8 +27,6 @@ except ImportError:
     LogisticRegression = None
     SKLEARN_AVAILABLE = False
 
-# Import ModelRegistry after it's been initialized
-
 from glassalpha.models.base import BaseTabularWrapper
 
 if TYPE_CHECKING:

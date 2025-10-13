@@ -10,9 +10,10 @@ reproducibility:
 
 # Dataset configuration
 data:
-  dataset: custom
-  path: ~/.glassalpha/data/healthcare_outcomes.csv
-  target_column: treatment_outcome
+  dataset: german_credit # Use built-in German Credit dataset
+  fetch: if_missing
+  offline: false
+  target_column: credit_risk
   protected_attributes:
     - age
     - bmi

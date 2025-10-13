@@ -186,6 +186,11 @@ id_ed25519*
 # ----------------------------------------------------------------------------
 # Project-Specific: GlassAlpha
 # ----------------------------------------------------------------------------
+# NOTE: Some files INTENTIONALLY live in root and should NOT be ignored:
+#   - audit_config.yaml (quickstart reference, included in PyPI distribution)
+#   - setup-git-aliases.sh (dev convenience, excluded from distribution)
+#   - models/ directory (example models for quickstart)
+#   - artifacts/ directory (example preprocessing artifacts)
 
 # AI-generated temporary test files and docs
 .ai-scratch/
@@ -238,7 +243,7 @@ logs/
 
 # Generated model artifacts (from audit runs with save_path)
 models/quickstart_model.pkl
-models/*_model.pkl
+# Note: german_credit_*_model.pkl files are intentional examples, not generated artifacts
 
 # Test config outputs in root (but allow tests/fixtures/*.yaml)
 /adult_config.yaml

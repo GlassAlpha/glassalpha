@@ -203,8 +203,7 @@ Automate model validation in deployment pipelines:
 
 ## Performance Tips
 
-- **Use fast mode** for development: `glassalpha audit --fast --save-model model.pkl`
-- **Sample data** for testing: `--sample 1000` reduces processing time
+- **Use fast mode** for development: Enable `runtime.fast_mode: true` in config
 - **Batch processing** for multiple instances
 - **Preprocessed data** avoids redundant feature engineering
 

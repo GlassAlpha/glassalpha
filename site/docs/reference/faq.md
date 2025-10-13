@@ -553,15 +553,14 @@ See the [Contributing Guide](../reference/contributing.md) for detailed instruct
 Yes, implement the `MetricInterface`:
 
 ```python
-from glassalpha.core import MetricRegistry
+# Custom metrics are now implemented by extending the metrics module directly:
 
-@MetricRegistry.register("my_metric")
 class MyCustomMetric:
-    metric_type = "performance"
-
     def compute(self, y_true, y_pred, **kwargs):
         # Custom calculation
         return {"value": result, "interpretation": "higher_is_better"}
+
+# Register in your metrics/__init__.py or use directly in pipeline
 ```
 
 ### How do I add custom explainers?
@@ -569,9 +568,8 @@ class MyCustomMetric:
 Implement the `ExplainerInterface`:
 
 ```python
-from glassalpha.core import ExplainerRegistry
+# Custom explainers are now implemented by extending the explain module directly:
 
-@ExplainerRegistry.register("my_explainer", priority=75)
 class MyExplainer:
     def explain(self, model, X, y=None):
         # Custom explanation logic

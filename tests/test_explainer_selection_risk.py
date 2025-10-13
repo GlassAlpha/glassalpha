@@ -109,7 +109,7 @@ class TestExplainerSelectionRisk:
             # If it does raise, that's also acceptable
             pass
 
-    def test_explainer_registry_deterministic_selection(self):
+    def test_explainer_selection_deterministic(self):
         """Same input must always select same explainer - reproducibility critical."""
         from glassalpha.explain import select_explainer
 

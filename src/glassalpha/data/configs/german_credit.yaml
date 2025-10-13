@@ -40,11 +40,10 @@ model:
 # =============================================================================
 
 data:
-  # Data will be loaded using German Credit dataset loader
-  # This path will be created automatically by the dataset loader
-  dataset: "custom"
-  path: "~/.glassalpha/data/german_credit_processed.csv"
-  schema_path: "~/.glassalpha/schemas/german_credit.yaml"
+  # Use built-in German Credit dataset
+  dataset: german_credit
+  fetch: if_missing
+  offline: false
 
   # Target and feature definitions
   target_column: "credit_risk"

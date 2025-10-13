@@ -72,6 +72,31 @@ Examples:
 - `--check-shift`: Test model robustness under demographic shifts (e.g., 'gender:+0.1'). Can specify multiple. (default: `[]`)
 - `--fail-on-degradation`: Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).
 
+### `glassalpha docs`
+
+Open documentation in browser.
+
+Opens the GlassAlpha documentation website. You can optionally specify
+a topic to jump directly to that section.
+
+Examples:
+    # Open docs home
+    glassalpha docs
+
+    # Open specific topic
+    glassalpha docs model-parameters
+
+    # Just print URL without opening
+    glassalpha docs quickstart --no-open
+
+**Arguments:**
+
+- `topic` (text, optional): Documentation topic (e.g., 'model-parameters', 'quickstart', 'cli')
+
+**Options:**
+
+- `--open`: Open in browser (default: `True`)
+
 ### `glassalpha doctor`
 
 Check environment and optional features.
@@ -140,6 +165,95 @@ Examples:
 - `--dataset, -d`: Dataset type (german_credit, adult_income)
 - `--model, -m`: Model type (xgboost, lightgbm, logistic_regression)
 - `--interactive`: Use interactive mode to customize project (default: `True`)
+
+### `glassalpha reasons`
+
+Generate ECOA-compliant reason codes for adverse action notice.
+
+This command extracts top-N negative feature contributions from a trained model
+to explain why a specific instance was denied (or approved). Output is formatted
+as an ECOA-compliant adverse action notice.
+
+Requirements:
+    - Trained model with SHAP-compatible architecture
+    - Test dataset with same features as training
+    - Instance index to explain
+
+Examples:
+    # Generate reason codes for instance 42
+    glassalpha reasons \
+        --model models/german_credit.pkl \
+        --data data/test.csv \
+        --instance 42 \
+        --output notices/instance_42.txt
+
+    # With custom config
+    glassalpha reasons -m model.pkl -d test.csv -i 10 -c config.yaml
+
+    # JSON output
+    glassalpha reasons -m model.pkl -d test.csv -i 5 --format json
+
+    # Custom threshold and top-N
+    glassalpha reasons -m model.pkl -d test.csv -i 0 --threshold 0.6 --top-n 3
+
+**Options:**
+
+- `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
+- `--data, -d`: Path to test data file (CSV)
+- `--instance, -i`: Row index of instance to explain (0-based)
+- `--config, -c`: Path to reason codes configuration YAML
+- `--output, -o`: Path for output notice file (defaults to stdout)
+- `--threshold, -t`: Decision threshold for approved/denied (default: `0.5`)
+- `--top-n, -n`: Number of reason codes to generate (ECOA typical: 4) (default: `4`)
+- `--format, -f`: Output format: 'text' or 'json' (default: `text`)
+
+### `glassalpha recourse`
+
+Generate ECOA-compliant counterfactual recourse recommendations.
+
+This command generates feasible counterfactual recommendations with policy constraints
+for individuals receiving adverse decisions. Supports immutable features, monotonic
+constraints, and cost-weighted optimization.
+
+Requirements:
+    - Trained model with SHAP-compatible architecture
+    - Test dataset with same features as training
+    - Instance index to explain (must be denied: prediction < threshold)
+    - Configuration file with policy constraints (recommended)
+
+Examples:
+    # Generate recourse for denied instance
+    glassalpha recourse \
+        --model models/german_credit.pkl \
+        --data data/test.csv \
+        --instance 42 \
+        --config configs/recourse_german_credit.yaml \
+        --output recourse/instance_42.json
+
+    # With custom threshold and top-N
+    glassalpha recourse -m model.pkl -d test.csv -i 10 -c config.yaml --top-n 3
+
+    # Output to stdout
+    glassalpha recourse -m model.pkl -d test.csv -i 5 -c config.yaml
+
+Configuration File:
+    The config file should include:
+    - recourse.immutable_features: list of features that cannot be changed
+    - recourse.monotonic_constraints: directional constraints (increase_only, decrease_only)
+    - recourse.cost_function: cost function for optimization (weighted_l1)
+    - data.protected_attributes: list of protected attributes to exclude
+    - reproducibility.random_seed: seed for deterministic results
+
+**Options:**
+
+- `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
+- `--data, -d`: Path to test data file (CSV)
+- `--instance, -i`: Row index of instance to explain (0-based)
+- `--config, -c`: Path to recourse configuration YAML
+- `--output, -o`: Path for output recommendations file (JSON, defaults to stdout)
+- `--threshold, -t`: Decision threshold for approved/denied (default: `0.5`)
+- `--top-n, -n`: Number of counterfactual recommendations to generate (default: `5`)
+- `--force-recourse`: Generate recourse recommendations even for approved instances (for testing) (default: `False`)
 
 ### `glassalpha validate`
 

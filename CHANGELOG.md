@@ -7,7 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - v0.2.1 Pre-PyPI Simplification
 
+### Removed
+
+- **Registry Compatibility Stubs** (Architectural Cleanup)
+  - Deleted `src/glassalpha/core/__init__.py` (168 lines of compatibility shims)
+  - Deleted `src/glassalpha/datasets/registry.py` (88 lines)
+  - Deleted `src/glassalpha/metrics/registry.py` (37 lines)
+  - Replaced with explicit availability checking in CLI and pipeline
+  - Component listing now uses direct runtime dependency checks
+  - Dataset loading uses simple dict lookup with direct imports
+  - Result: 293 lines removed, zero abstraction layers, fully explicit logic
+
 **Major architectural simplification** before PyPI launch. All breaking changes documented below.
+
+### Fixed
+
+- **PDF Generation Timeout Protection** (P0 - Critical Fix)
+  - Fixed CLI progress_callback bug: `pdf_progress_relay` was defined but never passed to worker function
+  - Added timeout enforcement to progress monitoring loop (5 minute max, 90 second stall detection)
+  - Added `pytest-timeout` plugin to prevent tests from hanging indefinitely (180 second default)
+  - Result: Tests no longer freeze during PDF generation, proper timeout handling in CLI
+
+### Added
+
+- **Evidence Pack Export** (E3: Enhancement 3 - v0.3.0)
+  - CLI commands: `glassalpha export-evidence-pack`, `glassalpha verify-evidence-pack`
+  - API method: `AuditResult.to_evidence_pack()` for programmatic export
+  - Creates tamper-evident ZIP bundles with all audit artifacts and checksums
+  - Generates SVG badges with pass/fail status and metrics for social sharing
+  - Verification instructions included for independent validation
+  - Deterministic pack naming and content for reproducible sharing
+  - Exit code 0 for successful verification, 1 for failures (CLI integration ready)
 
 ### Architecture Simplification Complete ✅
 

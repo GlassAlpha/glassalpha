@@ -64,7 +64,7 @@ def test_from_config_with_hash_validation(tmp_path):
     """Test from_config with data hash validation."""
     from sklearn.linear_model import LogisticRegression
 
-    from glassalpha.core.canonicalization import hash_data_for_manifest
+    from glassalpha.utils.canonicalization import hash_data_for_manifest
 
     # Generate data
     np.random.seed(42)

@@ -103,9 +103,9 @@ def _bootstrap_components() -> None:
     """
     logger.debug("Bootstrapping basic built-in components")
 
-    # Import core to ensure PassThroughModel is registered (via noop_components)
+    # Import core to ensure PassThroughModel is available
     try:
-        from ..core import PassThroughModel  # noqa: F401 - auto-registered by noop_components
+        from ..models.passthrough import PassThroughModel  # noqa: F401 - basic model for testing
 
         logger.debug("PassThroughModel available")
     except ImportError as e:
@@ -315,6 +315,15 @@ def _run_audit_pipeline(
                 # Add timeout protection for PDF generation using concurrent.futures
                 import concurrent.futures
 
+                # Create progress queue for thread communication BEFORE worker definition
+                import queue
+
+                progress_queue = queue.Queue()
+
+                def pdf_progress_relay(message: str, percent: int) -> None:
+                    """Progress callback that writes to shared queue."""
+                    progress_queue.put((message, percent))
+
                 pdf_path = None
 
                 def pdf_generation_worker():
@@ -331,45 +340,51 @@ def _run_audit_pipeline(
                                 report_title=f"ML Model Audit Report - {report_date}",
                                 generation_date=generation_date,
                                 show_progress=True,  # Show progress in CLI
-                                progress_callback=None,  # We'll handle progress via queue
+                                progress_callback=pdf_progress_relay,  # FIX: Actually pass the callback
                             )
                         return pdf_path
                     except Exception as e:
                         raise e
 
-                # Create progress queue for thread communication
-                import queue
-
-                progress_queue = queue.Queue()
-
-                def pdf_progress_relay(message: str, percent: int) -> None:
-                    """Progress callback that writes to shared queue."""
-                    progress_queue.put((message, percent))
-
             try:
                 # Run PDF generation with timeout using ThreadPoolExecutor
+                pdf_start_time = time.time()
+                timeout_seconds = 300  # 5 minutes max
+
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                     future = executor.submit(pdf_generation_worker)
 
                     # Monitor progress from queue while PDF generates
                     typer.echo("⏳ PDF generation in progress...", err=True)
                     completed = False
+                    last_progress_time = time.time()
 
                     while not completed:
+                        # Check overall timeout
+                        elapsed = time.time() - pdf_start_time
+                        if elapsed > timeout_seconds:
+                            typer.echo("  [TIMEOUT] PDF generation exceeded 5 minutes", err=True)
+                            future.cancel()
+                            break
+
                         try:
                             message, percent = progress_queue.get(timeout=0.5)
                             typer.echo(f"  [{percent:3d}%] {message}", err=True)
+                            last_progress_time = time.time()
                             if "successfully" in message or "complete" in message:
                                 completed = True
                         except queue.Empty:
-                            # No progress update in last 0.5s, but generation still running
+                            # Check if stuck (no progress for 90 seconds)
+                            if time.time() - last_progress_time > 90:
+                                typer.echo("  [WARNING] No progress for 90 seconds, still running...", err=True)
+                                last_progress_time = time.time()  # Reset to avoid spam
                             continue
                         except Exception:
                             # Queue might be closed or other error
                             break
 
                     # Get final result with remaining timeout
-                    remaining_timeout = 300  # Original timeout
+                    remaining_timeout = max(1, timeout_seconds - (time.time() - pdf_start_time))
                     pdf_path = future.result(timeout=remaining_timeout)
 
                 if pdf_path is None:
@@ -502,7 +517,7 @@ def _run_audit_pipeline(
                 )
                 typer.echo("💡 Note: You used --full-report which includes all individual fairness pairs")
                 typer.echo("   • Use default (compact mode) for <1MB reports")
-                typer.echo("   • Use --fast for development (reduces bootstrap samples)")
+                typer.echo("   • Enable runtime.fast_mode in config for faster iteration (reduces bootstrap samples)")
                 typer.echo("   • Full data always available in manifest.json sidecar")
             elif file_size_mb > 1:
                 # Moderate file (1-50MB) - gentle warning
@@ -1127,7 +1142,6 @@ def audit(  # pragma: no cover
 
         # Import here to avoid circular imports
         from ..config import load_config
-        from ..core import list_components
         from .preflight import preflight_check_dependencies, preflight_check_model
 
         # Bootstrap basic components before any preflight checks
@@ -1245,7 +1259,7 @@ def audit(  # pragma: no cover
             typer.secho("🔒 Repro mode enabled - results will be deterministic", fg=typer.colors.BLUE)
 
         # Validate components exist
-        available = list_components()
+        available = _check_available_components()
         model_type = audit_config.model.type
 
         if model_type not in available.get("models", []) and model_type != "passthrough":
@@ -1753,14 +1767,34 @@ def validate(  # pragma: no cover
                     f"    priority: [treeshap]",
                 )
 
-        # 4. Check model availability
-        from glassalpha.core import ExplainerRegistry, ModelRegistry
+        # Direct availability checking
+        import importlib.util
 
-        available_models = ModelRegistry.available_plugins()
-        if not available_models.get(audit_config.model.type, False):
+        def _check_model_available(model_type: str) -> bool:
+            """Check if model type dependencies are installed."""
+            model_type = model_type.lower()
+            if model_type in ["logistic_regression", "logistic", "sklearn"]:
+                return importlib.util.find_spec("sklearn") is not None
+            if model_type in ["xgboost", "xgb"]:
+                return importlib.util.find_spec("xgboost") is not None
+            if model_type in ["lightgbm", "lgb", "lgbm"]:
+                return importlib.util.find_spec("lightgbm") is not None
+            return False
+
+        def _check_explainer_available(explainer_name: str) -> bool:
+            """Check if explainer dependencies are installed."""
+            explainer_name = explainer_name.lower()
+            if explainer_name in ["treeshap", "kernelshap"]:
+                return importlib.util.find_spec("shap") is not None
+            if explainer_name in ["coefficients", "coef"]:
+                return True  # Always available
+            return False
+
+        # 4. Check model availability
+        if not _check_model_available(audit_config.model.type):
             msg = (
-                f"Model '{audit_config.model.type}' is not available. "
-                f"Install with: pip install 'glassalpha[explain]' (for xgboost/lightgbm)"
+                f"Model '{audit_config.model.type}' requires additional dependencies. "
+                f"Install with: pip install 'glassalpha[{audit_config.model.type}]'"
             )
             if strict_validation:
                 validation_errors.append(msg)
@@ -1769,14 +1803,11 @@ def validate(  # pragma: no cover
 
         # 5. Check explainer availability and compatibility
         if audit_config.explainers.priority:
-            available_explainers = ExplainerRegistry.available_plugins()
-            requested_explainers = audit_config.explainers.priority
-
-            available_requested = [e for e in requested_explainers if available_explainers.get(e, False)]
+            available_requested = [e for e in audit_config.explainers.priority if _check_explainer_available(e)]
 
             if not available_requested:
                 msg = (
-                    f"None of the requested explainers {requested_explainers} are available. "
+                    f"None of the requested explainers {audit_config.explainers.priority} are available. "
                     f"Install with: pip install 'glassalpha[explain]'"
                 )
                 if strict_validation:
@@ -1857,10 +1888,7 @@ def validate(  # pragma: no cover
             elif audit_config.data.dataset and audit_config.data.dataset != "custom":
                 # Built-in dataset - try to load and validate
                 try:
-                    from ..datasets.registry import REGISTRY
-
-                    spec = REGISTRY.get(audit_config.data.dataset)
-                    if spec:
+                    if audit_config.data.dataset in ["german_credit", "adult_income"]:
                         typer.echo(f"  ✓ Using built-in dataset: {audit_config.data.dataset}")
 
                         # Try to load the dataset to verify it exists
@@ -1941,6 +1969,9 @@ def validate(  # pragma: no cover
         typer.secho(f"Validation failed: {e}", fg=typer.colors.RED, err=True)
         # Intentional: User-friendly validation errors
         raise typer.Exit(ExitCode.VALIDATION_ERROR) from None
+    except typer.Exit as e:
+        # Re-raise typer.Exit exceptions (like validation errors) without wrapping
+        raise
     except Exception as e:
         typer.secho(f"Unexpected error: {e}", fg=typer.colors.RED, err=True)
         # Design choice: Hide implementation details from end users
@@ -2006,6 +2037,42 @@ def docs(  # pragma: no cover
         typer.echo(f"Documentation URL: {url}")
 
 
+def _check_available_components() -> dict[str, list[str]]:
+    """Check available components based on runtime dependencies."""
+    import importlib.util
+
+    available = {
+        "models": [],
+        "explainers": [],
+        "metrics": [
+            "accuracy",
+            "precision",
+            "recall",
+            "f1",
+            "auc_roc",
+            "demographic_parity",
+            "equal_opportunity",
+            "equalized_odds",
+        ],
+        "profiles": ["tabular_compliance"],
+    }
+
+    # Check model dependencies
+    if importlib.util.find_spec("sklearn"):
+        available["models"].append("logistic_regression")
+    if importlib.util.find_spec("xgboost"):
+        available["models"].append("xgboost")
+    if importlib.util.find_spec("lightgbm"):
+        available["models"].append("lightgbm")
+
+    # Check explainer dependencies
+    available["explainers"].append("coefficients")  # Always available
+    if importlib.util.find_spec("shap"):
+        available["explainers"].extend(["treeshap", "kernelshap"])
+
+    return available
+
+
 def list_components_cmd(  # pragma: no cover
     component_type: str | None = typer.Argument(
         None,
@@ -2042,9 +2109,7 @@ def list_components_cmd(  # pragma: no cover
     """
     import importlib.util
 
-    from ..core import list_components
-
-    components = list_components(component_type=component_type, include_enterprise=include_enterprise)
+    components = _check_available_components()
 
     if not components:
         typer.echo(f"No components found for type: {component_type}")
@@ -2194,6 +2259,18 @@ def reasons(  # pragma: no cover
         # Use joblib for loading (matches saving with joblib.dump in audit command)
         loaded = joblib.load(model)
 
+        # Check for companion .meta.json file
+        meta_path = Path(model).with_suffix(".meta.json")
+        model_metadata = None
+        if meta_path.exists():
+            try:
+                import json
+
+                model_metadata = json.loads(meta_path.read_text())
+                typer.echo(f"Found model metadata: {meta_path}")
+            except Exception as e:
+                logger.warning(f"Failed to load model metadata from {meta_path}: {e}")
+
         # Handle both old format (model only) and new format (dict with metadata)
         if isinstance(loaded, dict) and "model" in loaded:
             model_obj = loaded["model"]
@@ -2201,8 +2278,16 @@ def reasons(  # pragma: no cover
             preprocessing_info = loaded.get("preprocessing")
         else:
             model_obj = loaded
-            expected_features = None
+            expected_features = model_metadata.get("feature_names") if model_metadata else None
             preprocessing_info = None
+            if model_metadata and model_metadata.get("preprocessing_applied"):
+                preprocessing_artifact = model_metadata.get("preprocessing_artifact")
+                if preprocessing_artifact:
+                    preprocessing_info = {
+                        "mode": "artifact",
+                        "artifact_path": preprocessing_artifact,
+                        "feature_names_after": expected_features,
+                    }
 
         typer.echo(f"Loading data from: {data}")
         df = pd.read_csv(data)
@@ -2889,6 +2974,16 @@ def recourse(  # pragma: no cover
 
         loaded = joblib.load(model)
 
+        # Check for companion .meta.json file
+        meta_path = Path(model).with_suffix(".meta.json")
+        model_metadata = None
+        if meta_path.exists():
+            try:
+                model_metadata = json.loads(meta_path.read_text())
+                typer.echo(f"Found model metadata: {meta_path}")
+            except Exception as e:
+                logger.warning(f"Failed to load model metadata from {meta_path}: {e}")
+
         # Handle both old format (model only) and new format (dict with metadata)
         if isinstance(loaded, dict) and "model" in loaded:
             model_obj = loaded["model"]
@@ -2896,8 +2991,16 @@ def recourse(  # pragma: no cover
             preprocessing_info = loaded.get("preprocessing")
         else:
             model_obj = loaded
-            expected_features = None
+            expected_features = model_metadata.get("feature_names") if model_metadata else None
             preprocessing_info = None
+            if model_metadata and model_metadata.get("preprocessing_applied"):
+                preprocessing_artifact = model_metadata.get("preprocessing_artifact")
+                if preprocessing_artifact:
+                    preprocessing_info = {
+                        "mode": "artifact",
+                        "artifact_path": preprocessing_artifact,
+                        "feature_names_after": expected_features,
+                    }
 
         typer.echo(f"Loading data from: {data}")
         df = pd.read_csv(data)
@@ -3429,5 +3532,120 @@ def recourse(  # pragma: no cover
     except Exception as e:
         if "--verbose" in sys.argv or "-v" in sys.argv:
             logger.exception("Recourse generation failed")
+        typer.secho(f"Failed: {e}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(ExitCode.USER_ERROR) from None
+
+
+def export_evidence_pack(
+    report: Path = typer.Argument(..., help="Path to audit report (HTML or PDF)"),
+    output: Path = typer.Option(None, help="Output ZIP path (auto-generated if omitted)"),
+    config: Path | None = typer.Option(None, help="Include original config file"),
+    no_badge: bool = typer.Option(False, help="Skip badge generation"),
+):
+    """Export evidence pack for audit verification.
+
+    Creates tamper-evident ZIP with all audit artifacts, checksums,
+    and verification instructions.
+
+    The evidence pack includes:
+    - Audit report (HTML or PDF)
+    - Provenance manifest (hashes, versions, seeds)
+    - Policy decision log (stub for v0.3.0)
+    - Configuration file (if provided)
+    - Checksums and verification instructions
+
+    Example:
+        glassalpha export-evidence-pack audit_report.html
+
+        glassalpha export-evidence-pack audit.pdf --output custom_name.zip
+    """
+    try:
+        # Import version for badge
+        import glassalpha
+        from glassalpha.evidence import create_evidence_pack
+
+        os.environ["GLASSALPHA_VERSION"] = glassalpha.__version__
+
+        pack_path = create_evidence_pack(
+            audit_report_path=report,
+            output_path=output,
+            include_badge=not no_badge,
+        )
+
+        # Compute pack SHA256 for display
+        import hashlib
+
+        pack_hash = hashlib.sha256(pack_path.read_bytes()).hexdigest()
+
+        typer.secho(f"\n✅ Evidence pack ready: {pack_path.name}", fg=typer.colors.GREEN)
+        typer.echo(f"🔒 SHA256: {pack_hash}")
+        typer.echo("📦 Share this file + hash publicly (GitHub, Hugging Face, email)")
+        typer.echo("🔍 Verify with: glassalpha verify-evidence-pack " + pack_path.name)
+
+    except FileNotFoundError as e:
+        typer.secho(f"Error: {e}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(ExitCode.USER_ERROR) from None
+    except Exception as e:
+        if "--verbose" in sys.argv or "-v" in sys.argv:
+            logger.exception("Evidence pack export failed")
+        typer.secho(f"Failed: {e}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(ExitCode.USER_ERROR) from None
+
+
+def verify_evidence_pack(
+    pack: Path = typer.Argument(..., help="Evidence pack ZIP to verify"),
+    verbose: bool = typer.Option(False, help="Show detailed verification log"),
+):
+    """Verify evidence pack integrity.
+
+    Confirms all checksums match and pack is tamper-free.
+    Exit code 0 = verified, 1 = verification failed.
+
+    The verification checks:
+    - ZIP file is readable and not corrupted
+    - SHA256SUMS.txt is present and valid
+    - All file checksums match
+    - canonical.jsonl is well-formed
+    - Required artifacts are present
+
+    Example:
+        glassalpha verify-evidence-pack evidence_pack.zip
+
+        glassalpha verify-evidence-pack pack.zip --verbose
+    """
+    try:
+        from glassalpha.evidence import verify_evidence_pack
+
+        result = verify_evidence_pack(pack)
+
+        if result.is_valid:
+            typer.secho(
+                f"\n✅ Verified - all {result.artifacts_verified} artifacts match canonical.jsonl",
+                fg=typer.colors.GREEN,
+            )
+            if result.sha256:
+                typer.echo(f"🔒 SHA256: {result.sha256}")
+            typer.echo("📄 Audit report verified")
+            typer.echo("📋 Manifest verified")
+            typer.echo("🎯 Badge verified" if verbose else "")
+            typer.echo("✓ Reproducible proof confirmed")
+
+        else:
+            typer.secho("\n❌ Verification FAILED", fg=typer.colors.RED)
+            for error in result.errors:
+                typer.echo(f"✗ {error}")
+            if result.warnings:
+                typer.secho("⚠️  Warnings:", fg=typer.colors.YELLOW)
+                for warning in result.warnings:
+                    typer.echo(f"  {warning}")
+            typer.echo("⚠️  Pack may be corrupted or tampered")
+            raise typer.Exit(ExitCode.VALIDATION_ERROR)
+
+    except FileNotFoundError as e:
+        typer.secho(f"Error: {e}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(ExitCode.USER_ERROR) from None
+    except Exception as e:
+        if "--verbose" in sys.argv or "-v" in sys.argv:
+            logger.exception("Evidence pack verification failed")
         typer.secho(f"Failed: {e}", fg=typer.colors.RED, err=True)
         raise typer.Exit(ExitCode.USER_ERROR) from None

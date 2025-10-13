@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.core.canonicalization import (
+from glassalpha.utils.canonicalization import (
     _atomic_write,
     canonicalize,
     compute_result_id,

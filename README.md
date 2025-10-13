@@ -59,20 +59,23 @@ GlassAlpha requires deterministic outputs for compliance. Our CI enforces:
 
 Use `source scripts/setup-determinism-env.sh` to match CI environment locally.
 
-Create a configuration (interactive wizard)
+Create a project with configuration (interactive wizard)
 
 ```bash
-glassalpha init
+glassalpha quickstart
 ```
 
 Generate an audit report
 
 ```bash
-# Lightning-fast development mode (2-3 seconds)
-glassalpha audit --fast
-
-# Or full audit with all features (5-7 seconds)
 glassalpha audit
+```
+
+**Tip**: For faster iteration during development, enable fast mode in your config:
+
+```yaml
+runtime:
+  fast_mode: true # Reduces bootstrap samples (2-3s vs 5-7s)
 ```
 
 That's it. You now have a complete audit report with model performance, explanations, and fairness metrics.

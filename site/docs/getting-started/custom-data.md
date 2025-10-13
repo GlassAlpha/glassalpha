@@ -6,28 +6,30 @@ This guide shows you how to use your own datasets with GlassAlpha for ML auditin
 
 The fastest way to use custom data:
 
-**Option 1: Use our comprehensive template** (recommended for first-time users)
+**Option 1: Use quickstart generator** (recommended for first-time users)
 
-Use our fully-commented template from the repository:
+The easiest way is to use the quickstart command and then modify the generated config:
 
 ```bash
-# Copy the template from the repository
-glassalpha init --template custom_template --output my_audit_config.yaml
+# Generate a project with example config
+glassalpha quickstart
 
-# Edit it with your settings
-nano my_audit_config.yaml
+# Edit the generated config with your data
+cd my-audit-project
+nano audit_config.yaml
 ```
 
-The `custom_template.yaml` (packaged with GlassAlpha) includes extensive comments explaining every option. Just update:
+Update the key fields in `audit_config.yaml`:
 
-- `data.path` → your dataset path
-- `data.target_column` → your prediction target
-- `data.protected_attributes` → your sensitive features
+- `data.dataset: custom` → Use "custom" instead of built-in dataset name
+- `data.path: /path/to/your/data.csv` → Your dataset path
+- `data.target_column: your_target` → Your prediction target column
+- `data.protected_attributes: [...]` → Your sensitive features
 
 Then run:
 
 ```bash
-glassalpha audit --config my_audit_config.yaml --output audit.pdf
+glassalpha audit
 ```
 
 **Option 2: Minimal configuration** (if you know what you're doing)
