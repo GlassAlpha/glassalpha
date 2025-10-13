@@ -109,7 +109,7 @@ class DeterminismValidator:
         non_determinism_sources = []
 
         for run_num in range(runs):
-            logger.info("Running audit %d/%d for determinism validation", run_num + 1, runs)
+            logger.info(f"Running audit {run_num + 1}/{runs} for determinism validation")
 
             # Run single audit with same seed for reproducibility verification
             run_result = self._run_single_audit(config_path, seed, env)
