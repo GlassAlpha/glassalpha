@@ -100,40 +100,65 @@ ML team provides `credit_model_audit_2025Q4.pdf` and `credit_model_audit_2025Q4.
 - Failed policy gates without documented mitigation
 - Missing reproducibility information (no seed, no versions)
 
-#### Step 3: Generate evidence pack
+#### Step 3: Package evidence for submission
 
-Once audit passes review, create evidence pack:
+Once audit passes review, create evidence bundle:
 
 ```bash
-glassalpha export-evidence-pack \
-  --audit reports/credit_model_audit_2025Q4.pdf \
-  --output evidence_packs/credit_model_2025Q4.zip
+# Create evidence directory
+mkdir -p evidence_packs/credit_model_2025Q4
+
+# Copy artifacts
+cp reports/credit_model_audit_2025Q4.pdf evidence_packs/credit_model_2025Q4/
+cp reports/credit_model_audit_2025Q4.manifest.json evidence_packs/credit_model_2025Q4/
+cp configs/audit_config.yaml evidence_packs/credit_model_2025Q4/
+
+# Generate checksums
+cd evidence_packs/credit_model_2025Q4
+sha256sum *.pdf *.json *.yaml > SHA256SUMS.txt
+
+# Add verification instructions
+cat > README.txt << 'EOF'
+# Verification Instructions
+
+1. Verify checksums:
+   sha256sum -c SHA256SUMS.txt
+
+2. Reproduce audit:
+   glassalpha audit --config audit_config.yaml --output validation_rerun.pdf
+
+3. Compare outputs:
+   sha256sum validation_rerun.pdf credit_model_audit_2025Q4.pdf
+
+All artifacts should be byte-identical when regenerated with same configuration.
+EOF
+
+# Create ZIP for submission
+zip -r ../credit_model_2025Q4.zip .
 ```
 
-**Evidence pack contents**:
+**Evidence bundle contents**:
 
 ```
 credit_model_2025Q4.zip
-├── credit_model_audit_2025Q4.pdf
-├── credit_model_audit_2025Q4.manifest.json
-├── policy_decision.json
-├── checksums.txt (SHA256 hashes)
-├── config/
-│   ├── audit_config.yaml
-│   ├── policy_gates.yaml
-│   └── data_schema.yaml
-└── README.txt (verification instructions)
+├── credit_model_audit_2025Q4.pdf          # Complete audit
+├── credit_model_audit_2025Q4.manifest.json # Provenance (seeds, versions, hashes)
+├── audit_config.yaml                       # Exact configuration used
+├── SHA256SUMS.txt                          # Checksums for all files
+└── README.txt                              # Verification instructions
 ```
+
+**Note**: Automated evidence pack commands are planned for v0.3.0 (Enhancement E3).
 
 #### Step 4: Submit to regulator
 
-Include evidence pack in submission with cover letter:
+Include evidence bundle in submission with cover letter:
 
 **Example cover letter language**:
 
-> "Model documentation was generated using GlassAlpha v0.2.0, an open-source audit framework. The attached evidence pack contains a comprehensive audit report addressing SR 11-7 requirements (Sections III.A through V), including model validation testing, fairness analysis, and outcomes monitoring.
+> "Model documentation was generated using GlassAlpha v0.2.0, an open-source audit framework. The attached evidence bundle contains a comprehensive audit report addressing SR 11-7 requirements (Sections III.A through V), including model validation testing, fairness analysis, and outcomes monitoring.
 >
-> All artifacts in the evidence pack are checksummed for integrity verification. Independent validation can be performed using the included verification instructions. The provenance manifest documents all random seeds, package versions, and data hashes for full reproducibility."
+> All artifacts in the evidence bundle are checksummed for integrity verification. Independent validation can be performed using the included verification instructions. The provenance manifest documents all random seeds, package versions, and data hashes for full reproducibility."
 
 ### Workflow 2: Establishing Policy Gates
 

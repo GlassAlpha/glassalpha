@@ -153,8 +153,8 @@ GlassAlpha uses explicit dispatch to load ML models based on your configuration.
 If you request a model that isn't installed, GlassAlpha automatically falls back to LogisticRegression:
 
 ```bash
-# This works even without XGBoost installed
-glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf
+# This works even without XGBoost installed (use quickstart-generated config or example config)
+glassalpha audit --config src/glassalpha/data/configs/german_credit_simple.yaml --output audit.pdf
 # → Falls back to LogisticRegression with clear message
 ```
 
@@ -686,7 +686,7 @@ Throughout the documentation, you'll see two types of config path references:
 **Repository examples** (when running from cloned repo):
 
 ```bash
-glassalpha audit --config configs/german_credit_simple.yaml --output audit.html
+glassalpha audit --config src/glassalpha/data/configs/german_credit_simple.yaml --output audit.html
 ```
 
 **Custom configs** (when using your own):

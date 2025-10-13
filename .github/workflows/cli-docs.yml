@@ -1,50 +1,51 @@
+---
 name: CLI Documentation Check
 
 on:
-    push:
-        branches: [main, develop]
-        paths:
-            - "src/glassalpha/cli/**"
-            - "scripts/generate_cli_docs.py"
-            - "site/docs/reference/cli.md"
-    pull_request:
-        branches: [main, develop]
-        paths:
-            - "src/glassalpha/cli/**"
-            - "scripts/generate_cli_docs.py"
-            - "site/docs/reference/cli.md"
+  push:
+    branches: [main, develop]
+    paths:
+      - "src/glassalpha/cli/**"
+      - "scripts/generate_cli_docs.py"
+      - "site/docs/reference/cli.md"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "src/glassalpha/cli/**"
+      - "scripts/generate_cli_docs.py"
+      - "site/docs/reference/cli.md"
 
 permissions:
-    contents: read
-    pull-requests: read
+  contents: read
+  pull-requests: read
 
 jobs:
-    check-cli-docs:
-        name: Check CLI Docs are Current
-        runs-on: ubuntu-latest
+  check-cli-docs:
+    name: Check CLI Docs are Current
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v5
+    steps:
+      - uses: actions/checkout@v5
 
-            - name: Set up Python 3.11
-              uses: actions/setup-python@v6
-              with:
-                  python-version: "3.11"
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
 
-            - name: Install dependencies
-              run: |
-                  pip install --upgrade pip
-                  pip install -e "."
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e "."
 
-            - name: Check CLI docs are up to date
-              run: |
-                  python scripts/generate_cli_docs.py --check
+      - name: Check CLI docs are up to date
+        run: |
+          python scripts/generate_cli_docs.py --check
 
-            - name: Generate updated docs (if check failed)
-              if: failure()
-              run: |
-                  python scripts/generate_cli_docs.py --output site/docs/reference/cli.md
-                  echo "❌ CLI documentation is out of date"
-                  echo "Run: python scripts/generate_cli_docs.py --output site/docs/reference/cli.md"
-                  echo "Then commit the updated cli.md file"
-                  exit 1
+      - name: Generate updated docs (if check failed)
+        if: failure()
+        run: |
+          python scripts/generate_cli_docs.py --output site/docs/reference/cli.md
+          echo "❌ CLI documentation is out of date"
+          echo "Run: python scripts/generate_cli_docs.py --output site/docs/reference/cli.md"
+          echo "Then commit the updated cli.md file"
+          exit 1

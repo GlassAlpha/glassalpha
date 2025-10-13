@@ -111,13 +111,16 @@ def main_callback(
 
 
 # Import and register core commands
-from .commands import audit, doctor, list_components_cmd, validate
+from .commands import audit, docs, doctor, list_components_cmd, reasons, recourse, validate
 from .quickstart import quickstart
 
 # Register commands
 app.command()(audit)
 app.command()(doctor)
+app.command()(docs)
 app.command()(quickstart)
+app.command()(reasons)
+app.command()(recourse)
 app.command()(validate)
 app.command(name="list")(list_components_cmd)
 

@@ -44,28 +44,42 @@ Stress test model claims:
 
 ### Workflow 1: Initial Audit Review
 
-**Scenario**: You receive an audit PDF and evidence pack for validation.
+**Scenario**: You receive an audit report and documentation bundle for validation.
 
-#### Step 1: Verify evidence pack integrity
+#### Step 1: Verify evidence bundle integrity
 
 ```bash
-# Verify all checksums and manifest completeness
-glassalpha verify-evidence-pack \
-  --input evidence_packs/credit_model_2025Q4.zip
+# Extract and verify bundle
+unzip evidence_packs/credit_model_2025Q4.zip -d validation_check/
+cd validation_check/
+
+# Verify all checksums
+sha256sum -c SHA256SUMS.txt
 
 # Expected output:
-# ✓ All checksums valid (SHA256)
-# ✓ Manifest complete (all required fields present)
-# ✓ Policy gates documented
-# ✓ Reproducibility info present
+# credit_model_audit_2025Q4.pdf: OK
+# credit_model_audit_2025Q4.manifest.json: OK
+# audit_config.yaml: OK
 ```
+
+**What to verify**:
+
+- All checksums pass (SHA256)
+- Manifest is complete and valid JSON
+- Configuration file is present and valid YAML
+- Random seed is documented in manifest
+- Package versions are documented in manifest
+- Git SHA is present (for reproducibility)
+
+**Note**: Automated `verify-evidence-pack` command is planned for v0.3.0 (Enhancement E3).
 
 **Red flags**:
 
-- Checksum mismatches (evidence tampering)
+- Checksum mismatches (evidence tampering or corruption)
 - Missing manifest fields (incomplete documentation)
-- No random seed (non-reproducible)
+- No random seed in manifest (non-reproducible)
 - No package versions (environment not documented)
+- Missing configuration file (can't reproduce)
 
 #### Step 2: Review audit PDF systematically
 

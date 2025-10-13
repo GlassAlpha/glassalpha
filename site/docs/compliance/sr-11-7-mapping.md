@@ -396,50 +396,57 @@ sha256sum report_original.pdf report_validation.pdf
 
 **GlassAlpha Artifacts:**
 
-| Artifact                  | Purpose               | Command                           | Contents                        |
-| ------------------------- | --------------------- | --------------------------------- | ------------------------------- |
-| **Evidence pack (ZIP)**   | Complete audit bundle | `glassalpha export-evidence-pack` | PDF + manifest + policy + gates |
-| **Verification tool**     | Validate integrity    | `glassalpha verify-evidence-pack` | SHA256 checksums                |
-| **Policy decisions JSON** | Gates/compliance      | `policy_decision.json` sidecar    | PASS/FAIL per policy rule       |
-| **Shift analysis JSON**   | Robustness evidence   | `.shift_analysis.json` sidecar    | Degradation under shifts        |
+| Artifact                    | Purpose                      | How to Provide                           | Contents                           |
+| --------------------------- | ---------------------------- | ---------------------------------------- | ---------------------------------- |
+| **Audit report (HTML/PDF)** | Complete audit documentation | `glassalpha audit --output report.html`  | Full audit with all sections       |
+| **Manifest JSON**           | Provenance tracking          | Auto-generated as `report.manifest.json` | All hashes, seeds, versions        |
+| **Policy decisions JSON**   | Gates/compliance             | `policy_decision.json` sidecar           | PASS/FAIL per policy rule (v0.3.0) |
+| **Shift analysis JSON**     | Robustness evidence          | `.shift_analysis.json` sidecar           | Degradation under shifts           |
 
-**Evidence pack structure**:
+**Documentation bundle structure**:
 
 ```
-evidence_pack_20241007.zip
-├── audit_report.pdf          # Main audit (SHA256: abc123...)
-├── audit.manifest.json        # Provenance (SHA256: def456...)
-├── policy_decision.json       # Gate results (SHA256: ghi789...)
-├── audit.shift_analysis.json  # Shift testing (SHA256: jkl012...)
-├── gates.yaml                 # Policy configuration
-└── checksums.sha256           # Verification file
+validation_evidence/
+├── credit_model_audit_2025Q4.html      # Main audit
+├── credit_model_audit_2025Q4.manifest.json  # Provenance
+├── policy_decision.json                # Gate results (v0.3.0)
+├── credit_model_audit_2025Q4.shift_analysis.json  # Shift testing
+├── audit_config.yaml                   # Exact configuration used
+└── README.txt                          # Verification instructions
 ```
 
-**Example validation**:
+**Verification process**:
 
 ```bash
-# Export evidence pack
-glassalpha export-evidence-pack \
-  --audit report.pdf \
-  --manifest report.manifest.json \
-  --output evidence_pack.zip
+# Generate audit with shift testing
+glassalpha audit \
+  --config audit_config.yaml \
+  --output credit_model_audit_2025Q4.html \
+  --check-shift gender:+0.1
 
-# Independent validator verifies
-glassalpha verify-evidence-pack evidence_pack.zip
-# ✓ All checksums valid
-# ✓ Manifest integrity verified
-# ✓ Policy decisions reproducible
+# Verify reproducibility
+sha256sum credit_model_audit_2025Q4.html credit_model_audit_2025Q4.manifest.json
+
+# Independent validator can regenerate from config
+glassalpha audit --config audit_config.yaml --output validation_rerun.html
+
+# Compare checksums to verify byte-identical reproduction
+sha256sum validation_rerun.html
 ```
+
+**Note**: Automated evidence pack export/verification commands are planned for v0.3.0 (Track 2, Enhancement E3). Currently, package artifacts manually as shown above.
 
 **Example citation**:
 
 > "Validation evidence per SR 11-7 Section IV.B:
 >
-> - Evidence pack: `evidence_pack_20241007.zip` (SHA256:{hash})
-> - Contents: Audit PDF, manifest, policy decisions, shift analysis
-> - Verification: All artifacts SHA256-validated, byte-identical on rerun
-> - Availability: Evidence pack retained for 7 years per record retention policy
->   Independent validators can verify using `glassalpha verify-evidence-pack`."
+> - Audit report: `credit_model_audit_2025Q4.html` (SHA256:{hash})
+> - Manifest: `credit_model_audit_2025Q4.manifest.json` (SHA256:{hash})
+> - Configuration: `audit_config.yaml` (SHA256:{hash})
+> - Shift analysis: `credit_model_audit_2025Q4.shift_analysis.json` (SHA256:{hash})
+> - Verification: All artifacts SHA256-validated, byte-identical on rerun with same config
+> - Availability: Evidence retained for 7 years per record retention policy
+>   Independent validators can reproduce using audit_config.yaml."
 
 ---
 

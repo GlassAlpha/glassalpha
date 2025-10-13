@@ -258,14 +258,16 @@
 
 - [ ] **Integrity Verification**
 
-  - SHA256 checksums computed for all artifacts
-  - Checksums file included in evidence pack
-  - Verification instructions included
+  - SHA256 checksums computed for all artifacts (use `sha256sum *.pdf *.json *.yaml > SHA256SUMS.txt`)
+  - Checksums file included in evidence bundle
+  - Verification instructions included (README.txt)
 
-- [ ] **Evidence Pack Exported**
-  - Created with `glassalpha export-evidence-pack`
-  - Verified with `glassalpha verify-evidence-pack`
-  - Stored in tamper-evident location
+- [ ] **Evidence Bundle Packaged**
+  - All artifacts collected (audit PDF, manifest JSON, config YAML)
+  - Checksums generated and verified
+  - Verification instructions provided
+  - Bundle stored in tamper-evident location (ZIP with checksums)
+  - Note: Automated `export-evidence-pack` command planned for v0.3.0 (Enhancement E3)
 
 ---
 

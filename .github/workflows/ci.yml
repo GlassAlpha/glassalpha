@@ -1,3 +1,4 @@
+---
 name: CI/CD
 
 on:
@@ -5,7 +6,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: true
 
 permissions:
   contents: read
@@ -192,10 +193,13 @@ jobs:
           echo "=== Verify data package files specifically ==="
           python -m pip show -f glassalpha | grep "glassalpha/data" || echo "ERROR: glassalpha/data NOT FOUND in wheel"
           echo "=== Verify builtin configs are packaged ==="
-          python -m pip show -f glassalpha | grep "glassalpha/data/configs/german_credit_simple.yaml" \
+          python -m pip show -f glassalpha | grep \
+            "glassalpha/data/configs/german_credit_simple.yaml" \
             || (echo "ERROR: packaged configs missing"; exit 1)
           echo "=== Test import surface ==="
-          python -c "import glassalpha; from glassalpha import data, datasets, pipeline; print('SUCCESS: All core modules importable')" || echo "ERROR: Import surface test failed"
+          python -c \
+            "import glassalpha; from glassalpha import data, datasets, pipeline" \
+            || echo "ERROR: Import surface test failed"
           echo "=== Smoke tests ==="
           python -c "import glassalpha, sys; print('✅ Version:', glassalpha.__version__)"
           python -m glassalpha --help > /dev/null && echo "✅ CLI help command works" || echo "❌ CLI help failed"
@@ -283,20 +287,28 @@ jobs:
         run: |
           echo "=== Run critical contract regression tests ==="
           export MPLBACKEND=Agg
-          env PYTHONPATH="" python -m pytest tests/test_constants_contract.py tests/test_feature_alignment_contract.py tests/test_logging_no_printf.py \
-              --cov=glassalpha --cov-report=term-missing --cov-fail-under=0 -v --tb=short
+          env PYTHONPATH="" python -m pytest \
+              tests/test_constants_contract.py \
+              tests/test_feature_alignment_contract.py \
+              tests/test_logging_no_printf.py \
+              --cov=glassalpha --cov-report=term-missing --cov-fail-under=0 \
+              -v --tb=short
 
       - name: Run core contract tests
         run: |
           echo "=== Run core contract guard tests ==="
           export MPLBACKEND=Agg
-          env PYTHONPATH="" timeout 600 python -m pytest tests/contracts/ -v --tb=short || echo "Contract tests not found, skipping"
+          env PYTHONPATH="" timeout 600 python -m pytest tests/contracts/ \
+              -v --tb=short || echo "Contract tests not found, skipping"
 
       - name: Run performance regression tests
         run: |
           echo "=== Run performance regression tests (CLI speed + audit smoke test) ==="
           export MPLBACKEND=Agg
-          env PYTHONPATH="" timeout 600 python -m pytest tests/test_cli_performance.py tests/test_explainer_registry_contract.py tests/test_audit_smoke.py \
+          env PYTHONPATH="" timeout 600 python -m pytest \
+              tests/test_cli_performance.py \
+              tests/test_explainer_registry_contract.py \
+              tests/test_audit_smoke.py \
               -v --tb=short || echo "Performance tests completed or timed out"
           echo "✅ Performance tests passed"
 
@@ -351,7 +363,9 @@ jobs:
           # Target: Restore to 65% after Phase 2 adds pipeline/model tests
           # Roadmap: See tests/pipeline/README.md for test plan
           python -m coverage report --precision=2 \
-            --include="*/glassalpha/config/*,*/glassalpha/models/*,*/glassalpha/pipeline/*,*/glassalpha/report/renderer.py,*/glassalpha/metrics/core.py,*/glassalpha/metrics/thresholds.py,*/glassalpha/core/interfaces.py" \
+            --include="*/glassalpha/config/*,*/glassalpha/models/*,*/glassalpha/pipeline/*" \
+            --include="*/glassalpha/report/renderer.py,*/glassalpha/metrics/core.py" \
+            --include="*/glassalpha/metrics/thresholds.py,*/glassalpha/core/interfaces.py" \
             --fail-under=${COV_FLOOR_CRITICAL}
 
       - name: Gate 2 — Overall trend monitoring (no fail)
@@ -373,7 +387,8 @@ jobs:
         run: |
           echo "=== Run full test suite against installed package (no source tree access) ==="
           export MPLBACKEND=Agg
-          env PYTHONPATH="" timeout 1200 python -m pytest tests/ -v --maxfail=3 --tb=line || echo "Final test run completed or timed out"
+          env PYTHONPATH="" timeout 1200 python -m pytest tests/ \
+              -v --maxfail=3 --tb=line || echo "Final test run completed or timed out"
 
       - name: Test notebooks with nbmake
         working-directory: examples
@@ -384,7 +399,8 @@ jobs:
           echo "=== Execute notebooks to verify they run without errors ==="
           export MPLBACKEND=Agg
           # Run with timeout per notebook (3 minutes each)
-          python -m pytest --nbmake notebooks/*.ipynb --nbmake-timeout=180 -v || echo "⚠️  Some notebooks failed (see above)"
+          python -m pytest --nbmake notebooks/*.ipynb \
+            --nbmake-timeout=180 -v || echo "⚠️  Some notebooks failed (see above)"
 
   security:
     runs-on: ubuntu-latest
@@ -518,7 +534,7 @@ jobs:
           black --check src/ tests/ || echo "⚠️  Black found formatting issues (not failing build)"
           echo ""
           echo "Note: Linting warnings do not fail the build currently"
-          # mypy --strict src/ # Disabled during architectural foundation phase - re-enable when type hints are comprehensive
+          # mypy --strict src/ # Disabled during architectural foundation phase
   docs:
     runs-on: ubuntu-latest
     steps:

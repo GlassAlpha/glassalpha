@@ -1,5 +1,5 @@
 # GlassAlpha - Wheel-first development workflow
-.PHONY: smoke build install test lint clean clean-temp hooks help dev-setup check check-workflows check-sigstore check-packaging check-determinism check-venv sync-deps freeze-deps
+.PHONY: smoke build install test lint clean clean-temp hooks help dev-setup check check-fast check-workflows check-sigstore check-packaging check-determinism check-venv sync-deps freeze-deps
 
 # Default target
 help:
@@ -7,7 +7,8 @@ help:
 	@echo ""
 	@echo "🚀 dev-setup  - Complete dev environment setup (one-time)"
 	@echo "🔥 smoke      - Run wheel smoke test (validates 4 critical contracts)"
-	@echo "🔍 check      - Quick pre-commit check (smoke test + doctor + packaging + determinism)"
+	@echo "⚡ check-fast - Fast validation (smoke + workflows + packaging, ~30s)"
+	@echo "🔍 check      - Full pre-commit check (includes PDF determinism, ~2-3min)"
 	@echo "📦 build      - Build wheel"
 	@echo "📥 install    - Install wheel (for testing)"
 	@echo "🧪 test       - Run full test suite (auto-checks venv first)"
@@ -120,7 +121,15 @@ dev-setup:
 	@echo "  - Run 'make test' for full test suite"
 	@echo "  - Run 'glassalpha audit --config quickstart.yaml --output test.pdf' for a quick test"
 
-# Fast pre-commit check
+# Fast validation loop (skip expensive PDF tests)
+check-fast: smoke check-workflows check-packaging
+	@echo ""
+	@echo "🏥 Checking environment..."
+	@glassalpha doctor
+	@echo ""
+	@echo "✅ Fast checks passed!"
+
+# Full pre-commit check (includes PDF determinism)
 check: smoke check-workflows check-sigstore check-packaging check-determinism
 	@echo ""
 	@echo "🏥 Checking environment..."
