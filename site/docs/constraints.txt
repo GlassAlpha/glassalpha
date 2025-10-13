@@ -20,7 +20,7 @@ pyyaml==6.0.1
 # CLI and utilities
 typer==0.12.3
 rich==13.7.1
-click==8.1.7
+click==8.3.0
 
 # Report generation
 jinja2==3.1.6
