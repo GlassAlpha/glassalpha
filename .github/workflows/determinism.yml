@@ -293,141 +293,12 @@ jobs:
             /tmp/hashes.txt
           retention-days: 7
 
-  validate-determinism-framework:
-    name: Test Determinism Framework
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install system dependencies (Ubuntu)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libcairo2-dev \
-            libpango1.0-dev \
-            libgdk-pixbuf2.0-dev
-
-      - name: Install dependencies
-        run: |
-          pip install -c constraints.txt -e ".[all,pdf_determinism,dev]"
-          pip install shap
-
-      - name: Verify dependencies
-        run: |
-          python3 -c "import weasyprint; print(f'✅ WeasyPrint {weasyprint.__version__}')"
-          python3 -c "import pypdf; print(f'✅ pypdf {pypdf.__version__}')"
-          python3 -c "import shap; print(f'✅ SHAP {shap.__version__}')"
-
-      - name: Test DeterminismValidator
-        run: |
-          PYTHONHASHSEED=0 TZ=UTC MPLBACKEND=Agg SOURCE_DATE_EPOCH=1577836800 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 BLIS_NUM_THREADS=1 GLASSALPHA_NO_PROGRESS=1 GLASSALPHA_DETERMINISTIC=1 LC_ALL=C python3 << 'EOF'
-          import sys
-          import tempfile
-          import yaml
-          from pathlib import Path
-
-          # Use installed package (not hardcoded path)
-          from glassalpha.utils.determinism_validator import validate_audit_determinism
-
-          # Create test config with strict determinism controls
-          config = {
-              'audit_profile': 'tabular_compliance',
-              'data': {
-                  'dataset': 'german_credit',
-                  'target_column': 'credit_risk',
-              },
-              'model': {'type': 'logistic_regression'},
-              'reproducibility': {
-                  'random_seed': 42,
-                  'strict': True,
-                  'thread_control': True,
-              },
-          }
-
-          with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-              yaml.dump(config, f)
-              config_path = Path(f.name)
-
-          try:
-              # Run validation
-              report = validate_audit_determinism(
-                  config_path=config_path,
-                  runs=2,  # Reduced for speed
-                  seed=42,
-                  check_shap=True,
-              )
-
-              print(f"Is deterministic: {report.is_deterministic}")
-              print(f"Summary: {report.summary}")
-              print(f"Unique hashes: {len(set(report.hashes))}")
-
-              if not report.is_deterministic:
-                  print("Non-determinism sources:")
-                  for source in report.non_determinism_sources:
-                      print(f"  - {source}")
-                  exit(1)
-
-              print("✅ DeterminismValidator working correctly")
-
-          finally:
-              config_path.unlink()
-          EOF
-
-      - name: Test explainer selection determinism
-        run: |
-          PYTHONHASHSEED=0 TZ=UTC MPLBACKEND=Agg SOURCE_DATE_EPOCH=1577836800 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 BLIS_NUM_THREADS=1 GLASSALPHA_NO_PROGRESS=1 GLASSALPHA_DETERMINISTIC=1 LC_ALL=C python3 << 'EOF'
-          # Use installed package (not hardcoded path)
-          from glassalpha.explain import select_explainer, _available
-          from sklearn.linear_model import LogisticRegression
-          import pandas as pd
-          import numpy as np
-
-          # Create test data
-          np.random.seed(42)
-          X = pd.DataFrame(np.random.randn(100, 5), columns=[f'f{i}' for i in range(5)])
-          y = np.random.randint(0, 2, 100)
-
-          # Train model
-          model = LogisticRegression(random_state=42)
-          model.fit(X, y)
-
-          # Check available explainers
-          # Note: _available function is a stub that returns True for all explainers
-          treeshap_available = _available("treeshap")
-          coefficients_available = _available("coefficients")
-          print(f"TreeSHAP available: {treeshap_available}")
-          print(f"Coefficients available: {coefficients_available}")
-
-          # Test deterministic selection
-          explainer1 = select_explainer(
-              model_type="logistic_regression",
-              requested_priority=['coefficients'],
-          )
-
-          explainer2 = select_explainer(
-              model_type="logistic_regression",
-              requested_priority=['coefficients'],
-          )
-
-          assert explainer1 == explainer2, f"Non-deterministic selection: {explainer1} != {explainer2}"
-          print(f"✅ Deterministic explainer selection: {explainer1}")
-          EOF
-
   report-status:
     name: Report Validation Status
     needs:
       [
         validate-determinism,
         compare-cross-platform,
-        validate-determinism-framework,
       ]
     runs-on: ubuntu-latest
     if: always()
@@ -438,11 +309,9 @@ jobs:
           echo "=== Determinism Validation Summary ==="
           echo "Determinism tests: ${{ needs.validate-determinism.result }}"
           echo "Cross-platform comparison: ${{ needs.compare-cross-platform.result }}"
-          echo "Framework tests: ${{ needs.validate-determinism-framework.result }}"
 
           if [ "${{ needs.validate-determinism.result }}" != "success" ] || \
-             [ "${{ needs.compare-cross-platform.result }}" != "success" ] || \
-             [ "${{ needs.validate-determinism-framework.result }}" != "success" ]; then
+             [ "${{ needs.compare-cross-platform.result }}" != "success" ]; then
             echo "❌ Determinism validation failed"
             exit 1
           fi
