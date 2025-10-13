@@ -76,6 +76,11 @@ exclude CI_*.md
 exclude *_ANALYSIS.md
 exclude *_PLAN.md
 exclude fix-*.plan.md
+exclude UX_*.md
+exclude *_VALIDATION.md
+exclude *_COMPLETE.md
+exclude *_SUMMARY.md
+exclude *_IMPROVEMENTS*.md
 global-exclude test_*.html test_*.pdf test_*.pkl test_*.json
 global-exclude *_simple_audit.html *_simple_audit.manifest.json
 global-exclude malformed.yaml

@@ -187,11 +187,20 @@ id_ed25519*
 # Project-Specific: GlassAlpha
 # ----------------------------------------------------------------------------
 
-# AI-generated temporary test files
+# AI-generated temporary test files and docs
 .ai-scratch/
 .saved-prompts/
 temp-*
 **/temp-*
+UX_*.md
+*_VALIDATION.md
+*_COMPLETE.md
+*_SUMMARY.md
+*_IMPROVEMENTS*.md
+CI_*.md
+*_ANALYSIS.md
+*_PLAN.md
+fix-*.plan.md
 
 # Generated PDFs (except example docs)
 *.pdf

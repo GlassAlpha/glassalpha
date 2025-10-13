@@ -19,6 +19,13 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf] # Ensure LF line endings
 
+  - repo: https://github.com/mgedmin/check-manifest
+    rev: "0.49"
+    hooks:
+      - id: check-manifest
+        args: [--verbose]
+        # Requires setup.py or pyproject.toml packaging context
+        additional_dependencies: [build, setuptools, wheel]
 # MyPy disabled during architectural foundation phase
 # Will re-enable when Phase 1 implementation is complete
 # - repo: https://github.com/pre-commit/mirrors-mypy
