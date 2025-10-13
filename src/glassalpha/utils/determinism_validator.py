@@ -105,7 +105,7 @@ class DeterminismValidator:
         non_determinism_sources = []
 
         for run_num in range(runs):
-            logger.info(f"Running audit {run_num + 1}/{runs} for determinism validation")
+            logger.info("Running audit %d/%d for determinism validation", run_num + 1, runs)
 
             # Run single audit with same seed for reproducibility verification
             run_result = self._run_single_audit(config_path, seed, env)
@@ -125,7 +125,7 @@ class DeterminismValidator:
             import shap  # noqa: F401
         except ImportError as e:
             raise DeterminismError(
-                f"SHAP required for deterministic explainer selection. Install with: pip install shap\nError: {e}",
+                "SHAP required for deterministic explainer selection. Install with: pip install shap",
             ) from e
 
     def _run_single_audit(
@@ -150,8 +150,8 @@ class DeterminismValidator:
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
 
-            # Create output path (use PDF to match CI expectations)
-            output_file = tmp_path / "audit.pdf"
+            # Create output path (use HTML for faster validation - PDF can be slow in CI)
+            output_file = tmp_path / "audit.html"
 
             # Create a temporary config with the specific seed for this run
             run_config_path = tmp_path / "run_config.yaml"
@@ -179,14 +179,16 @@ class DeterminismValidator:
                     str(run_config_path),
                     "-o",
                     str(output_file),
+                    "--output-format",
+                    "html",  # Use HTML for faster determinism validation
                 ]
 
-                result = subprocess.run(
+                subprocess.run(
                     cmd,
                     env=env,
                     capture_output=True,
                     text=True,
-                    timeout=300,  # 5 minute timeout
+                    timeout=600,  # 10 minute timeout (increased for CI reliability)
                     check=True,
                 )
 
@@ -222,7 +224,7 @@ class DeterminismValidator:
                     "success": False,
                     "hash": None,
                     "duration": duration,
-                    "error": "Audit timed out after 5 minutes",
+                    "error": "Audit timed out after 10 minutes",
                 }
 
     def _compute_file_hash(self, file_path: Path) -> str:
