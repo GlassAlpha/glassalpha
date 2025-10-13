@@ -10,7 +10,33 @@ _Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable wi
 
 ## Installation
 
-### Option 1: Install from PyPI (easiest)
+> ⚠️ **Pre-release Notice**: GlassAlpha is not yet published to PyPI. Use source installation below until official release (expected Q1 2025).
+
+### Option 1: Install from source (recommended)
+
+```bash
+git clone https://github.com/GlassAlpha/glassalpha
+cd glassalpha
+pip install -e ".[all]"  # Install with all optional features
+```
+
+**Base installation** includes LogisticRegression model with coefficient-based explanations (fast, zero extra dependencies).
+
+**For minimal installation** (HTML reports only):
+
+```bash
+pip install -e .
+```
+
+**For advanced models** (XGBoost/LightGBM with SHAP):
+
+```bash
+pip install -e ".[explain]"  # Adds 5-10 minutes to initial setup
+```
+
+### Option 2: Install from PyPI (coming soon)
+
+Once published to PyPI (expected Q1 2025):
 
 ```bash
 # Install with pipx (recommended for CLI tools)
@@ -18,22 +44,6 @@ pipx install glassalpha
 
 # Or with pip
 pip install glassalpha
-```
-
-**Base installation** includes LogisticRegression model with coefficient-based explanations (fast, zero extra dependencies).
-
-**For advanced models** (XGBoost/LightGBM with SHAP):
-
-```bash
-pip install 'glassalpha[explain]'  # Adds 5-10 minutes to initial setup
-```
-
-### Option 2: Install from source (for development)
-
-```bash
-git clone https://github.com/GlassAlpha/glassalpha
-cd glassalpha
-pip install -e ".[all]"  # Install with all optional features
 ```
 
 ## Development Setup
@@ -161,7 +171,7 @@ glassalpha audit --config audit.yaml \
 **Separate commands available:**
 
 - **Reason codes** (E2): Generate ECOA-compliant adverse action notices via `glassalpha reasons`
-- **Actionable recourse** (E2.5): Generate counterfactual recommendations via `glassalpha recourse`
+- **Actionable recourse** (E2.5): Generate counterfactual recommendations via `glassalpha recourse` (works best with sklearn models)
 
 ### Regulatory Compliance
 
@@ -177,7 +187,7 @@ All Apache 2.0 licensed.
 
 ### Quick Features
 
-- **30-second setup**: Interactive `glassalpha init` wizard
+- **30-second setup**: Interactive `glassalpha quickstart` wizard
 - **Smart defaults**: Auto-detects config files, infers output paths
 - **Built-in datasets**: German Credit and Adult Income for quick testing
 - **Self-diagnosable errors**: Clear What/Why/Fix error messages

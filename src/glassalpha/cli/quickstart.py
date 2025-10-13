@@ -128,6 +128,12 @@ def quickstart(
             )
             raise typer.Exit(ExitCode.USER_ERROR)
 
+        # Handle --output . specially (create in current directory)
+        if output == Path("."):
+            output = Path.cwd()
+            typer.echo(f"Creating project in current directory: {output}")
+            typer.echo()
+
         # Check if output directory already exists
         if output.exists() and any(output.iterdir()):
             try:

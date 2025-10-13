@@ -26,26 +26,32 @@ Complete installation instructions for GlassAlpha on different platforms and env
 
 ## Installation methods
 
-### Quick install (recommended)
+> ⚠️ **Pre-release Notice**: GlassAlpha is not yet published to PyPI. Use source installation until official release (expected Q1 2025).
+
+### Quick install from source (recommended)
 
 The fastest way to get started with GlassAlpha:
 
 ```bash
-# Install pipx (if not already installed)
-python3 -m pip install --user pipx
-python3 -m pipx ensurepath
+# Clone repository
+git clone https://github.com/GlassAlpha/glassalpha
+cd glassalpha
 
-# Install GlassAlpha with all features
-pipx install "glassalpha[all]"
+# Install with all features
+pip install -e ".[all]"
 
 # Verify installation
 glassalpha --version
 glassalpha doctor
 ```
 
-**Why pipx?** Installs GlassAlpha in an isolated environment, making the `glassalpha` command globally available without dependency conflicts.
+**For isolated environments:** Create a virtual environment first:
 
-**For Python projects:** Use `pip install glassalpha` in a virtual environment instead (see below).
+```bash
+python3 -m venv ~/.glassalpha-env
+source ~/.glassalpha-env/bin/activate  # On Windows: .glassalpha-env\Scripts\activate
+pip install -e ".[all]"
+```
 
 ### Feature matrix
 

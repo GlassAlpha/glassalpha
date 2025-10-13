@@ -263,21 +263,40 @@ class CategoricalDataError(GlassAlphaError):
             docs: Override default docs link
 
         """
+        # Show first 5 columns if more than 5
+        col_display = categorical_columns[:5]
+        col_suffix = f" (and {len(categorical_columns) - 5} more)" if len(categorical_columns) > 5 else ""
+
         if fix is None:
-            fix = (
-                "Encode categorical columns before model training. "
-                "Example: pd.get_dummies(df, columns=['category_col']). "
-                "Or use sklearn's ColumnTransformer with OneHotEncoder."
-            )
+            # Build helpful error message with code snippet
+            fix = """Preprocess categorical features before training:
+
+  from sklearn.preprocessing import OneHotEncoder
+  from sklearn.compose import ColumnTransformer
+
+  # Identify categorical columns
+  cat_cols = X.select_dtypes(include=['object', 'category']).columns
+
+  # Create preprocessor
+  preprocessor = ColumnTransformer(
+      transformers=[
+          ('cat', OneHotEncoder(drop='first'), cat_cols)
+      ],
+      remainder='passthrough'
+  )
+
+  # Transform data
+  X_train_processed = preprocessor.fit_transform(X_train)
+  X_test_processed = preprocessor.transform(X_test)
+
+  # Now train and audit
+  model.fit(X_train_processed, y_train)
+  result = ga.audit.from_model(model, X_test_processed, y_test)"""
 
         if docs is None:
-            docs = "https://glassalpha.com/guides/categorical-data"
+            docs = "https://glassalpha.com/guides/preprocessing/"
 
-        message = (
-            f"Categorical columns found: {categorical_columns}. "
-            "sklearn models require numeric features. "
-            "Encode categorical data before training."
-        )
+        message = f"Categorical columns found: {col_display}{col_suffix}\n\n💡 Quick fix below:"
 
         super().__init__(
             code="GAE2001",

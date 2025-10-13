@@ -53,13 +53,16 @@ glassalpha audit --config your_config.yaml
 
 ## The 5-minute version
 
-Get your first professional audit report in 5 minutes with base installation:
+> ⚠️ **Pre-release**: Install from source (PyPI coming Q1 2025)
+
+Get your first professional audit report in 5 minutes:
 
 ### Using quickstart generator (easiest)
 
 ```bash
-# 1. Install (1-2 minutes)
-pip install glassalpha
+# 1. Clone and install (1-2 minutes)
+git clone https://github.com/GlassAlpha/glassalpha
+cd glassalpha && pip install -e ".[all]"
 
 # 2. Generate project (interactive wizard, 30 seconds)
 glassalpha quickstart
@@ -69,10 +72,12 @@ cd my-audit-project && python run_audit.py
 
 # 4. Done! Open your professional report
 open reports/audit_report.html  # macOS
+xdg-open reports/audit_report.html  # Linux
+start reports/audit_report.html  # Windows
 ```
 
 **Note**: Base installation uses LogisticRegression model (fast, zero extra dependencies).
-For advanced models (XGBoost/LightGBM with SHAP), install with `pip install 'glassalpha[explain]'` (adds 5-10 minutes to initial setup).
+For advanced models only, install with `pip install -e ".[explain]"` instead.
 
 ### Using repository example
 

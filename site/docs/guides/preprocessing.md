@@ -1,4 +1,178 @@
-# Preprocessing Artifact Verification
+# Working with Categorical Data
+
+## Quick Start: Categorical Data
+
+**Problem**: Most real datasets have categorical features (strings, categories), but sklearn models require numeric input only.
+
+**Solution**: Preprocess categorical features before training and auditing.
+
+### Step 1: Identify Categorical Columns
+
+```python
+import pandas as pd
+import glassalpha as ga
+
+# Load your data
+data = ga.datasets.load_german_credit()
+
+# Find categorical columns
+cat_cols = data.select_dtypes(include=['object', 'category']).columns
+print(f"Categorical columns: {list(cat_cols)}")
+# Output: ['checking_account_status', 'credit_history', 'purpose', ...]
+```
+
+### Step 2: One-Hot Encode Categorical Features
+
+```python
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.model_selection import train_test_split
+
+# Split features and target
+X = data.drop('credit_risk', axis=1)
+y = data['credit_risk']
+
+# Split train/test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Identify categorical columns
+cat_cols = X.select_dtypes(include=['object', 'category']).columns
+
+# Create preprocessor
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('cat', OneHotEncoder(drop='first', handle_unknown='ignore'), cat_cols)
+    ],
+    remainder='passthrough'
+)
+
+# Transform data
+X_train_processed = preprocessor.fit_transform(X_train)
+X_test_processed = preprocessor.transform(X_test)
+```
+
+### Step 3: Train Model with Preprocessed Data
+
+```python
+from sklearn.linear_model import LogisticRegression
+
+model = LogisticRegression(random_state=42)
+model.fit(X_train_processed, y_train)
+```
+
+### Step 4: Audit with Preprocessed Data
+
+```python
+# Generate audit using preprocessed test data
+result = ga.audit.from_model(
+    model=model,
+    X=X_test_processed,
+    y=y_test,
+    protected_attributes={'gender': data.loc[X_test.index, 'gender']}
+)
+
+# Save report
+result.to_html('audit_report.html')
+```
+
+### Common Patterns
+
+#### Pattern 1: Mixed Categorical and Numeric
+
+```python
+from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+
+numeric_cols = X.select_dtypes(include=['number']).columns
+cat_cols = X.select_dtypes(include=['object', 'category']).columns
+
+preprocessor = ColumnTransformer([
+    ('num', StandardScaler(), numeric_cols),
+    ('cat', OneHotEncoder(drop='first'), cat_cols)
+])
+```
+
+#### Pattern 2: Handle Missing Values
+
+```python
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+
+numeric_transformer = Pipeline([
+    ('imputer', SimpleImputer(strategy='median')),
+    ('scaler', StandardScaler())
+])
+
+categorical_transformer = Pipeline([
+    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+    ('encoder', OneHotEncoder(drop='first', handle_unknown='ignore'))
+])
+
+preprocessor = ColumnTransformer([
+    ('num', numeric_transformer, numeric_cols),
+    ('cat', categorical_transformer, cat_cols)
+])
+```
+
+#### Pattern 3: German Credit Complete Example
+
+```python
+import glassalpha as ga
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+# Load dataset
+data = ga.datasets.load_german_credit()
+
+# Split features and target
+X = data.drop('credit_risk', axis=1)
+y = data['credit_risk']
+
+# Split train/test
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Preprocess categorical features
+cat_cols = X.select_dtypes(include=['object', 'category']).columns
+preprocessor = ColumnTransformer([
+    ('cat', OneHotEncoder(drop='first', handle_unknown='ignore'), cat_cols)
+], remainder='passthrough')
+
+X_train_processed = preprocessor.fit_transform(X_train)
+X_test_processed = preprocessor.transform(X_test)
+
+# Train model
+model = LogisticRegression(random_state=42, max_iter=5000)
+model.fit(X_train_processed, y_train)
+
+# Generate audit
+result = ga.audit.from_model(
+    model=model,
+    X=X_test_processed,
+    y=y_test,
+    protected_attributes={
+        'gender': data.loc[X_test.index, 'gender'],
+        'age_group': data.loc[X_test.index, 'age_group']
+    }
+)
+
+# Save report
+result.to_html('german_credit_audit.html')
+print(f"✓ Audit complete! Open german_credit_audit.html to view.")
+```
+
+### Next Steps
+
+- **For production audits**: See [Preprocessing Artifact Verification](#overview) below
+- **For more examples**: See `examples/notebooks/german_credit_walkthrough.ipynb`
+- **For troubleshooting**: See [Common Errors](#troubleshooting)
+
+---
+
+## Preprocessing Artifact Verification
 
 ## Overview
 

@@ -22,6 +22,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Recourse Command PolicyConstraints API** (P0 - Critical Fix)
+
+  - Fixed parameter name mismatches in `PolicyConstraints.__init__` (now accepts both `feature_costs`/`cost_weights` and `feature_bounds`/`bounds`)
+  - Fixed validation functions to accept multiple calling conventions (`validate_monotonic_constraints`, `validate_feature_bounds`)
+  - Added XGBoost Booster wrapper for `predict_proba` compatibility in recourse generation
+  - Documented known limitation: XGBoost models have limited recourse support due to DMatrix feature name constraints
+  - Recommendation: Use sklearn-compatible models (LogisticRegression, RandomForest) for recourse, or use `glassalpha reasons` for XGBoost models
+  - Result: Recourse command no longer crashes on PolicyConstraints initialization
+
 - **PDF Generation Timeout Protection** (P0 - Critical Fix)
   - Fixed CLI progress_callback bug: `pdf_progress_relay` was defined but never passed to worker function
   - Added timeout enforcement to progress monitoring loop (5 minute max, 90 second stall detection)

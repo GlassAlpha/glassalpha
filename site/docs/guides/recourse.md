@@ -31,6 +31,9 @@ glassalpha recourse \
   --output recourse/instance_42.json
 ```
 
+!!! note "Model Compatibility"
+Recourse works best with sklearn-compatible models like `logistic_regression` and `random_forest`. XGBoost models have limited support. See [Known Limitations](#known-limitations) for details.
+
 ### Example Output
 
 ```json
@@ -718,6 +721,42 @@ glassalpha recourse \
   -c recourse_healthcare.yaml \
   --threshold 0.3
 ```
+
+## Known Limitations
+
+### XGBoost Model Compatibility
+
+**Issue**: Recourse generation currently has limited support for XGBoost models saved by `glassalpha audit`. The feature modification process encounters errors with XGBoost's native Booster format due to DMatrix feature name constraints.
+
+**Symptoms**:
+
+```
+Prediction failed for counterfactual: feature_names mismatch
+training data did not have the following fields: 1
+```
+
+**Workaround**: Use sklearn-compatible models for recourse generation:
+
+```yaml
+# Use LogisticRegression instead of XGBoost
+model:
+  type: logistic_regression
+  params:
+    random_state: 42
+    max_iter: 2000
+```
+
+**Supported Models** (full recourse compatibility):
+
+- ✅ `logistic_regression` - Recommended for credit/lending
+- ✅ `linear_regression` - Regression tasks
+- ✅ `random_forest` - sklearn RandomForest (not XGBoost)
+- ⚠️ `xgboost` - Limited support (known issues)
+- ⚠️ `lightgbm` - Limited support (may encounter similar issues)
+
+**Status**: This is a known architectural limitation in how recourse interacts with gradient boosting libraries. We're tracking improvements in [GitHub Issue #XXX](https://github.com/GlassAlpha/glassalpha/issues).
+
+**Alternative for XGBoost models**: Use reason codes (`glassalpha reasons`) instead of recourse for adverse action notices with XGBoost models. Reason codes work reliably with all model types.
 
 ## Next Steps
 

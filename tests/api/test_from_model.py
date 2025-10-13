@@ -286,7 +286,7 @@ def test_from_model_categorical_data_raises_error():
 
     assert "category" in exc_info.value.message
     assert exc_info.value.code == "GAE2001"
-    assert "encode categorical" in exc_info.value.fix.lower()
+    assert "preprocess categorical features before training" in exc_info.value.fix.lower()
 
 
 def test_from_model_multiindex_error_is_actionable():

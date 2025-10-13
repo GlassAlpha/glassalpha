@@ -1108,16 +1108,43 @@ def audit(  # pragma: no cover
 
         # Check file existence early with specific error message
         if not config.exists():
-            _output_error(
-                f"Configuration file does not exist: {config}\n\n"
-                "Quick fixes:\n"
-                "  1. Create a config: glassalpha init\n"
-                "  2. List datasets: glassalpha datasets list\n"
-                "  3. Use example template: glassalpha init --template quickstart\n\n"
-                "Examples:\n"
-                "  glassalpha init --template quickstart --output my-audit.yaml\n"
-                "  glassalpha audit --config my-audit.yaml --output report.html",
-            )
+            current_dir = Path.cwd()
+
+            # Build helpful error message
+            error_msg = f"""Configuration file not found: {config}
+
+📂 Current directory: {current_dir}
+📍 Searched path: {config.absolute()}
+"""
+
+            # List any YAML files in current directory
+            yaml_files = list(current_dir.glob("*.yaml")) + list(current_dir.glob("*.yml"))
+            if yaml_files:
+                error_msg += "\n📋 Available config files:\n"
+                for f in yaml_files[:5]:  # Show max 5
+                    error_msg += f"  - {f.name}\n"
+                if len(yaml_files) > 5:
+                    error_msg += f"  ... and {len(yaml_files) - 5} more\n"
+            else:
+                error_msg += "\n⚠️  No YAML config files found in current directory\n"
+
+            error_msg += """
+💡 Quick fixes:
+  1. Change to project directory:
+     cd /path/to/project && glassalpha audit
+
+  2. Use full config path:
+     glassalpha audit --config /full/path/to/audit.yaml
+
+  3. Create config in current directory:
+     glassalpha quickstart
+
+📖 Examples:
+  glassalpha quickstart
+  glassalpha audit --config audit_config.yaml
+  glassalpha audit --config ../other-project/audit.yaml"""
+
+            _output_error(error_msg)
             raise typer.Exit(ExitCode.USER_ERROR)
 
         # Validate output directory exists before doing any work
@@ -1460,7 +1487,14 @@ def audit(  # pragma: no cover
         raise typer.Exit(ExitCode.USER_ERROR) from None
 
 
-def doctor():  # pragma: no cover
+def doctor(
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed environment information including package versions and paths",
+    ),
+):  # pragma: no cover
     """Check environment and optional features.
 
     This command diagnoses the current environment and shows what optional
@@ -1470,7 +1504,7 @@ def doctor():  # pragma: no cover
         # Basic environment check
         glassalpha doctor
 
-        # Verbose output
+        # Verbose output with package versions
         glassalpha doctor --verbose
 
     """
@@ -1523,10 +1557,17 @@ def doctor():  # pragma: no cover
             pass
 
     # Group: SHAP + Tree models (they come together in [explain] extra)
-    has_all_explain = has_shap and has_xgboost and has_lightgbm
-    if has_all_explain:
-        typer.echo("  SHAP + tree models: ✅ installed")
-        typer.echo("    (includes SHAP, XGBoost, LightGBM)")
+    # Note: Either XGBoost OR LightGBM is sufficient with SHAP
+    has_tree_explain = has_shap and (has_xgboost or has_lightgbm)
+    if has_tree_explain:
+        installed_parts = []
+        if has_shap:
+            installed_parts.append("SHAP")
+        if has_xgboost:
+            installed_parts.append("XGBoost")
+        if has_lightgbm:
+            installed_parts.append("LightGBM")
+        typer.echo(f"  SHAP + tree models: ✅ installed ({', '.join(installed_parts)})")
     else:
         typer.echo("  SHAP + tree models: ❌ not installed")
         # Show what's partially there if any
@@ -1564,7 +1605,7 @@ def doctor():  # pragma: no cover
     missing_features = []
 
     # Check what's missing
-    if not has_all_explain:
+    if not has_tree_explain:
         missing_features.append("SHAP + tree models")
     if not has_pdf_backend:
         missing_features.append("PDF generation")
@@ -1580,7 +1621,7 @@ def doctor():  # pragma: no cover
         typer.echo()
 
         # Show specific install commands for what's missing
-        if not has_all_explain:
+        if not has_tree_explain:
             typer.echo("  📦 For SHAP + tree models (XGBoost, LightGBM):")
             typer.echo("     pip install 'glassalpha[explain]'")
             typer.echo()
@@ -1609,6 +1650,70 @@ def doctor():  # pragma: no cover
 
     typer.echo(f"Ready to run: {suggested_command}")
     typer.echo()
+
+    # Verbose output - detailed environment information
+    if verbose:
+        typer.echo("\n" + "=" * 40)
+        typer.echo("Detailed Environment Information")
+        typer.echo("=" * 40)
+
+        # Python details
+        typer.echo("\nPython Environment:")
+        typer.echo(f"  Executable: {sys.executable}")
+        typer.echo(f"  Version: {sys.version}")
+        typer.echo(f"  Path: {sys.path[0]}")
+
+        # Package versions
+        typer.echo("\nInstalled Package Versions:")
+        packages = [
+            "numpy",
+            "pandas",
+            "scikit-learn",
+            "matplotlib",
+            "jinja2",
+            "xgboost",
+            "lightgbm",
+            "shap",
+            "weasyprint",
+            "reportlab",
+            "glassalpha",
+        ]
+        for package in packages:
+            try:
+                import importlib.metadata
+
+                version = importlib.metadata.version(package)
+                typer.echo(f"  {package}: {version}")
+            except Exception:
+                typer.echo(f"  {package}: not installed")
+
+        # Configuration locations
+        typer.echo("\nConfiguration Locations:")
+        try:
+            from platformdirs import user_config_dir, user_data_dir
+
+            typer.echo(f"  Data dir: {user_data_dir('glassalpha')}")
+            typer.echo(f"  Config dir: {user_config_dir('glassalpha')}")
+        except ImportError:
+            typer.echo("  platformdirs not installed (optional)")
+
+        # Cache locations
+        typer.echo("\nCache Directory:")
+        try:
+            from ..utils.cache_dirs import resolve_data_root
+
+            typer.echo(f"  Cache: {resolve_data_root()}")
+        except Exception as e:
+            typer.echo(f"  Cache: unable to resolve ({e})")
+
+        # Environment checks
+        typer.echo("\nEnvironment Variables:")
+        env_vars = ["PYTHONHASHSEED", "TZ", "MPLBACKEND", "SOURCE_DATE_EPOCH"]
+        for var in env_vars:
+            value = os.environ.get(var, "(not set)")
+            typer.echo(f"  {var}: {value}")
+
+        typer.echo()
 
 
 def validate(  # pragma: no cover
@@ -1817,7 +1922,7 @@ def validate(  # pragma: no cover
             else:
                 # Check model/explainer compatibility for available explainers
                 model_type = audit_config.model.type
-                if "treeshap" in requested_explainers and model_type not in ["xgboost", "lightgbm", "random_forest"]:
+                if "treeshap" in available_requested and model_type not in ["xgboost", "lightgbm", "random_forest"]:
                     msg = (
                         f"TreeSHAP requested but model type '{model_type}' is not a tree model. "
                         "Consider using 'coefficients' (for linear) or 'permutation' (universal)."
@@ -1828,7 +1933,7 @@ def validate(  # pragma: no cover
                         validation_warnings.append(msg)
 
                 # Check other explainer compatibility issues
-                if "coefficients" in requested_explainers and model_type not in [
+                if "coefficients" in available_requested and model_type not in [
                     "logistic_regression",
                     "linear_regression",
                 ]:
@@ -1895,7 +2000,16 @@ def validate(  # pragma: no cover
                         from ..utils.cache_dirs import resolve_data_root
 
                         cache_root = resolve_data_root()
-                        expected_path = cache_root / spec.default_relpath
+
+                        # Map dataset name to expected cache path
+                        dataset_name = audit_config.data.dataset
+                        if dataset_name == "german_credit":
+                            expected_path = cache_root / "german_credit_processed.csv"
+                        elif dataset_name == "adult_income":
+                            expected_path = cache_root / "adult_income.csv"
+                        else:
+                            # Generic fallback for custom datasets
+                            expected_path = cache_root / f"{dataset_name}.csv"
 
                         if expected_path.exists():
                             typer.echo(f"  ✓ Dataset cached locally: {expected_path}")
@@ -2162,8 +2276,7 @@ def reasons(  # pragma: no cover
         ...,
         "--data",
         "-d",
-        help="Path to test data file (CSV)",
-        exists=True,
+        help="Path to test data file (CSV). Auto-generated if missing using built-in dataset.",
         file_okay=True,
     ),
     instance: int = typer.Option(
@@ -2254,6 +2367,43 @@ def reasons(  # pragma: no cover
             if hasattr(cfg, "reason_codes"):
                 organization = getattr(cfg.reason_codes, "organization", organization)
                 contact_info = getattr(cfg.reason_codes, "contact_info", contact_info)
+
+        # Check if data file exists, auto-generate if missing
+        if not data.exists():
+            typer.echo(f"⚠️  Data file not found: {data}")
+            typer.echo("💡 Auto-generating sample data from built-in dataset...")
+            typer.echo()
+
+            # Auto-generate sample data
+            try:
+                from ..datasets import load_german_credit
+
+                # Load dataset
+                dataset = load_german_credit()
+                X = dataset.drop("credit_risk", axis=1)
+
+                # Get only numeric columns for simplicity
+                numeric_cols = X.select_dtypes(include=["number"]).columns
+                X_numeric = X[numeric_cols]
+
+                # Save to requested path
+                data.parent.mkdir(parents=True, exist_ok=True)
+                X_numeric.to_csv(data, index=False)
+
+                typer.echo(f"✓ Created sample data: {data}")
+                typer.echo(f"  Columns: {list(X_numeric.columns)}")
+                typer.echo()
+                typer.echo("📝 Note: This is sample data from German Credit dataset.")
+                typer.echo("   For production, save your actual test data during audit.")
+                typer.echo()
+
+            except Exception as e:
+                typer.echo(f"✗ Could not generate sample data: {e}", err=True)
+                typer.echo()
+                typer.echo("Quick fixes:")
+                typer.echo(f"  1. Check path is correct: {data}")
+                typer.echo("  2. Or create CSV manually with same features as model")
+                raise typer.Exit(ExitCode.USER_ERROR)
 
         typer.echo(f"Loading model from: {model}")
         # Use joblib for loading (matches saving with joblib.dump in audit command)
@@ -2604,13 +2754,23 @@ def reasons(  # pragma: no cover
 
         # Get prediction (with better error handling for feature mismatch)
         try:
-            # Convert DataFrame to numpy for XGBoost compatibility
-            X_numpy = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+            # Handle XGBoost Booster format specially
+            if type(model_obj).__name__ == "Booster" or (
+                hasattr(model_obj, "model") and type(model_obj.model).__name__ == "Booster"
+            ):
+                import xgboost as xgb
 
-            if hasattr(model_obj, "predict_proba"):
-                prediction = float(model_obj.predict_proba(X_numpy)[0, 1])
+                booster = model_obj.model if hasattr(model_obj, "model") else model_obj
+                X_dmatrix = xgb.DMatrix(X_instance_encoded)
+                prediction = float(booster.predict(X_dmatrix)[0])
             else:
-                prediction = float(model_obj.predict(X_numpy)[0])
+                # Convert DataFrame to numpy for compatibility
+                X_numpy = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+
+                if hasattr(model_obj, "predict_proba"):
+                    prediction = float(model_obj.predict_proba(X_numpy)[0, 1])
+                else:
+                    prediction = float(model_obj.predict(X_numpy)[0])
         except ValueError as e:
             error_msg = str(e)
             if "Too many missing features" in error_msg or (
@@ -2664,8 +2824,15 @@ def reasons(  # pragma: no cover
                 typer.echo("    (This may take 10-30 seconds for tree models)")
 
                 explainer = shap.TreeExplainer(native_model)
-                # Convert DataFrame to numpy for SHAP compatibility
-                X_shap = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+
+                # For XGBoost Booster, need to convert to DMatrix format
+                if type(native_model).__name__ == "Booster":
+                    import xgboost as xgb
+
+                    X_shap = xgb.DMatrix(X_instance_encoded)
+                else:
+                    # Convert DataFrame to numpy for SHAP compatibility
+                    X_shap = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
 
                 typer.echo("    Computing SHAP values...", err=True)
                 shap_values = explainer.shap_values(X_shap)
@@ -2859,8 +3026,7 @@ def recourse(  # pragma: no cover
         ...,
         "--data",
         "-d",
-        help="Path to test data file (CSV)",
-        exists=True,
+        help="Path to test data file (CSV). Auto-generated if missing using built-in dataset.",
         file_okay=True,
     ),
     instance: int = typer.Option(
@@ -2935,6 +3101,14 @@ def recourse(  # pragma: no cover
         - data.protected_attributes: list of protected attributes to exclude
         - reproducibility.random_seed: seed for deterministic results
 
+    Model Compatibility:
+        Recourse works best with sklearn-compatible models:
+        ✅ logistic_regression, linear_regression, random_forest (sklearn)
+        ⚠️  xgboost, lightgbm (limited support - known issues with feature modification)
+
+        For XGBoost models, consider using 'glassalpha reasons' instead for ECOA-compliant
+        adverse action notices. See: https://glassalpha.com/guides/recourse/#known-limitations
+
     """
     import json
 
@@ -2967,6 +3141,43 @@ def recourse(  # pragma: no cover
                 "Warning: No config provided. Using default policy (no constraints).",
                 fg=typer.colors.YELLOW,
             )
+
+        # Check if data file exists, auto-generate if missing
+        if not data.exists():
+            typer.echo(f"⚠️  Data file not found: {data}")
+            typer.echo("💡 Auto-generating sample data from built-in dataset...")
+            typer.echo()
+
+            # Auto-generate sample data
+            try:
+                from ..datasets import load_german_credit
+
+                # Load dataset
+                dataset = load_german_credit()
+                X = dataset.drop("credit_risk", axis=1)
+
+                # Get only numeric columns for simplicity
+                numeric_cols = X.select_dtypes(include=["number"]).columns
+                X_numeric = X[numeric_cols]
+
+                # Save to requested path
+                data.parent.mkdir(parents=True, exist_ok=True)
+                X_numeric.to_csv(data, index=False)
+
+                typer.echo(f"✓ Created sample data: {data}")
+                typer.echo(f"  Columns: {list(X_numeric.columns)}")
+                typer.echo()
+                typer.echo("📝 Note: This is sample data from German Credit dataset.")
+                typer.echo("   For production, save your actual test data during audit.")
+                typer.echo()
+
+            except Exception as e:
+                typer.echo(f"✗ Could not generate sample data: {e}", err=True)
+                typer.echo()
+                typer.echo("Quick fixes:")
+                typer.echo(f"  1. Check path is correct: {data}")
+                typer.echo("  2. Or create CSV manually with same features as model")
+                raise typer.Exit(ExitCode.USER_ERROR)
 
         typer.echo(f"Loading model from: {model}")
         # Use joblib for loading (matches saving with joblib.dump in audit command)
@@ -3317,7 +3528,16 @@ def recourse(  # pragma: no cover
 
         # Get prediction (with better error handling for feature mismatch)
         try:
-            if hasattr(model_obj, "predict_proba"):
+            # Handle XGBoost Booster format specially
+            if type(model_obj).__name__ == "Booster" or (
+                hasattr(model_obj, "model") and type(model_obj.model).__name__ == "Booster"
+            ):
+                import xgboost as xgb
+
+                booster = model_obj.model if hasattr(model_obj, "model") else model_obj
+                X_dmatrix = xgb.DMatrix(X_instance_encoded)
+                prediction = float(booster.predict(X_dmatrix)[0])
+            elif hasattr(model_obj, "predict_proba"):
                 prediction = float(model_obj.predict_proba(X_instance_encoded)[0, 1])
             else:
                 prediction = float(model_obj.predict(X_instance_encoded)[0])
@@ -3378,8 +3598,16 @@ def recourse(  # pragma: no cover
             import shap
 
             explainer = shap.TreeExplainer(native_model)
-            # Convert DataFrame to numpy for SHAP compatibility
-            X_shap = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+
+            # For XGBoost Booster, need to convert to DMatrix format
+            if type(native_model).__name__ == "Booster":
+                import xgboost as xgb
+
+                X_shap = xgb.DMatrix(X_instance_encoded)
+            else:
+                # Convert DataFrame to numpy for SHAP compatibility
+                X_shap = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+
             shap_values = explainer.shap_values(X_shap)
 
             # Handle multi-output case (binary classification)
@@ -3449,11 +3677,36 @@ def recourse(  # pragma: no cover
             feature_bounds=feature_bounds,
         )
 
+        # Wrap XGBoost Booster for predict_proba compatibility
+        if type(model_obj).__name__ == "Booster" or (
+            hasattr(model_obj, "model") and type(model_obj.model).__name__ == "Booster"
+        ):
+            import numpy as np
+            import xgboost as xgb
+
+            class BoosterWrapper:
+                """Wrapper to make XGBoost Booster compatible with predict_proba interface."""
+
+                def __init__(self, booster):
+                    self.booster = booster
+
+                def predict_proba(self, X):
+                    """Predict probabilities using DMatrix."""
+                    dmatrix = xgb.DMatrix(X)
+                    pred = self.booster.predict(dmatrix)
+                    # Return in (n_samples, n_classes) format
+                    return np.column_stack([1 - pred, pred])
+
+            booster = model_obj.model if hasattr(model_obj, "model") else model_obj
+            wrapped_model = BoosterWrapper(booster)
+        else:
+            wrapped_model = model_obj
+
         # Generate recourse
         from ..explain.recourse import generate_recourse
 
         result = generate_recourse(
-            model=model_obj,
+            model=wrapped_model,
             feature_values=feature_values_series,
             shap_values=shap_values,
             feature_names=feature_names,

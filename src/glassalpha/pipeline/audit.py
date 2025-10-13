@@ -754,6 +754,36 @@ class AuditPipeline:
                         metadata["preprocessing_artifact"] = self._preprocessing_artifact_path
                     meta_path.write_text(json.dumps(metadata, indent=2))
                     logger.info(f"Model metadata saved to: {meta_path}")
+
+                    # Auto-save test data for reasons/recourse commands
+                    try:
+                        model_dir = save_path.parent
+
+                        # Save test features
+                        test_data_path = model_dir / "test_data.csv"
+                        if isinstance(X_processed, pd.DataFrame):
+                            X_processed.to_csv(test_data_path, index=False)
+                        else:
+                            # Convert numpy array to DataFrame
+                            feature_names = metadata.get(
+                                "feature_names", [f"feature_{i}" for i in range(X_processed.shape[1])]
+                            )
+                            pd.DataFrame(X_processed, columns=feature_names).to_csv(test_data_path, index=False)
+
+                        # Save test labels
+                        test_labels_path = model_dir / "test_labels.csv"
+                        if isinstance(data[schema.target], pd.Series):
+                            data[schema.target].to_csv(test_labels_path, index=False, header=["target"])
+                        else:
+                            # Convert numpy array to DataFrame
+                            pd.DataFrame(data[schema.target], columns=["target"]).to_csv(test_labels_path, index=False)
+
+                        logger.info(f"✓ Test data saved to: {test_data_path}")
+                        logger.info(f"✓ Test labels saved to: {test_labels_path}")
+                    except Exception as e:
+                        logger.debug(f"Could not auto-save test data: {e}")
+                        # Not critical - just means reasons/recourse will need manual data
+
                 except Exception as e:
                     logger.warning(f"Failed to auto-save model to {model_save_path}: {e}")
 

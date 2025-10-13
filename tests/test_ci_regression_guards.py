@@ -29,7 +29,7 @@ class TestArchitecturalGuards:
         # Read the audit pipeline source code
         pipeline_file = Path(__file__).parent.parent / "src" / "glassalpha" / "pipeline" / "audit.py"
 
-        with pipeline_file.open("r") as f:
+        with pipeline_file.open("r", encoding="utf-8") as f:
             source_code = f.read()
 
         # Parse the AST to find method calls
@@ -90,7 +90,7 @@ class TestArchitecturalGuards:
         """CRITICAL: Pipeline must not import vendor ML libraries directly."""
         pipeline_file = Path(__file__).parent.parent / "src" / "glassalpha" / "pipeline" / "audit.py"
 
-        with pipeline_file.open("r") as f:
+        with pipeline_file.open("r", encoding="utf-8") as f:
             source_code = f.read()
 
         # Check for dangerous imports (direct vendor usage, not wrapper imports)
