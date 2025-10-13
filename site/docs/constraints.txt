@@ -42,7 +42,7 @@ pre-commit==3.7.1
 
 # Build tools
 build==1.2.1
-wheel==0.43.0
+wheel==0.45.1
 setuptools==70.0.0
 pip==24.1.2
 
