@@ -5,13 +5,19 @@ across runs, which is critical for regulatory compliance and reproducible resear
 """
 
 import hashlib
+import importlib.util
 import logging
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 from glassalpha.exceptions import DeterminismError
 
@@ -39,9 +45,6 @@ class DeterminismValidator:
 
     def __init__(self) -> None:
         """Initialize determinism validator."""
-        import shutil
-        import sys
-
         # Use python3 -m glassalpha for consistency across environments
         # Store as list for subprocess.run()
         python3_path = shutil.which("python3")
@@ -79,7 +82,8 @@ class DeterminismValidator:
             self._verify_shap_available()
 
         if not config_path.exists():
-            raise DeterminismError(f"Config file not found: {config_path}")
+            msg = f"Config file not found: {config_path}"
+            raise DeterminismError(msg)
 
         # Set up deterministic environment
         env = os.environ.copy()
@@ -121,12 +125,9 @@ class DeterminismValidator:
 
     def _verify_shap_available(self) -> None:
         """Verify SHAP is available for deterministic explainer selection."""
-        try:
-            import shap  # noqa: F401
-        except ImportError as e:
-            raise DeterminismError(
-                "SHAP required for deterministic explainer selection. Install with: pip install shap",
-            ) from e
+        if importlib.util.find_spec("shap") is None:
+            msg = "SHAP required for deterministic explainer selection. Install with: pip install shap"
+            raise DeterminismError(msg)
 
     def _run_single_audit(
         self,
@@ -145,8 +146,6 @@ class DeterminismValidator:
             Dict with success, hash, duration, and error info
 
         """
-        import time
-
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
 
@@ -155,10 +154,9 @@ class DeterminismValidator:
 
             # Create a temporary config with the specific seed for this run
             run_config_path = tmp_path / "run_config.yaml"
-            import yaml
 
             with config_path.open() as f:
-                config_data = yaml.safe_load(f)
+                config_data = yaml.safe_load(f)  # type: ignore[no-any-return]
 
             # Add seed to reproducibility section
             if "reproducibility" not in config_data:
@@ -173,7 +171,8 @@ class DeterminismValidator:
 
             try:
                 # Build command list (glassalpha_cmd is already a list)
-                cmd = self.glassalpha_cmd + [
+                cmd = [
+                    *self.glassalpha_cmd,
                     "audit",
                     "-c",
                     str(run_config_path),
@@ -183,7 +182,7 @@ class DeterminismValidator:
                     "html",  # Use HTML for faster determinism validation
                 ]
 
-                subprocess.run(
+                subprocess.run(  # noqa: S603
                     cmd,
                     env=env,
                     capture_output=True,
@@ -203,12 +202,13 @@ class DeterminismValidator:
                         "duration": duration,
                         "error": None,
                     }
-                return {
-                    "success": False,
-                    "hash": None,
-                    "duration": duration,
-                    "error": "No output file generated",
-                }
+                else:
+                    return {
+                        "success": False,
+                        "hash": None,
+                        "duration": duration,
+                        "error": "No output file generated",
+                    }
 
             except subprocess.CalledProcessError as e:
                 duration = time.time() - start_time

@@ -295,11 +295,7 @@ jobs:
 
   report-status:
     name: Report Validation Status
-    needs:
-      [
-        validate-determinism,
-        compare-cross-platform,
-      ]
+    needs: [validate-determinism, compare-cross-platform]
     runs-on: ubuntu-latest
     if: always()
 
