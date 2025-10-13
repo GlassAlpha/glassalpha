@@ -1149,6 +1149,8 @@ def run_audit(
             config=pdf_config,
             report_title=f"ML Model Audit Report - {report_date}",
             generation_date=generation_date,
+            show_progress=show_progress,
+            progress_callback=progress_callback,
         )
 
         # Generate manifest sidecar if available

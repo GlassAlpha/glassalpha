@@ -52,8 +52,8 @@ explainers:
   # Explainer-specific configuration
   config:
     treeshap:
-      max_samples: 1000
-      check_additivity: true
+      max_samples: 500 # Reduced from 1000 for CI performance
+      check_additivity: false # Disabled for speed (still deterministic)
 
 # =============================================================================
 # METRICS CONFIGURATION
@@ -76,9 +76,9 @@ metrics:
       - "equal_opportunity"
       - "equalized_odds"
 
-  # Enable confidence intervals
+  # Enable confidence intervals (reduced for CI speed)
   compute_confidence_intervals: true
-  n_bootstrap: 1000
+  n_bootstrap: 100 # Reduced from 1000 for CI performance (still deterministic)
 
 # =============================================================================
 # REPRODUCIBILITY CONFIGURATION

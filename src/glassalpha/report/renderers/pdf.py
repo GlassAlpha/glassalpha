@@ -6,6 +6,7 @@ with professional styling, page layout, and regulatory compliance features.
 
 import logging
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -93,6 +94,7 @@ class AuditPDFRenderer:
         output_path: Path,
         template_name: str = "standard_audit.html",
         show_progress: bool = True,
+        progress_callback: Callable[[str, int], None] | None = None,
         **template_vars: Any,
     ) -> Path:
         """Render complete audit report as PDF.
@@ -102,6 +104,7 @@ class AuditPDFRenderer:
             output_path: Path where PDF should be saved
             template_name: HTML template to use
             show_progress: Show progress indicator during rendering
+            progress_callback: Optional callback(message, percent) for progress updates
             **template_vars: Additional template variables
 
         Returns:
@@ -124,7 +127,7 @@ class AuditPDFRenderer:
         try:
             # Generate HTML content with embedded plots
             if show_progress:
-                print("⏳ PDF generation (step 1/3): Converting HTML template...", end="", flush=True)
+                progress_callback("Converting HTML template...", 10) if progress_callback else None
 
             html_content = self.html_renderer.render_audit_report(
                 audit_results=audit_results,
@@ -136,12 +139,7 @@ class AuditPDFRenderer:
             logger.debug(f"Generated HTML content: {len(html_content):,} characters")
 
             if show_progress:
-                print(" ✓", flush=True)
-                print(
-                    "⏳ PDF generation (step 2/3): Rendering pages (this may take 1-2 minutes)...",
-                    end="",
-                    flush=True,
-                )
+                progress_callback("Rendering pages (this may take 1-2 minutes)...", 40) if progress_callback else None
 
             # Create WeasyPrint HTML object
             html_doc = HTML(string=html_content, base_url=str(self.html_renderer.template_dir))
@@ -158,8 +156,7 @@ class AuditPDFRenderer:
             logger.debug("WeasyPrint render complete")
 
             if show_progress:
-                print(" ✓", flush=True)
-                print("⏳ PDF generation (step 3/3): Writing file and normalizing metadata...", end="", flush=True)
+                progress_callback("Writing file and normalizing metadata...", 80) if progress_callback else None
 
             # Write PDF to file with metadata
             pdf_document.write_pdf(
@@ -185,8 +182,10 @@ class AuditPDFRenderer:
             logger.info(f"Successfully generated PDF: {output_path} ({file_size:,} bytes)")
 
             if show_progress:
-                print(" ✓", flush=True)
-                print(f"✅ PDF generated successfully: {output_path.name} ({file_size:,} bytes)")
+                progress_callback(
+                    f"PDF generated successfully: {output_path.name} ({file_size:,} bytes)",
+                    100,
+                ) if progress_callback else None
 
             return output_path
 

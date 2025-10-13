@@ -1736,7 +1736,9 @@ class AuditPipeline:
                             if isinstance(ifc, dict):
                                 distance_metric = ifc.get("distance_metric", distance_metric)
                                 similarity_percentile = ifc.get("similarity_percentile", similarity_percentile)
-                                prediction_diff_threshold = ifc.get("prediction_diff_threshold", prediction_diff_threshold)
+                                prediction_diff_threshold = ifc.get(
+                                    "prediction_diff_threshold", prediction_diff_threshold
+                                )
                                 threshold = ifc.get("threshold", threshold)
                             else:
                                 if hasattr(ifc, "distance_metric"):
@@ -1833,7 +1835,7 @@ class AuditPipeline:
             # Preprocess features to handle categorical columns (prevent "could not convert string to float" errors)
             # This ensures stability metrics work on datasets with categorical features like German Credit
             X_processed = self._preprocess_for_training(X)
-            
+
             # Run perturbation sweep
             logger.info(
                 f"Running perturbation sweep: epsilon={epsilon_values}, threshold={threshold}, seed={seed}",
@@ -2354,24 +2356,24 @@ class AuditPipeline:
         # Try to get metrics from config
         if hasattr(self.config, "metrics"):
             metrics_config = self.config.metrics
-            
+
             # Handle both nested structure (metrics.fairness.metrics) and legacy flat structure
             if hasattr(metrics_config, "fairness"):
                 fairness_config = metrics_config.fairness
-                
+
                 logger.debug(f"Fairness config type: {type(fairness_config)}")
                 logger.debug(f"Fairness config has metrics attr: {hasattr(fairness_config, 'metrics')}")
-                
+
                 # New structure: metrics.fairness.metrics = [...]
                 if hasattr(fairness_config, "metrics") and fairness_config.metrics:
                     logger.debug(f"Returning metrics from config: {fairness_config.metrics}")
                     return fairness_config.metrics
-                
+
                 # Legacy structure: metrics.fairness = [...] (list directly)
                 if isinstance(fairness_config, list):
                     logger.debug(f"Returning metrics as list: {fairness_config}")
                     return fairness_config
-        
+
         # Fallback to default metrics if not configured
         logger.debug("Using default fairness metrics")
         return [

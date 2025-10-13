@@ -331,16 +331,46 @@ def _run_audit_pipeline(
                                 report_title=f"ML Model Audit Report - {report_date}",
                                 generation_date=generation_date,
                                 show_progress=True,  # Show progress in CLI
+                                progress_callback=None,  # We'll handle progress via queue
                             )
                         return pdf_path
                     except Exception as e:
                         raise e
 
+                # Create progress queue for thread communication
+                import queue
+
+                progress_queue = queue.Queue()
+
+                def pdf_progress_relay(message: str, percent: int) -> None:
+                    """Progress callback that writes to shared queue."""
+                    progress_queue.put((message, percent))
+
             try:
                 # Run PDF generation with timeout using ThreadPoolExecutor
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                     future = executor.submit(pdf_generation_worker)
-                    pdf_path = future.result(timeout=300)  # 5 minutes timeout
+
+                    # Monitor progress from queue while PDF generates
+                    typer.echo("⏳ PDF generation in progress...", err=True)
+                    completed = False
+
+                    while not completed:
+                        try:
+                            message, percent = progress_queue.get(timeout=0.5)
+                            typer.echo(f"  [{percent:3d}%] {message}", err=True)
+                            if "successfully" in message or "complete" in message:
+                                completed = True
+                        except queue.Empty:
+                            # No progress update in last 0.5s, but generation still running
+                            continue
+                        except Exception:
+                            # Queue might be closed or other error
+                            break
+
+                    # Get final result with remaining timeout
+                    remaining_timeout = 300  # Original timeout
+                    pdf_path = future.result(timeout=remaining_timeout)
 
                 if pdf_path is None:
                     raise RuntimeError("PDF generation failed - no output path returned")
@@ -1037,12 +1067,16 @@ def audit(  # pragma: no cover
                     break
 
             if config is None:
+                current_dir = Path.cwd()
+                searched_files = ["glassalpha.yaml", "audit.yaml", "config.yaml"]
                 _output_error(
-                    "Configuration file not found.\n\n"
+                    f"Configuration file not found: {config}\n\n"
+                    f"Current directory: {current_dir}\n"
+                    f"Searched for: {', '.join(searched_files)}\n\n"
                     "Quick fixes:\n"
-                    "  1. Create a config: glassalpha init\n"
-                    "  2. List datasets: glassalpha datasets list\n"
-                    "  3. Use example template: glassalpha init --template quickstart\n\n"
+                    "  1. Create config: glassalpha init --output audit.yaml\n"
+                    "  2. Use template: glassalpha init --template quickstart\n"
+                    "  3. Specify path: glassalpha audit --config /path/to/config.yaml\n\n"
                     "Examples:\n"
                     "  glassalpha init --template quickstart --output my-audit.yaml\n"
                     "  glassalpha audit --config my-audit.yaml --output report.html",
@@ -2541,9 +2575,14 @@ def reasons(  # pragma: no cover
             import shap
 
             try:
+                typer.echo("  Computing TreeSHAP explanations...")
+                typer.echo("    (This may take 10-30 seconds for tree models)")
+
                 explainer = shap.TreeExplainer(native_model)
                 # Convert DataFrame to numpy for SHAP compatibility
                 X_shap = X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
+
+                typer.echo("    Computing SHAP values...", err=True)
                 shap_values = explainer.shap_values(X_shap)
 
                 # Handle multi-output case (binary classification)
@@ -2553,6 +2592,8 @@ def reasons(  # pragma: no cover
                 # Flatten to 1D
                 if len(shap_values.shape) > 1:
                     shap_values = shap_values[0]
+
+                typer.echo("    ✓ SHAP computation complete", err=True)
             except Exception as tree_error:
                 # TreeSHAP failed, try KernelSHAP
                 error_msg = str(tree_error).lower()
@@ -2570,12 +2611,21 @@ def reasons(  # pragma: no cover
                         f"Note: TreeSHAP not compatible with {type(native_model).__name__}. Using KernelSHAP...",
                         fg=typer.colors.CYAN,
                     )
+                    typer.echo("  Computing KernelSHAP explanations...")
+                    typer.echo("    (This may take 30-60 seconds for linear models)")
+
                     # Convert to numpy for compatibility
                     X_sample = (
                         X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
                     )
+
+                    typer.echo("    Initializing KernelExplainer...", err=True)
                     explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_sample, 100))
+
+                    typer.echo("    Computing SHAP values...", err=True)
                     shap_values = explainer.shap_values(X_sample)[0, :, 1]
+
+                    typer.echo("    ✓ KernelSHAP computation complete", err=True)
                 else:
                     raise
 

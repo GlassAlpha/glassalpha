@@ -154,35 +154,36 @@ jobs:
           print('✅ Determinism config validated')
           "
 
-          # Run audit twice (seed is set in config file)
+          # Run audit twice (config specifies HTML output for speed)
+          # Note: Config has output_format: html, so HTML will be used regardless of extension
           echo "=== Running first audit ==="
-          python3 -m glassalpha audit -c "$CONFIG_FILE" -o /tmp/audit1.pdf || {
+          python3 -m glassalpha audit -c "$CONFIG_FILE" -o /tmp/audit1.html || {
             echo "❌ First audit failed"
             exit 1
           }
 
           echo "=== Running second audit ==="
-          python3 -m glassalpha audit -c "$CONFIG_FILE" -o /tmp/audit2.pdf || {
+          python3 -m glassalpha audit -c "$CONFIG_FILE" -o /tmp/audit2.html || {
             echo "❌ Second audit failed"
             exit 1
           }
 
           # Verify files exist
-          if [ ! -f /tmp/audit1.pdf ]; then
-            echo "❌ /tmp/audit1.pdf was not created"
+          if [ ! -f /tmp/audit1.html ]; then
+            echo "❌ /tmp/audit1.html was not created"
             exit 1
           fi
 
-          if [ ! -f /tmp/audit2.pdf ]; then
-            echo "❌ /tmp/audit2.pdf was not created"
+          if [ ! -f /tmp/audit2.html ]; then
+            echo "❌ /tmp/audit2.html was not created"
             exit 1
           fi
 
-          echo "✅ Both audit PDFs created successfully"
+          echo "✅ Both audit HTMLs created successfully"
 
           # Compute hashes
-          hash1=$(sha256sum /tmp/audit1.pdf | cut -d' ' -f1)
-          hash2=$(sha256sum /tmp/audit2.pdf | cut -d' ' -f1)
+          hash1=$(sha256sum /tmp/audit1.html | cut -d' ' -f1)
+          hash2=$(sha256sum /tmp/audit2.html | cut -d' ' -f1)
 
           echo "Hash 1: $hash1"
           echo "Hash 2: $hash2"
@@ -201,7 +202,8 @@ jobs:
         with:
           name: determinism-artifacts-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
-            /tmp/audit*.pdf
+            /tmp/audit*.html
+            /tmp/audit*.manifest.json
             /tmp/test_config.yaml
           retention-days: 7
 
@@ -224,8 +226,8 @@ jobs:
         run: |
           echo "=== Cross-Platform Determinism Validation ==="
 
-          # Find all audit1.pdf and audit2.pdf files
-          find artifacts -name "audit*.pdf" -type f | while read file; do
+          # Find all audit1.html and audit2.html files
+          find artifacts -name "audit*.html" -type f | while read file; do
             platform=$(echo "$file" | cut -d'-' -f3)
             python_ver=$(echo "$file" | cut -d'-' -f4)
             run_num=$(basename "$file" | cut -d'_' -f2 | cut -d'.' -f1)  # audit1 or audit2
@@ -280,14 +282,14 @@ jobs:
           echo ""
           echo "What matters: Same platform + same Python = same output (✅ ACHIEVED)"
 
-      - name: Upload failed PDFs for debugging
+      - name: Upload failed artifacts for debugging
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: determinism-failure-cross-platform
           path: |
-            artifacts/**/*.pdf
             artifacts/**/*.html
+            artifacts/**/*.manifest.json
             /tmp/hashes.txt
           retention-days: 7
 
