@@ -2583,7 +2583,8 @@ class AuditPipeline:
                 # Legacy behavior: loader returns DataFrame, save to temp file
                 import tempfile
 
-                temp_path = Path(tempfile.mktemp(suffix=".csv"))
+                temp_fd, temp_path = tempfile.mkstemp(suffix=".csv")
+                os.close(temp_fd)  # Close file descriptor, keep path
                 result.to_csv(temp_path, index=False)
                 produced = temp_path
 

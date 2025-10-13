@@ -10,6 +10,7 @@ classification target indicating credit risk (good/bad).
 """
 
 import logging
+import os
 import urllib.request
 from pathlib import Path
 
@@ -514,8 +515,10 @@ def load_german_credit(
             # Create temporary files
             import tempfile
 
-            train_path = Path(tempfile.mktemp(suffix="_train.csv"))
-            test_path = Path(tempfile.mktemp(suffix="_test.csv"))
+            train_fd, train_path = tempfile.mkstemp(suffix="_train.csv")
+            test_fd, test_path = tempfile.mkstemp(suffix="_test.csv")
+            os.close(train_fd)  # Close file descriptor, keep path
+            os.close(test_fd)  # Close file descriptor, keep path
 
             # Save encoded data to files
             dataset.save_encoded_data(train_data, train_path)
@@ -531,7 +534,8 @@ def load_german_credit(
 
         import tempfile
 
-        output_path = Path(tempfile.mktemp(suffix="_encoded.csv"))
+        output_fd, output_path = tempfile.mkstemp(suffix="_encoded.csv")
+        os.close(output_fd)  # Close file descriptor, keep path
         return dataset.save_encoded_data(encoded_data, output_path)
 
     return data

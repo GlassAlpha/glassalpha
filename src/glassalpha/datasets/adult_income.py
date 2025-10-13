@@ -12,6 +12,7 @@ Protected Attributes: Race, sex, age
 """
 
 import logging
+import os
 import urllib.request
 from pathlib import Path
 
@@ -286,7 +287,8 @@ def load_adult_income(
 
         import tempfile
 
-        output_path = Path(tempfile.mktemp(suffix="_encoded.csv"))
+        output_fd, output_path = tempfile.mkstemp(suffix="_encoded.csv")
+        os.close(output_fd)  # Close file descriptor, keep path
         return dataset.save_encoded_data(encoded_data, output_path)
 
     return data
