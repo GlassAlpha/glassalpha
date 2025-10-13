@@ -515,10 +515,14 @@ def load_german_credit(
             # Create temporary files
             import tempfile
 
-            train_fd, train_path = tempfile.mkstemp(suffix="_train.csv")
-            test_fd, test_path = tempfile.mkstemp(suffix="_test.csv")
+            train_fd, train_path_str = tempfile.mkstemp(suffix="_train.csv")
+            test_fd, test_path_str = tempfile.mkstemp(suffix="_test.csv")
             os.close(train_fd)  # Close file descriptor, keep path
             os.close(test_fd)  # Close file descriptor, keep path
+
+            # Convert to Path objects
+            train_path = Path(train_path_str)
+            test_path = Path(test_path_str)
 
             # Save encoded data to files
             dataset.save_encoded_data(train_data, train_path)
@@ -534,8 +538,9 @@ def load_german_credit(
 
         import tempfile
 
-        output_fd, output_path = tempfile.mkstemp(suffix="_encoded.csv")
+        output_fd, output_path_str = tempfile.mkstemp(suffix="_encoded.csv")
         os.close(output_fd)  # Close file descriptor, keep path
+        output_path = Path(output_path_str)
         return dataset.save_encoded_data(encoded_data, output_path)
 
     return data
