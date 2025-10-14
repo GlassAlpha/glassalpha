@@ -7,7 +7,7 @@ help:
 	@echo ""
 	@echo "🚀 dev-setup  - Complete dev environment setup (one-time)"
 	@echo "🔥 smoke      - Run wheel smoke test (validates 4 critical contracts)"
-	@echo "⚡ check-fast - Fast validation (smoke + workflows + packaging, ~30s)"
+	@echo "⚡ check-fast - Fast validation (smoke + workflows + packaging + docs, ~30s)"
 	@echo "🔍 check      - Full pre-commit check (includes PDF determinism, ~2-3min)"
 	@echo "📦 build      - Build wheel"
 	@echo "📥 install    - Install wheel (for testing)"
@@ -122,7 +122,7 @@ dev-setup:
 	@echo "  - Run 'glassalpha audit --config quickstart.yaml --output test.pdf' for a quick test"
 
 # Fast validation loop (skip expensive PDF tests)
-check-fast: smoke check-workflows check-packaging
+check-fast: smoke check-workflows check-packaging check-docs
 	@echo ""
 	@echo "🏥 Checking environment..."
 	@glassalpha doctor

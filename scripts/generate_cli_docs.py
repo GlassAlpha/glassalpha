@@ -236,8 +236,10 @@ def check_docs_current(generated_docs: str, docs_path: Path) -> bool:
 
     existing_docs = docs_path.read_text()
 
-    # Normalize line endings for comparison
+    # Normalize line endings and ensure trailing newline for comparison
     generated_normalized = generated_docs.replace("\r\n", "\n")
+    if not generated_normalized.endswith("\n"):
+        generated_normalized += "\n"
     existing_normalized = existing_docs.replace("\r\n", "\n")
 
     return generated_normalized == existing_normalized
@@ -277,7 +279,9 @@ def main():
     # Output mode
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(docs)
+        # Ensure trailing newline for consistency with pre-commit hooks
+        docs_with_newline = docs if docs.endswith("\n") else docs + "\n"
+        args.output.write_text(docs_with_newline)
         print(f"✓ Generated CLI documentation: {args.output}", file=sys.stderr)
     else:
         print(docs)
