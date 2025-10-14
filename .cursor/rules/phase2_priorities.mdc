@@ -1,0 +1,883 @@
+---
+description: Phase 2 priorities - Distribution, enhancement, and enterprise foundation
+alwaysApply: true
+---
+
+# Phase 2 Priorities: Scale & Monetization
+
+> **Mission**: Transform working audit tool into adopted OSS project with clear enterprise upgrade path.
+
+## Comprehensive Simplification Complete ✅
+
+**Status**: As of October 14, 2025, comprehensive codebase simplification (Phases 1-4) is **complete**.
+
+**What was accomplished**:
+- ✅ 50% fewer dependencies (15 → 8 core + 4 optional groups)
+- ✅ 50% fewer config classes (10+ → 5)
+- ✅ 76% reduction in API complexity (1314 → 4 focused modules)
+- ✅ 2% reduction in test files (124 → 122, foundation for more)
+- ✅ All compliance guarantees preserved
+- ✅ No breaking changes to public API
+
+**Remaining work** (Phases 5-9): Module flattening, CLI consolidation, docs streamlining, build tooling, architecture docs update.
+
+**Impact**: Significantly simpler codebase ready for user adoption while maintaining full compliance functionality.
+
+## Contents
+
+- [Phase 2 Goals](#phase-2-goals)
+- [OSS vs Enterprise Decision Framework](#-oss-vs-enterprise-decision-framework)
+- [Phase 2 Roadmap: Three Parallel Tracks](#phase-2-roadmap-three-parallel-tracks)
+  - [Track 1: Distribution (OSS Adoption)](#track-1-distribution-oss-adoption--primary-focus)
+  - [Track 2: Enhancement (OSS Depth)](#track-2-enhancement-oss-depth--secondary-focus)
+  - [Track 3: Enterprise Foundation](#track-3-enterprise-foundation--validation-focus)
+- [Phase 2 Exit Criteria](#-phase-2-exit-criteria)
+- [Metrics Tracking](#-metrics-tracking)
+- [Decision Gates](#-decision-gates)
+- [Agent Task Prioritization](#-agent-task-prioritization)
+- [Review Gate](#review-gate)
+- [Trust-Killing Behaviors](#trust-killing-behaviors-avoid)
+
+---
+
+## Phase 2 Goals
+
+1. **Distribution**: 1-2K GitHub stars, 500+ CLI runs per collection cycle, 30+ repos using in CI
+2. **Enhancement**: Make audits defensible with calibration, fairness@threshold, stability
+3. **Enterprise Foundation**: Identify paying customers, validate enterprise feature demand
+
+---
+
+## 🎯 OSS vs Enterprise Decision Framework
+
+Use this to decide where new features belong:
+
+### ✅ OSS (Free Forever)
+
+**Criteria**: Trust-building, distribution-enabling, individual user value
+
+- Core audit functionality (PDF, manifest, gates)
+- Basic explainability (SHAP, reason codes, recourse)
+- Statistical confidence intervals (fairness + calibration)
+- Individual fairness metrics (consistency, matched pairs, disparate treatment)
+- Basic intersectional analysis (2-way)
+- Dataset bias detection (proxy correlation, distribution drift)
+- Adversarial perturbation testing (epsilon sweeps)
+- Basic calibration (fixed bins, simple ECE)
+- CLI tools for individual workflows
+- Example datasets and notebooks
+- **Rule**: If a solo data scientist finds it valuable → OSS
+
+### 💰 Enterprise (Paid)
+
+**Criteria**: Governance, scale, multi-user, compliance depth
+
+- SSO, RBAC, multi-tenancy
+- Signing/timestamping (KMS/HSM integration)
+- Batch processing (10k+ predictions)
+- Advanced analytics (N-way intersectional, portfolio aggregation)
+- Connectors (Snowflake, Databricks, BigQuery)
+- Monitoring dashboards with alerting
+- Regulator-specific templates
+- Support SLAs
+- **Rule**: If a compliance officer or team lead finds it essential → Enterprise
+
+---
+
+## Phase 2 Roadmap: Three Parallel Tracks
+
+### Track 1: Distribution (OSS Adoption) — PRIMARY FOCUS
+
+**Goal**: Make it stupidly easy to adopt GlassAlpha
+
+#### Current Status: Evidence Packs Implemented, Ready for Content Strategy
+
+**Foundation complete**:
+
+- ✅ PyPI packaging configured
+- ✅ Determinism enforcement
+- ✅ Docker image
+- ✅ CLI docs automation
+- ✅ Notebook API with `from_model()` and inline HTML display
+- ✅ **SBOM generation and Sigstore signing in CI** (October 2025)
+- ✅ **Supply chain verification script** (`scripts/verify_dist.sh`)
+- ✅ **Plugin documentation complete** (entry points + interfaces)
+- ✅ **Import-time performance gate** (<300ms enforcement)
+- ✅ **Automated release workflow** (`.github/workflows/release.yml`)
+- ✅ **Evidence pack export** (manifest, checksums, artifact bundling)
+
+**Next up**: Leverage evidence packs for trust-building content strategy (Stage 0.9)
+
+#### Stage 0.9: Evidence-Pack Gallery (Trust-Building Content) (~120k tokens | Band: M)
+
+**Goal**: Use evidence packs to demonstrate audit quality and enable distribution through shareable, trustworthy artifacts.
+
+**Dependencies**: None (evidence pack export already complete ✅)
+
+**Strategy Shift**: Focus on "boring compliance" datasets (not sports/music) to build regulator trust.
+
+**0.9A: Compliance Dataset Audit Gallery** (ETM: ~80k | Band: S | Priority: P0)
+
+Create 5-6 complete audit packs on real-world compliance scenarios:
+
+**Required audits** (P0):
+
+- HMDA mortgage lending (fairness + calibration by geography/race)
+- Credit card fraud detection (threshold optimization + shift testing)
+- Hospital readmission risk (calibration + individual fairness)
+- Property tax assessment (bias detection + proxy analysis)
+- German Credit (baseline reference audit)
+
+**Each audit pack includes**:
+
+- audit.pdf (byte-identical golden fixture)
+- audit.html (inline summary)
+- manifest.json (full lineage with Sigstore signature)
+- reason_codes.csv (ECOA-compliant exclusions)
+- config.yaml (exact config used)
+- SHA256SUMS.txt (verification checksums)
+- README.md (dataset context, reproduction steps, compliance notes)
+
+**Distribution strategy**:
+
+- Host on GitHub Releases as downloadable .zip artifacts
+- Create `examples/audit_gallery/` with preview thumbnails + links
+- Publish MkDocs gallery page with one-click access
+- Add verification script: `scripts/verify_audit_pack.sh`
+
+**Why P0**: Creates shareable, trust-building artifacts that prove determinism and quality WITHOUT needing viral content
+
+**Exit**: 5+ compliance audit packs published, 100+ downloads combined, 2+ cited by compliance officers
+
+**0.9B: "Boring is Beautiful" Campaign** (ETM: ~40k | Band: XS | Priority: P0)
+
+Position determinism as the differentiator through content:
+
+**Content pieces** (4 weeks):
+
+1. **Week 1**: "Determinism Challenge" - screen-record running same audit twice, identical SHA256
+2. **Week 2**: HMDA audit drop with fairness analysis across demographics
+3. **Week 3**: "How to Verify a GlassAlpha Audit" (validator's guide, 2 pages)
+4. **Week 4**: Fraud detection with shift testing (`--check-shift age:+0.05`)
+
+**Format** (per audit drop):
+
+- One LinkedIn post (professional tone, compliance focus)
+- GitHub Release with signed artifacts
+- Blog post on site with embedded audit preview
+- Twitter thread (3-4 tweets max, focus on technical trust signals)
+
+**Messaging pillars**:
+
+- "Byte-identical audits across platforms"
+- "Regulator-ready evidence packs"
+- "One command, professional output"
+- NO sports/music datasets
+- NO meme campaigns
+- NO viral content strategy
+
+**Why P0**: Positions GlassAlpha for B2B compliance market, not consumer virality
+
+**Exit**: 4 audit drops published, 200+ LinkedIn engagements, 3+ validator inquiries
+
+**0.9C: Automated Dataset Pipeline** (ETM: ~60k | Band: S | Priority: P1)
+
+**Leverage AI for content generation** - Code is cheap, so automate audit pack creation:
+
+**Infrastructure** (one-time setup):
+
+- `src/glassalpha/datasets/loaders/` - Auto-fetch and cache public datasets
+  - HMDA (mortgage lending): fetch from CFPB public data
+  - UCI datasets (German Credit, Adult, etc.): auto-download from archive
+  - Hospital readmissions: MIMIC-III derived or public hospital stats
+  - Property assessments: county open data APIs
+  - Fraud datasets: Kaggle/UCI public datasets
+- `scripts/generate_audit_pack.py` - One-command audit pack generator
+  - Fetches dataset, trains baseline model (XGBoost/LogReg), runs audit, exports evidence pack
+  - Deterministic seeds, pinned dependencies
+  - Outputs ready-to-publish .zip with all artifacts
+- `examples/audit_packs/Makefile` - `make all` generates all audit packs
+
+**Why P1**: AI can generate 5-6 audit packs faster than manual creation. Enables rapid content scaling.
+
+**Automated features**:
+
+- Auto-detect protected attributes from dataset metadata
+- Auto-select appropriate fairness metrics based on domain
+- Auto-generate README with dataset context and compliance notes
+- Auto-compute SHA256SUMS.txt and sign with Sigstore
+
+**Future scaling** (Phase 3):
+
+- Community contributions: users submit dataset loaders, CI auto-generates audit packs
+- Weekly auto-refresh: re-run audits on updated data (property prices, HMDA annual releases)
+- Benchmark suite: track audit quality metrics across datasets over time
+
+**Exit**: Pipeline generates 5+ audit packs in <10 minutes total, reproducible across platforms
+
+#### Stage 1.0: PyPI Publication Track (~40k tokens | Band: XS)
+
+**Infrastructure status**: ✅ COMPLETE
+
+**What's complete**:
+
+- ✅ CI validation (determinism tests on Linux + macOS, Docker build working)
+- ✅ Package build & test (CI validates wheel/sdist on every run)
+- ✅ CLI docs auto-generation (`.github/workflows/cli-docs.yml` handles this)
+- ✅ Installation docs (README + site docs already reference PyPI installation)
+- ✅ **SBOM + Sigstore signing in CI** (generates signed artifacts automatically)
+- ✅ **Supply chain verification script** (`scripts/verify_dist.sh`)
+- ✅ **Plugin documentation complete** (entry points + interfaces documented)
+- ✅ **Import-time performance gate** (<300ms enforcement in CI)
+
+**Remaining tasks**:
+
+1. **First PyPI Publication** (ETM: ~15k | Band: XS)
+
+   Manual first publish (recommended for initial release):
+
+   ```bash
+   # Clean build
+   rm -rf dist/ build/ *.egg-info
+   python -m build
+
+   # Test on TestPyPI first (optional but recommended)
+   python -m twine upload --repository testpypi dist/*
+   pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ glassalpha
+
+   # Publish to production PyPI
+   python -m twine upload dist/*
+
+   # Verify installation
+   pip install glassalpha
+   glassalpha --version
+   glassalpha doctor
+   ```
+
+   **Note**: You already have PyPI account + API token ✅
+
+2. **Set up automated releases** (ETM: ~20k | Band: XS)
+
+   Create `.github/workflows/release.yml` for future releases:
+
+   - Triggers automatically on GitHub release creation
+   - Builds wheel + sdist with SBOM + Sigstore signatures
+   - Publishes to PyPI without manual intervention
+   - Attaches signed artifacts to GitHub release
+
+   **Setup required**:
+
+   - Add `PYPI_API_TOKEN` to GitHub repo secrets
+   - Optional: Add `TEST_PYPI_API_TOKEN` for testing
+
+   **Future workflow after setup**:
+
+   ```bash
+   git tag v0.2.1
+   git push origin v0.2.1
+   gh release create v0.2.1 --generate-notes
+   # GitHub Actions automatically builds, signs, and publishes
+   ```
+
+3. **Post-publication verification** (ETM: ~5k | Band: XS)
+   - Test `pip install glassalpha` from PyPI works
+   - Test all extras: `[shap]`, `[xgboost]`, `[lightgbm]`, `[pdf]`, `[all]`
+   - Verify supply chain: `scripts/verify_dist.sh dist/glassalpha-*.whl`
+   - Add PyPI version badge to README
+   - Update installation docs to reflect live PyPI package
+
+**Blocked until PyPI published**:
+
+- Stage 1.1A (GitHub Action) - needs published package
+- Stage 1.2A (Notebooks) - needs `pip install glassalpha` to work
+- All external distribution work
+
+---
+
+#### Stage 1.1: CI Integration Foundations
+
+**Dependencies**: Stage 1.0 (PyPI) complete
+
+**1.1A: GitHub Action** (ETM: ~80k | Band: S | Priority: P0)
+
+- Repo: `glassalpha/glassalpha-action`
+- Inputs: config, gates, fail-on-violations
+- Fails PR on: gate violations, contract failures, drift
+- Badge generation: `[![GlassAlpha](badge.svg)](link)`
+- Auto-comment on PRs with PDF results and manifest links
+- Upload artifacts (PDF, manifest, reason codes) to PR
+- **Exit**: 5+ external repos using Action
+
+**1.1B: Pre-commit Hook** (ETM: ~40k | Band: XS | Priority: P0)
+
+- `.pre-commit-hooks.yaml` with `glassalpha-verify`
+- Validates data contracts before commit
+- Fast (<5 seconds)
+- **Exit**: 10+ repos using hook
+
+**1.1C: Template Repositories** (ETM: ~60k | Band: S | Priority: P1)
+
+- `glassalpha-template-credit` - Full credit scoring setup
+- `glassalpha-template-insurance` - Insurance risk assessment
+- Includes: Makefile, pre-commit, GitHub Action, config, pre-configured workflows
+- Ready-to-fork repositories with example data
+- **Exit**: 20+ template uses
+
+**1.1D: Visual Exploration Methods (QW4)** (ETM: ~60k | Band: S | Priority: P1)
+
+- Add `result.calibration.plot()` for calibration curves
+- Add `result.fairness.plot_threshold_sweep()` for fairness metrics
+- Uses matplotlib (already a dependency via sklearn)
+- Matches pandas/sklearn API patterns (`df.plot()`, `model.plot_importance()`)
+- **Why**: Enables iterative tuning in notebooks (adjust threshold, replot)
+- **Exit**: Users can visualize metrics without opening PDF
+
+#### Stage 1.2: Onboarding Experience
+
+**Dependencies**: Stage 1.0 (PyPI) + Stage 1.1D (plot methods) complete
+
+**1.2A: Interactive Notebooks** (ETM: ~100k | Band: S | Priority: P0)
+
+**Beta Testing Phase** (ETM: ~20k | Band: XS)
+
+- Create single test Colab: "German Credit Quickstart" using `from_model()` API
+- Share with 5 beta users
+- Validate: 4/5 complete audit in <10 minutes, 0/5 complain about "no visual feedback"
+- **Decision gate**: If success → proceed to full suite; if failure → iterate
+
+**Full Notebook Suite** (dependencies: beta test success)
+
+- Colab: "Generate Your First Audit in 8 Minutes" (German Credit)
+- Colab: "Fairness Analysis" (Adult Income)
+- Kaggle: "Audit a Fraud Detection Model"
+- All notebooks use `from_model()` API, inline HTML display, plot methods
+- **Exit**: 1000+ notebook opens
+
+**1.2B: Framework Plugins** (ETM: ~120k | Band: M | Priority: P1)
+
+- Kedro plugin: `kedro-glassalpha` (PyPI published)
+- Prefect task example
+- Dagster asset example
+- **Exit**: 100+ downloads per collection cycle
+
+**1.2C: QuickStart CLI** (ETM: ~70k | Band: S | Priority: P0)
+
+- `glassalpha quickstart` generates template project
+- Interactive prompts for dataset type, model type
+- **Exit**: <60 seconds from install to first audit
+
+**1.2D: Deferred Notebook Features** (Validate Adoption First)
+
+**MT1: Interactive Widgets** (ETM: ~120k | Band: M | Priority: P2 | DEFERRED)
+
+- `ipywidgets` for threshold sliders, group filters
+- Example: `interactive_fairness(result)` with slider for threshold exploration
+- **Why defer**: Requires new dependency, only valuable for advanced users
+- **Activation criteria**: After Stage 1.2 complete AND notebook adoption >20% of total usage
+
+#### Stage 1.3: Community Building
+
+**Dependencies**: Stage 1.2 complete
+
+**1.3A: Case Studies** (ETM: ~50k | Band: XS | Priority: P1)
+
+- "Fintech: Credit model audit in production"
+- "Healthcare: Bias detection"
+- "Insurance: Reproducing 2024 audit packet"
+- **Exit**: 3 published with customer permission
+
+**1.3B: Content Series** (ETM: ongoing | Priority: P2)
+
+- Regular blog posts + social threads
+- Topics: German Credit, COMPAS, healthcare, fraud detection
+- **Exit**: 4+ posts, growing engagement
+
+**1.3C: Contributor Infrastructure** (ETM: ~90k | Band: S | Priority: P1)
+
+- RFC process with 2 starter RFCs
+- 20 "first-audit" labeled issues
+- `MAINTAINERS.md` with canonical JSON rules
+- Contributor guides: adding metrics, adding stability tests
+- **Exit**: 10+ external PRs merged
+
+---
+
+### Track 2: Enhancement (OSS Depth) — SECONDARY FOCUS
+
+**Goal**: Make audits defensible to regulators
+
+#### Core Enhancements (OSS)
+
+**✅ COMPLETE (shipped in v0.2.0)**:
+
+- E10: Statistical confidence intervals for fairness metrics
+- E10+: Calibration confidence intervals (ECE, Brier, bin-wise)
+- E11: Individual fairness (consistency, matched pairs, counterfactual flip)
+- E5.1: Intersectional fairness (2-way intersections with CIs)
+- E12: Dataset bias audit (proxy correlations, drift, sampling power)
+- E6+: Adversarial perturbation sweeps (ε-robustness testing)
+- E6.5: Demographic shift simulator (reweighting + degradation gates)
+- E2.5: Actionable recourse generation (counterfactual recommendations)
+
+**Remaining work for v0.3.0**:
+
+**E1: Policy-as-Code Gates** (ETM: ~120k | Band: M | Priority: P0)
+
+- DSL for PASS/FAIL with clause citations
+- `policy_decision.json` export
+- CLI returns exit code 1 on failure
+- Starter gates: SR 11-7 (banking), NAIC (insurance)
+- **Why OSS**: Core compliance story, enables CI adoption
+
+**E2: Reason Codes (Basic)** (ETM: ~80k | Band: S | Priority: P0) ✅ **COMPLETE**
+
+- ✅ Top-N negative feature contributions
+- ✅ AAN letter template (ECOA compliant)
+- ✅ Default exclusion list (protected attributes)
+- ✅ CLI: `glassalpha reasons --model X --instance Y`
+- ✅ CSV and JSON export options
+- **Status**: Implemented as separate CLI command (not in audit PDF yet - see E2.1)
+- **Enterprise upgrade**: Catalog mapping, bulk generation, PII controls
+
+**E2.1: Reason Codes PDF Integration** (ETM: ~40k | Band: XS | Priority: P0)
+
+- Embed reason codes directly in `standard_audit.html` PDF template
+- Include reason code section with top-N negative contributions
+- Show protected attribute exclusion list in PDF
+- **Why P0**: Breaks "one command → professional PDF" experience without this
+- **Exit**: Reason codes visible in audit PDF without separate CLI command
+
+**E3: Evidence Pack Export** (ETM: ~70k | Band: S | Priority: P0) ✅ **COMPLETE**
+
+- ✅ Zip with PDF + manifest + policy_decision + gates.yaml
+- ✅ SHA256 checksums
+- ✅ CLI: `glassalpha export-evidence-pack`, `glassalpha verify-evidence-pack`
+- **Status**: Implemented, ready for content strategy (Stage 0.9)
+- **Next**: Leverage for audit gallery and distribution
+- **Enterprise upgrade**: Signing/timestamping with KMS
+
+**E4: Calibration (Basic)** (ETM: ~60k | Band: S | Priority: P0) ✅ **COMPLETE**
+
+- ✅ Fixed bins: `np.linspace(0, 1, 11)`
+- ✅ Weighted ECE and Brier score
+- ✅ Calibration curve with confidence intervals (E10+)
+- ✅ JSON export with all metrics
+- **Status**: Fully implemented in audit pipeline
+- **Enterprise upgrade**: Auto-coalescing bins, sample_weight support, drift monitoring
+
+**E5: Fairness at Threshold (Basic)** (ETM: ~90k | Band: S | Priority: P0) ✅ **COMPLETE**
+
+- ✅ Group metrics (TPR, FPR, precision, recall) at configurable threshold
+- ✅ Confidence intervals for all metrics (E10)
+- ✅ Sample size warnings and statistical power
+- ✅ Tie-break rule implemented and documented
+- **Status**: Fully implemented with bootstrap CIs
+- **Enterprise upgrade**: Min support handling, portfolio aggregation, threshold sweep UI
+
+**E6: Stability Tests (Lite)** (ETM: ~50k | Band: XS | Priority: P1) ⚠️ **PARTIAL**
+
+- ✅ Adversarial perturbation sweeps (E6+ implemented)
+- ❌ Monotonicity checks (not yet implemented)
+- ❌ Feature importance validation (not yet implemented)
+- **Status**: Robustness testing complete, monotonicity deferred
+- **Why OSS**: Catches embarrassing bugs, validates assumptions
+- **Enterprise upgrade**: Full suite (ablations), scenario library
+
+**E6.5: Shift Simulator (Basic)** (ETM: ~150k | Band: M | Priority: P1) ✅ **COMPLETE**
+
+- ✅ Single-factor cohort reweighting (±percentage points on protected attributes)
+- ✅ Before/after metrics (fairness, calibration) in JSON export
+- ✅ CLI: `glassalpha audit --check-shift gender:+0.1 --fail-on-degradation 0.05`
+- ✅ Fails PR if shift causes >threshold metric degradation (exit code 1)
+- ✅ Fully deterministic with seeded reweighting
+- **Status**: Production ready, ready for CI adoption
+- **Enterprise upgrade**: Multi-factor scenarios, parameterized stress tests, batch runs, scenario library
+- **Exit**: 10+ repos using `--check-shift` in CI
+
+**🔒 SHIFT SEMANTICS (One-Way Door Decision)**
+
+This semantic definition is fixed once shipped (users will depend on it):
+
+**Shift Parameter Meaning:**
+
+- `--check-shift gender:+0.1` means **absolute percentage point increase in reweighting**
+- If train set is 30% `gender=1`, shifted set becomes 40% `gender=1` (30% + 10pp)
+- If train set is 60% `gender=1`, shifted set becomes 70% `gender=1` (60% + 10pp)
+- Negative shifts: `--check-shift race:-0.05` reduces proportion by 5 percentage points
+
+**Mathematical Definition:**
+
+```python
+# Let p_orig = original proportion of protected_attr=1
+# Let shift = signed shift value (e.g., +0.1 or -0.05)
+p_shifted = p_orig + shift
+
+# Reweighting formula (post-stratification):
+weight[protected_attr == 1] *= (p_shifted / p_orig)
+weight[protected_attr == 0] *= ((1 - p_shifted) / (1 - p_orig))
+```
+
+**Edge Cases:**
+
+- If `p_shifted < 0.01` → ERROR (can't shift below 1%)
+- If `p_shifted > 0.99` → ERROR (can't shift above 99%)
+- Protected attribute must be binary (multi-class deferred to enterprise)
+
+**E7: Registry (Lite)** (ETM: ~90k | Band: S | Priority: P1)
+
+- SQLite backend
+- Basic lookup: `glassalpha registry list --model-id X`
+- 4-tuple composite key: (model_id, dataset_hash, model_hash, policy_version)
+- **Why OSS**: Local audit history
+- **Enterprise upgrade**: SSO, RBAC, API, multi-tenant
+
+#### Documentation & Positioning
+
+**E8: SR 11-7 Mapping Doc** (ETM: ~40k | Band: XS | Priority: P0) ✅ **COMPLETE**
+
+- ✅ Explicit clause → artifact table
+- ✅ Shows compliance coverage for all SR 11-7 sections
+- ✅ Examiner Q&A examples included
+- ✅ Citation templates provided
+- **Status**: Published at `site/docs/compliance/sr-11-7-mapping.md`
+- **Exit**: Banking teams can cite specific sections
+
+**E9: README Positioning Refresh** (ETM: ~30k | Band: XS | Priority: P0) ✅ **COMPLETE**
+
+- ✅ Lead with pain: "Ever tried explaining your ML model to a regulator?"
+- ✅ Emphasize shift testing gates for CI/CD (not dashboards)
+- ✅ Comprehensive feature list with all E-series capabilities
+- ✅ Clear distinction between v0.2.0 (available) and v0.3.0 (coming)
+- **Status**: README and homepage synced, beta status declared
+- **Exit**: 50%+ conversion from docs visit to install
+
+#### Deferred: PDF Template Integration
+
+**PDF Display Work** (ETM: ~150k | Band: M | Priority: P2 | DEFERRED)
+
+The following features have JSON exports ready but need PDF template integration:
+
+- Individual fairness metrics (E11)
+- Intersectional fairness (E5.1)
+- Dataset bias section (E12)
+- Calibration confidence intervals (E10+)
+- Robustness score (E6+)
+
+**Why defer**: Core functionality works (JSON export), PDF is presentation layer only. Prioritize distribution over polish.
+
+**Activation criteria**: After Stage 1.2 complete AND user feedback requests PDF display.
+
+---
+
+### Track 3: Enterprise Foundation — VALIDATION FOCUS
+
+**Goal**: Identify paying customers, validate feature demand
+
+#### Stage 3.1: Market Validation
+
+**V1: User Interviews** (ETM: ~30k | Band: XS | Priority: P0 | Dependencies: None)
+
+- Target: 10 interviews with compliance officers, risk managers, ML leads
+- Key validation questions:
+  - "What's blocking production audits?"
+  - "Would you pay for X?"
+  - "Do you stress test for demographic shifts?" (validate E6.5)
+  - "Do you use notebooks for model development?" (validate F5)
+  - "Do you report confidence intervals for metrics?" (validate E10/E10+)
+  - "Do you audit individual treatment consistency?" (validate E11)
+  - "Do you analyze intersectional bias?" (validate E5.1)
+  - "Do you audit datasets separately from models?" (validate E12)
+  - "Do you track fairness drift over time?" (validate enterprise demand)
+  - "Do you test model robustness to adversarial perturbations?" (validate E6+)
+- **Exit**: Document top 5 enterprise feature requests + notebook usage patterns
+
+**V2: Enterprise Discussion Template** (ETM: ~20k | Band: XS | Priority: P1 | Dependencies: None)
+
+- GitHub Discussions tag: "Enterprise Features Request"
+- Template asks: org size, use case, budget
+- **Exit**: 5+ inbound conversations
+
+**V3: Consultant Validation** (ETM: ~40k | Band: XS | Priority: P0 | Dependencies: Stage 0.9 complete)
+
+**Promoted to P0** - Consultants are critical distribution channel for B2B compliance tools
+
+- "Validator's Guide to GlassAlpha" (2 pages)
+  - How to verify checksums and manifests
+  - How to reproduce audits deterministically
+  - How to cite audit artifacts in compliance reviews
+  - What to look for in audit quality checks
+- Logo program: "Audited with GlassAlpha"
+- Sample validator report template
+- **Why P0**: Consultants multiply distribution through client engagements
+- **Exit**: 3+ consultants using in client work, validator guide in 5+ compliance reviews
+
+#### Stage 3.2: Enterprise Feature Prioritization
+
+**Dependencies**: Stage 3.1 complete
+
+**P1: Feature Demand Analysis** (ETM: ~30k | Band: XS)
+
+- Rank enterprise features by:
+  - Number of requests
+  - Deal size potential
+  - Effort to build
+- **Exit**: Top 3 enterprise features identified
+
+**P2: Pricing Research** (ETM: ~40k | Band: XS | Dependencies: V1 complete)
+
+- Competitor pricing (Fiddler, Arthur, etc.)
+- Willingness-to-pay conversations
+- OSS→Enterprise upgrade path
+- **Exit**: Draft pricing page
+
+---
+
+## 🎯 Phase 2 Exit Criteria
+
+### Distribution Metrics
+
+- [ ] 1-2K GitHub stars
+- [ ] 500+ CLI runs per collection cycle (opt-in telemetry)
+- [ ] 30+ repos using GitHub Action
+- [ ] 10+ external contributors
+- [ ] 50+ downloads of golden artifact packages
+
+### Enhancement Metrics
+
+- [ ] 3 golden fixtures with full feature coverage
+- [ ] Gold-standard example package published and downloadable
+- [ ] Reason codes integrated into audit PDF
+- [ ] SR 11-7 mapping doc complete
+- [ ] 90%+ of banking compliance officers say "this meets our needs"
+- [ ] 10+ repos using `--check-shift` in CI
+- [ ] PDF templates updated with all new metrics
+
+### Enterprise Metrics
+
+- [ ] 10+ user interviews completed
+- [ ] 5+ inbound enterprise feature requests
+- [ ] 3+ consultants using in client work
+- [ ] Top 3 enterprise features validated with budget
+
+### Quality Metrics
+
+- [ ] Byte-identical PDFs across platforms
+- [ ] <2 second audit generation on German Credit
+- [ ] Zero P0 bugs in production
+
+---
+
+## 📊 Metrics Tracking
+
+Track regularly (automated where possible):
+
+```python
+{
+  "github": {
+    "stars": int,
+    "forks": int,
+    "action_installs": int,
+    "external_prs": int
+  },
+  "usage": {
+    "cli_runs": int,  # Opt-in telemetry
+    "action_runs": int,
+    "errors": int
+  },
+  "docs": {
+    "visitors": int,
+    "notebook_opens": int
+  },
+  "enterprise": {
+    "inbound_asks": int,
+    "interviews_completed": int,
+    "consultants_active": int
+  }
+}
+```
+
+---
+
+## 🚦 Decision Gates
+
+**After Stage 1 (Distribution):**
+
+- If Action installs < 10 → Pivot distribution strategy
+- If stars < 200 → Fix positioning/content
+- Proceed to Stage 2 enhancements
+
+**After Stage 2 (Enhancement):**
+
+- If quality feedback negative → Fix before enterprise push
+- If 0 enterprise asks → Revisit pricing/positioning
+- Proceed to Stage 3 validation
+
+**After Stage 3 (Validation):**
+
+- If <3 enterprise feature requests validated → Extend OSS phase
+- If 5+ requests with budget → Start enterprise development
+- **Go/No-Go** on enterprise tier
+
+---
+
+## 🎯 Agent Task Prioritization
+
+Since AI agent is writing code, prioritize by:
+
+1. **User impact** (not effort)
+2. **Distribution leverage** (features that enable adoption)
+3. **Enterprise validation** (features buyers ask for)
+
+**Current priorities** (updated post-evidence pack implementation):
+
+**Immediate (next 4 weeks)**:
+
+- P0: Compliance Dataset Audit Gallery (0.9A) - 5-6 real-world audit packs (HMDA, fraud, readmission, property tax)
+- P0: "Boring is Beautiful" Campaign (0.9B) - 4-week content series emphasizing determinism
+- P0: Validator's Guide (V3) - consultant distribution channel enablement
+- P0: PyPI Publication Track (1.0) - unblocks external adoption
+
+**Short-term (v0.3.0)**:
+
+- P0: GitHub Action with PR commenting (1.1A) - CI adoption driver (BLOCKED until PyPI)
+- P0: Policy-as-Code Gates (E1) - compliance story
+- P0: Reason Codes PDF Integration (E2.1) - completes "one command → PDF" experience
+
+**Medium-term**:
+
+- P1: User Interviews (V1) - validate enterprise feature demand during audit gallery phase
+- P1: Automated Dataset Pipeline (0.9C) - generate audit packs rapidly (ETM: ~60k tokens)
+- P1: Pre-commit hook (1.1B) - workflow integration
+- P1: Visual exploration (1.1D/QW4) - notebook tuning (defer until adoption validated)
+- P1: Registry with 4-tuple keys (E7) - audit history tracking
+
+**Deferred** (validate adoption first):
+
+- P2: Interactive notebooks (1.2A) - wait for PyPI + beta validation
+- P2: PDF template updates for E11/E5.1/E12 - polish only (user feedback needed)
+- P2: Sports/music datasets - NOT aligned with B2B compliance positioning
+
+---
+
+## Review Gate
+
+Every feature must pass: **"Does this improve adoption, audit quality, or validate enterprise demand?"**
+
+- If adoption: Track 1 (Distribution)
+- If audit quality for individuals: Track 2 (OSS Enhancement)
+- If governance/scale/multi-user: Track 3 (Enterprise)
+- If none: Defer to Phase 3
+
+## Related Rules
+
+- **Strategic vision**: See `long_term.mdc` for long-term strategy and business model
+- **Enterprise features**: See `enterprise_features.mdc` for paid/OSS boundary decisions
+- **Implementation specs**: See `implementation_specs.mdc` for compliance-critical technical requirements
+
+## Trust-Killing Behaviors (Avoid)
+
+These behaviors destroy credibility and adoption. Never ship code with these issues:
+
+1. **Overpromising**: Never claim "explains causality" if you only have SHAP values (correlations)
+2. **Silent failures**: Always surface warnings (fairness groups with n<30, low statistical power, violated assumptions)
+3. **Unclear assumptions**: Document data requirements, model compatibility, statistical assumptions explicitly
+4. **Poor defaults**: Every config should work for German Credit out of box (seed=42, explainer=treeshap)
+5. **Misleading metrics**: Always show confidence intervals, sample sizes, statistical limitations
+6. **Non-determinism**: Never ship features with unseeded randomness or platform-dependent behavior
+7. **Unclear error messages**: Every error must cite exact config key, failure reason, and fix
+
+**Compliance Officer Filter**: If a compliance officer can't trust the output for regulatory submission, defer or fix before shipping.
+
+## Distribution Anti-Patterns (What NOT To Do)
+
+Based on market analysis and positioning, **avoid these strategies**:
+
+### ❌ Consumer Virality Tactics
+
+**Don't do**:
+
+- Sports analytics (NBA shots, F1 laps, MLB pitches)
+- Music popularity models (Spotify hit prediction)
+- Fun/viral datasets optimized for Twitter engagement
+- Meme campaigns or "reason-code bingo"
+- Social media focus on entertainment value
+
+**Why avoid**: Dilutes "regulator-ready" positioning. Compliance officers won't discover tools via viral sports threads. Wrong audience, wrong channel.
+
+**Exception**: After 1K+ stars and proven B2B adoption, MAY add fun datasets for top-of-funnel. Not before.
+
+### ❌ LLM Trace Sidecar (Phase 2)
+
+**Don't do**:
+
+- `glassalpha-llm-trace` separate product
+- RAG attribution audits
+- LLM eval framework integration
+- Prompt/response logging
+
+**Why avoid**: Different product, crowded market (TruLens, LangSmith), splits focus during critical distribution phase. Your moat is tabular compliance.
+
+**Revisit**: After Stage 3.1 (user interviews) IF 5+ potential buyers request LLM audit features. Validate demand first.
+
+### ❌ Markdown Story Reporter
+
+**Don't do**:
+
+- Blog-ready Markdown export from audit JSON
+- "Model Story" templates for content marketing
+- Narrative generation for non-technical audiences
+
+**Why avoid**: Adds maintenance burden, wrong format (buyers want PDFs for regulators), and not on critical path.
+
+**Exception**: If compliance officers specifically request "executive summary in Word/Markdown", revisit in Phase 3.
+
+### ❌ Generic Explainability Positioning
+
+**Don't do**:
+
+- Position as "SHAP/LIME alternative"
+- Emphasize explainer methods over compliance artifacts
+- Compete with Fairlearn/AIF360 on metrics alone
+- Dashboard/monitoring narrative
+
+**Why avoid**: Commodity explainers don't differentiate. Your moat is "deterministic, regulator-ready evidence packs + CI gates."
+
+**Do instead**: Position as "compliance audit toolkit" not "explainability library."
+
+### ❌ Premature Enterprise Development
+
+**Don't do**:
+
+- Build SSO/RBAC before validating demand
+- Create monitoring dashboards
+- Build connectors (Snowflake, Databricks)
+- Develop N-way intersectional UI
+
+**Why avoid**: OSS adoption validates enterprise need. Don't build enterprise features until 5+ buyers request them with budget.
+
+**Do instead**: Focus on Stage 0.9-1.2 (distribution) and Stage 3.1 (validation) first.
+
+## Positioning Decision Framework
+
+**When evaluating any content/feature/campaign**:
+
+1. **Does this help a compliance officer trust the output?** → Yes = Do it | No = Skip
+2. **Does this demonstrate determinism/reproducibility?** → Yes = Do it | No = Skip
+3. **Does this appeal to consultants/validators?** → Yes = Do it | No = Skip
+4. **Does this optimize for Twitter virality?** → Yes = Skip | No = Consider
+5. **Does this dilute "regulator-ready" positioning?** → Yes = Skip | No = Consider
+
+**Target personas** (prioritize in order):
+
+1. Compliance officers at regional banks
+2. Risk managers at insurance companies
+3. Third-party auditors and consultants
+4. ML engineers at regulated firms
+5. Data scientists (only after 1-4 are served)
+
+**Wrong personas** (don't optimize for):
+
+- ML researchers (they want papers, not compliance)
+- Startup founders (they want speed, not audit rigor)
+- Twitter ML influencers (they want viral content)
+- Open source hobbyists (they want fun projects)
