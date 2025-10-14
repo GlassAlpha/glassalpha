@@ -21,6 +21,7 @@ help:
 	@echo "🔍 check-workflows - Validate GitHub Actions workflows"
 	@echo "📦 check-packaging - Validate MANIFEST.in and pyproject.toml"
 	@echo "📓 check-notebooks - Validate example notebooks (imports, structure)"
+	@echo "📚 check-docs - Validate CLI documentation (auto-fixes if stale)"
 	@echo ""
 	@echo "Environment Management:"
 	@echo "🔍 check-venv - Check if venv is in sync with source code"
@@ -141,10 +142,14 @@ check: clean-temp smoke check-workflows check-sigstore check-packaging check-det
 	@echo ""
 	@echo "✅ All checks passed - ready to commit!"
 
-# Check CLI documentation is current
+# Check CLI documentation is current (auto-fix if stale)
 check-docs:
 	@echo "🔍 Checking CLI documentation..."
-	@python3 scripts/generate_cli_docs.py --check
+	@if ! python3 scripts/generate_cli_docs.py --check 2>/dev/null; then \
+		echo "   🔧 Auto-fixing outdated CLI documentation..."; \
+		python3 scripts/generate_cli_docs.py --output site/docs/reference/cli.md; \
+		echo "   ✓ CLI documentation regenerated"; \
+	fi
 
 # Validate example notebooks
 check-notebooks:
