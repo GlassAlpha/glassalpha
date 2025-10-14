@@ -2400,8 +2400,8 @@ class AuditPipeline:
 
         """
         explainer_map = {
-            "treeshap": "glassalpha.explain.shap.tree.TreeSHAPExplainer",
-            "kernelshap": "glassalpha.explain.shap.kernel.KernelSHAPExplainer",
+            "treeshap": "glassalpha.explain.shap.TreeSHAPExplainer",
+            "kernelshap": "glassalpha.explain.shap.KernelSHAPExplainer",
             "coefficients": "glassalpha.explain.coefficients.CoefficientsExplainer",
         }
 

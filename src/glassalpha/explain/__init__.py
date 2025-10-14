@@ -61,7 +61,7 @@ def select_explainer(model_type: str, requested_priority: list[str] | None = Non
             # Check availability for each explainer type
             if first_choice == "treeshap":
                 try:
-                    from glassalpha.explain.shap.tree import TreeSHAPExplainer
+                    from glassalpha.explain.shap import TreeSHAPExplainer
 
                     logger.info(f"Explainer: selected {first_choice} for {model_type} (priority)")
                     return first_choice
