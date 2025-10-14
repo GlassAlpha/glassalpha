@@ -129,8 +129,8 @@ class _ProgressWrapper:
             self._maybe_log()
             yield item
 
-        if not self.disabled and self.total and self.n == self.total:
-            logger.info("%s: %d/%d (100%%)", self.desc, self.n, self.total)
+            if not self.disabled and self.total and self.n == self.total:
+                    logger.info(f"{self.desc}: {self.n}/{self.total} (100%)")
 
     def __enter__(self) -> _ProgressWrapper:
         """Context manager entry."""
@@ -154,7 +154,7 @@ class _ProgressWrapper:
         """Close progress and log final state."""
         if not self.disabled and self.total and self.n > 0:
             pct = int(100 * self.n / self.total)
-            logger.info("%s: %d/%d (%d%%)", self.desc, self.n, self.total, pct)
+            logger.info(f"{self.desc}: {self.n}/{self.total} ({pct}%)")
 
     def set_description(self, desc: str) -> None:
         """Set description.
@@ -181,4 +181,4 @@ class _ProgressWrapper:
 
         if self.n % interval == 0 or self.n == self.total:
             pct = int(100 * self.n / self.total)
-            logger.info("%s: %d/%d (%d%%)", self.desc, self.n, self.total, pct)
+            logger.info(f"{self.desc}: {self.n}/{self.total} ({pct}%)")

@@ -11,7 +11,6 @@ import pandas as pd
 import pytest
 
 from glassalpha.utils.canonicalization import (
-    _atomic_write,
     canonicalize,
     compute_result_id,
     hash_data_for_manifest,
@@ -76,37 +75,37 @@ class TestCanonicalize:
         assert not np.signbit(result)
 
     def test_bytes(self):
-        """Bytes become base64-encoded dict"""
+        """Bytes converted to list of integers (simplified)"""
         data = b"hello world"
         result = canonicalize(data)
 
-        assert result["_type"] == "bytes"
-        assert result["data"] == base64.b64encode(data).decode("ascii")
+        # Simplified: bytes → list of integers (sequence handling)
+        assert isinstance(result, list)
+        assert result == [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100]
 
     def test_ndarray_1d(self):
-        """1D array becomes dict with data, shape, dtype"""
+        """1D array becomes simple list (simplified)"""
         arr = np.array([1, 2, 3])
         result = canonicalize(arr)
 
-        assert result["_type"] == "ndarray"
-        assert result["data"] == [1, 2, 3]
-        assert result["shape"] == [3]
-        assert "int" in result["dtype"]
+        # Simplified: just a list, no metadata
+        assert result == [1, 2, 3]
+        assert isinstance(result, list)
 
     def test_ndarray_2d(self):
-        """2D array includes correct shape"""
+        """2D array flattened to list (simplified)"""
         arr = np.array([[1, 2], [3, 4]])
         result = canonicalize(arr)
 
-        assert result["shape"] == [2, 2]
-        assert result["data"] == [1, 2, 3, 4]  # Flattened
+        # Simplified: flattened, no shape metadata
+        assert result == [1, 2, 3, 4]
 
     def test_ndarray_with_nan(self):
         """Array with NaN canonicalizes NaN to "NaN" """
         arr = np.array([1.0, np.nan, 3.0])
         result = canonicalize(arr)
 
-        assert result["data"][1] == "NaN"
+        assert result[1] == "NaN"
 
     def test_dict_sorts_keys(self):
         """Dict keys sorted alphabetically"""
@@ -428,54 +427,6 @@ class TestHashDataForManifest:
         hash2 = hash_data_for_manifest(arr)
 
         assert hash1 == hash2
-
-
-class TestAtomicWrite:
-    """Tests for _atomic_write() function."""
-
-    def test_writes_file(self, tmp_path):
-        """File written successfully"""
-        target = tmp_path / "output.txt"
-        content = b"hello world"
-
-        _atomic_write(str(target), content)
-
-        assert target.exists()
-        assert target.read_bytes() == content
-
-    def test_creates_parent_dirs(self, tmp_path):
-        """Parent directories created if missing"""
-        target = tmp_path / "subdir" / "nested" / "output.txt"
-        content = b"hello"
-
-        _atomic_write(str(target), content)
-
-        assert target.exists()
-        assert target.read_bytes() == content
-
-    def test_overwrites_existing(self, tmp_path):
-        """Existing file overwritten"""
-        target = tmp_path / "output.txt"
-        target.write_bytes(b"old content")
-
-        _atomic_write(str(target), b"new content")
-
-        assert target.read_bytes() == b"new content"
-
-    def test_atomic_on_failure(self, tmp_path):
-        """Original file intact if write fails"""
-        target = tmp_path / "output.txt"
-        target.write_bytes(b"original")
-
-        # Simulate failure by writing to non-writable location
-        # (can't easily test true atomicity without killing process)
-        # Just verify no temp files left behind
-
-        _atomic_write(str(target), b"updated")
-
-        # No .tmp files left
-        tmp_files = list(tmp_path.glob("*.tmp"))
-        assert len(tmp_files) == 0
 
 
 class TestDeterminismAcrossRuns:

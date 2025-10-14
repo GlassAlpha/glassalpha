@@ -213,6 +213,11 @@ jobs:
           echo "=== Create test datasets for CI testing ==="
           python scripts/create_test_datasets.py
 
+      - name: Validate workflows
+        run: |
+          echo "=== Validate GitHub Actions workflows ==="
+          make check-workflows
+
       - name: Syntax check (prevent broken Python files)
         run: |
           echo "=== Compile all Python files to catch syntax errors ==="

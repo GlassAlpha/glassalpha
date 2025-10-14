@@ -250,7 +250,7 @@ def test_quickstart_config_works() -> None:
     # Verify quickstart uses safe defaults
     assert config.model.type == "logistic_regression"  # Always available
     assert config.data.dataset == "german_credit"  # Built-in dataset
-    assert config.reproducibility.random_seed is not None  # Deterministic
+    assert config.random_seed is not None  # Deterministic (now flat structure)
 
 
 # ============================================================================

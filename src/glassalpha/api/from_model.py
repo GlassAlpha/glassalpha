@@ -308,8 +308,8 @@ def from_model(
             import traceback
 
             logger = logging.getLogger(__name__)
-            logger.warning("Failed to compute explanations: %s", e)
-            logger.debug("Explanation error traceback: %s", traceback.format_exc())
+            logger.warning(f"Failed to compute explanations: {e}")
+            logger.debug(f"Explanation error traceback: {traceback.format_exc()}")
             # Continue without explanations rather than failing the entire audit
 
     # Update manifest with model-specific info
