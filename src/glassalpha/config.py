@@ -111,6 +111,10 @@ class ReportConfig(BaseModel):
     output_format: str = Field("html", description="Output format: html or pdf")
     output_path: Path | None = Field(None, description="Path for output report")
 
+    # PDF export options
+    pdf_profile: str = Field("fast", description="PDF export profile: fast | print | strict")
+    pdf_cache: bool = Field(True, description="Enable PDF export caching")
+
 
 class ExplainerConfig(BaseModel):
     """Explainer configuration."""

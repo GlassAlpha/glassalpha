@@ -76,11 +76,9 @@ class PDFConfig:
 class AuditPDFRenderer:
     """Professional PDF renderer for audit reports.
 
-    Note: PDF generation is "best effort" for determinism. HTML reports
-    are byte-identical across runs (verified), but PDF rendering may have
-    minor variations due to WeasyPrint's layout engine. PDFs are suitable
-    for human review and regulatory submission but should not be used for
-    cryptographic verification of audit reproducibility.
+    Note: PDF generation is for human review and regulatory submission only.
+    For deterministic, byte-identical outputs, use HTML format instead.
+    HTML reports can be converted to PDF using external tools if needed.
     """
 
     def __init__(self, config: PDFConfig | None = None):
@@ -168,10 +166,7 @@ class AuditPDFRenderer:
             # Write PDF to file with metadata
             pdf_document.write_pdf(
                 target=str(output_path),
-                pdf_version="1.4",  # Good compatibility
-                pdf_identifier=False,  # Deterministic output
-                custom_metadata=True,  # Use HTML meta tags for deterministic timestamps
-                pdf_variant=None,  # Disable PDF/A for stability (was causing hangs)
+                pdf_version="1.4",
                 presentational_hints=True,
                 optimize_images=self.config.optimize_size,
                 jpeg_quality=self.config.image_quality,
@@ -179,11 +174,6 @@ class AuditPDFRenderer:
 
             # Set PDF metadata
             self._set_pdf_metadata(output_path)
-
-            # Normalize PDF metadata for byte-identical determinism
-            from glassalpha.utils.determinism import normalize_pdf_metadata
-
-            normalize_pdf_metadata(output_path)
 
             file_size = output_path.stat().st_size
             logger.info(f"Successfully generated PDF: {output_path} ({file_size:,} bytes)")
@@ -544,11 +534,6 @@ class AuditPDFRenderer:
 
             # Set metadata
             self._set_pdf_metadata(output_path)
-
-            # Normalize PDF metadata for byte-identical determinism
-            from glassalpha.utils.determinism import normalize_pdf_metadata
-
-            normalize_pdf_metadata(output_path)
 
             file_size = output_path.stat().st_size
             logger.info(f"HTML to PDF conversion complete: {file_size:,} bytes")

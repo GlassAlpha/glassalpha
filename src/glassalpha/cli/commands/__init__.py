@@ -14,6 +14,9 @@ user-facing error messages. This is the correct pattern for CLI tools.
 
 # Core commands
 from .audit import audit
+
+# Note: cache is NOT imported here to keep CLI startup fast (<300ms)
+# It's imported directly in main.py only when needed
 from .config_cmds import (
     config_cheat_cmd,
     config_list_cmd,
@@ -27,6 +30,7 @@ from .system import docs, doctor, list_components_cmd
 
 __all__ = [
     "audit",
+    # "cache",  # Excluded to avoid slow imports
     "config_cheat_cmd",
     "config_list_cmd",
     "config_template_cmd",

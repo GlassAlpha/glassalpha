@@ -176,10 +176,10 @@ def _run_audit_pipeline(
     elif output_format == "pdf" and _PDF_AVAILABLE:
         # Warn about potential slow PDF generation
         typer.secho(
-            "⚠️  PDF generation may take 1-2 minutes for complex audits. Consider using HTML format for faster results.",
+            "⚠️  PDF generation takes 1-3 minutes. HTML format is faster and fully deterministic.",
             fg=typer.colors.YELLOW,
         )
-        typer.echo("   Tip: Set 'output_format: html' in your config for faster generation.\n")
+        typer.echo("   Tip: Use --output report.html or set 'output_format: html' in config.\n")
 
     try:
         # Step 1: Run audit pipeline with progress bar
@@ -219,245 +219,91 @@ def _run_audit_pipeline(
         _display_audit_summary(audit_results)
 
         # Step 2: Generate report in specified format
+
+        # Determine where to generate HTML (temp file for PDF, output path for HTML)
+        import tempfile
+
         if output_format == "pdf":
-            # Import PDF dependencies only when needed
+            # Generate HTML to temp file first for PDF conversion
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as temp_html:
+                html_output_path = Path(temp_html.name)
+            pdf_mode = True
+        else:
+            # Generate HTML directly to output path
+            html_output_path = output_path
+            pdf_mode = False
+
+        # Generate HTML
+        html_start = time.time()
+        # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
+
+        # Use deterministic timestamp for reproducibility
+        from glassalpha.utils.determinism import get_deterministic_timestamp
+
+        seed = audit_results.execution_info.get("random_seed") if audit_results.execution_info else None
+        deterministic_ts = get_deterministic_timestamp(seed=seed)
+        report_date = deterministic_ts.strftime("%Y-%m-%d")
+        generation_date = deterministic_ts.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        html_content = render_audit_report(
+            audit_results=audit_results,
+            output_path=html_output_path,
+            compact=compact,
+            report_title=f"ML Model Audit Report - {report_date}",
+            generation_date=generation_date,
+        )
+
+        html_time = time.time() - html_start
+        file_size = len(html_content.encode("utf-8"))
+
+        # Handle PDF generation if needed
+        if output_format == "pdf":
+            typer.echo("\nGenerating PDF report...")
+            typer.echo("⏳ Using Playwright/Chrome (30-60 seconds typical)")
+            typer.echo("💡 Tip: HTML format is instant and byte-identical across runs\n")
+
             try:
-                from glassalpha.report import PDFConfig, render_audit_pdf
-            except ImportError:
-                output_error(
-                    "PDF generation requires additional dependencies.\n"
-                    "Install with: pip install 'glassalpha[all]'\n"
-                    "Falling back to HTML output...",
-                )
-                output_format = "html"
-                output_path = output_path.with_suffix(".html")
+                from glassalpha.report.export import export_pdf
 
-            # Print format-specific message after fallback handling
-            # Note: PDF determinism is "best effort" - layout engine may have minor variations
-            if output_format == "pdf":
-                typer.echo(f"\nGenerating PDF report: {output_path}")
-
-                # Warn user about PDF generation issues and offer alternative
-                typer.echo()
-                typer.secho("⚠️  WARNING: PDF generation can be slow and may hang", fg=typer.colors.YELLOW)
-                typer.echo()
-                typer.echo("Known issues:")
-                typer.echo("  • Can take 2-5 minutes for complex reports")
-                typer.echo("  • May hang indefinitely on some systems")
-                typer.echo("  • WeasyPrint rendering engine limitations")
-                typer.echo()
-                typer.secho("💡 Recommended alternative:", fg=typer.colors.CYAN)
-                typer.echo("  1. Generate HTML first: --output report.html  (fast, reliable)")
-                typer.echo("  2. Convert to PDF if needed: glassalpha html-to-pdf report.html")
-                typer.echo()
-                typer.echo("Press Ctrl+C within 10 seconds to use HTML format instead...")
-                typer.echo()
-
-                # Give user 10 seconds to cancel
-                import time
-
-                pdf_cancelled = False
-                try:
-                    for i in range(10, 0, -1):
-                        typer.echo(f"  Starting PDF generation in {i}...", err=True)
-                        time.sleep(1)
-                except KeyboardInterrupt:
-                    pdf_cancelled = True
-                    typer.echo()
-                    typer.secho("⏩ Switched to HTML format", fg=typer.colors.CYAN)
-                    output_format = "html"
-                    output_path = output_path.with_suffix(".html")
-
-                if not pdf_cancelled:
-                    typer.echo()
-                    typer.echo("⏳ PDF generation in progress... (this may take 1-3 minutes)")
-
-                # Create PDF configuration
-                pdf_config = PDFConfig(
-                    page_size="A4",
-                    title="ML Model Audit Report",
-                    author="GlassAlpha",
-                    subject="Machine Learning Model Compliance Assessment",
-                    optimize_size=True,
+                pdf_path, cache_hit = export_pdf(
+                    html_path=html_output_path,
+                    output_path=output_path,
+                    profile=audit_config.report.pdf_profile if hasattr(audit_config.report, "pdf_profile") else "fast",
+                    use_cache=True,
                 )
 
-                # Only proceed with PDF generation if user didn't cancel
-                if not pdf_cancelled:
-                    # Use deterministic timestamp for PDF generation
-                    from glassalpha.utils.determinism import get_deterministic_timestamp
-
-                    seed = audit_results.execution_info.get("random_seed") if audit_results.execution_info else None
-                    deterministic_ts = get_deterministic_timestamp(seed=seed)
-                    report_date = deterministic_ts.strftime("%Y-%m-%d")
-                    generation_date = deterministic_ts.strftime("%Y-%m-%d %H:%M:%S UTC")
-
-                    # Add timeout protection for PDF generation using concurrent.futures
-                    import concurrent.futures
-
-                    # Create progress queue for thread communication BEFORE worker definition
-                    import queue
-
-                    progress_queue = queue.Queue()
-
-                    def pdf_progress_relay(message: str, percent: int) -> None:
-                        """Progress callback that writes to shared queue."""
-                        progress_queue.put((message, percent))
-
-                    pdf_path = None
-
-                    def pdf_generation_worker():
-                        """Worker function for PDF generation that can run in a thread."""
-                        try:
-                            # PDF generation inherits deterministic context from parent thread
-                            # (thread limits already set before ThreadPoolExecutor creation)
-                            pdf_path = render_audit_pdf(
-                                audit_results=audit_results,
-                                output_path=output_path,
-                                config=pdf_config,
-                                report_title=f"ML Model Audit Report - {report_date}",
-                                generation_date=generation_date,
-                                show_progress=True,  # Show progress in CLI
-                                progress_callback=pdf_progress_relay,  # Pass progress to main thread
-                            )
-                            return pdf_path
-                        except Exception as e:
-                            raise e
-
-            if output_format == "pdf" and not pdf_cancelled:
-                try:
-                    # Run PDF generation with timeout using ThreadPoolExecutor
-                    # Wrap in deterministic context BEFORE creating threads to avoid deadlocks
-                    pdf_start_time = time.time()
-                    timeout_seconds = 300  # 5 minutes max
-
-                    from glassalpha.utils.determinism import deterministic
-
-                    with deterministic(seed=seed or 42, strict=True):
-                        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                            future = executor.submit(pdf_generation_worker)
-
-                            # Monitor progress from queue while PDF generates
-                            typer.echo("⏳ PDF generation in progress...", err=True)
-                            completed = False
-                            last_progress_time = time.time()
-
-                            while not completed:
-                                # Check overall timeout
-                                elapsed = time.time() - pdf_start_time
-                                if elapsed > timeout_seconds:
-                                    typer.echo("  [TIMEOUT] PDF generation exceeded 5 minutes", err=True)
-                                    future.cancel()
-                                    break
-
-                                try:
-                                    message, percent = progress_queue.get(timeout=0.5)
-                                    typer.echo(f"  [{percent:3d}%] {message}", err=True)
-                                    last_progress_time = time.time()
-                                    if "successfully" in message or "complete" in message:
-                                        completed = True
-                                except queue.Empty:
-                                    # Check if stuck (no progress for 90 seconds)
-                                    if time.time() - last_progress_time > 90:
-                                        typer.echo("  [WARNING] No progress for 90 seconds, still running...", err=True)
-                                        last_progress_time = time.time()  # Reset to avoid spam
-                                    continue
-                                except Exception:
-                                    # Queue might be closed or other error
-                                    break
-
-                            # Get final result with remaining timeout
-                            remaining_timeout = max(1, timeout_seconds - (time.time() - pdf_start_time))
-                            pdf_path = future.result(timeout=remaining_timeout)
-
-                    if pdf_path is None:
-                        raise RuntimeError("PDF generation failed - no output path returned")
-
-                except concurrent.futures.TimeoutError:
-                    typer.secho("\n❌ PDF generation timed out after 5 minutes", fg=typer.colors.RED)
-                    typer.echo("💡 Try using HTML format for faster results:")
-                    typer.echo("   glassalpha audit --config your_config.yaml --output report.html")
-                    typer.echo("   # or set 'output_format: html' in your config")
-                    raise typer.Exit(code=1)
-                except Exception as e:
-                    typer.secho(f"\n❌ PDF generation failed: {e}", fg=typer.colors.RED)
-                    typer.echo("💡 Try using HTML format as a fallback:")
-                    typer.echo("   glassalpha audit --config your_config.yaml --output report.html")
-                    typer.echo("   # or set 'output_format: html' in your config")
-                    raise typer.Exit(code=1)
-
-                pdf_time = time.time() - pdf_start_time
-
-                # Validate PDF was actually created (P0 fix: issue #1, #3)
-                if not pdf_path.exists():
-                    typer.secho("\n❌ PDF generation failed - file was not created", fg=typer.colors.RED, err=True)
-                    typer.echo("\nPossible causes:", err=True)
-                    typer.echo("  • WeasyPrint dependencies missing or misconfigured", err=True)
-                    typer.echo("  • System font issues", err=True)
-                    typer.echo("  • Insufficient memory or disk space", err=True)
-                    typer.echo("\nSolutions:", err=True)
-                    typer.echo("  1. Use HTML output instead: --output report.html", err=True)
-                    typer.echo("  2. Check PDF dependencies: glassalpha doctor", err=True)
-                    typer.echo("  3. Install PDF dependencies: pip install 'glassalpha[all]'", err=True)
-                    raise typer.Exit(ExitCode.SYSTEM_ERROR)
+                if cache_hit:
+                    typer.echo("✓ PDF served from cache (0 seconds)")
+                else:
+                    typer.echo(f"✓ PDF generated: {pdf_path.stat().st_size:,} bytes")
 
                 file_size = pdf_path.stat().st_size
 
-            # Generate manifest sidecar if provenance manifest is available
-            manifest_path = None
-            if hasattr(audit_results, "execution_info") and "provenance_manifest" in audit_results.execution_info:
-                from glassalpha.provenance import write_manifest_sidecar
+            except RuntimeError as e:
+                typer.secho(f"\n❌ PDF generation failed: {e}", fg=typer.colors.RED)
+                typer.echo("💡 Fallback options:")
+                typer.echo("  1. Use HTML: --output report.html")
+                typer.echo("  2. Try strict profile: set pdf_profile: strict in config")
+                typer.echo("  3. Install Playwright: pip install 'glassalpha[pdf]' && playwright install chromium")
+                raise typer.Exit(code=1)
 
-                try:
-                    manifest_path = write_manifest_sidecar(
-                        audit_results.execution_info["provenance_manifest"],
-                        output_path,
-                    )
-                    typer.echo(f"Manifest: {manifest_path}")
-                except Exception as e:
-                    logger.warning(f"Failed to write manifest sidecar: {e}")
+        # Generate manifest sidecar if provenance manifest is available
+        manifest_path = None
+        if hasattr(audit_results, "execution_info") and "provenance_manifest" in audit_results.execution_info:
+            from glassalpha.provenance import write_manifest_sidecar
 
-        elif output_format == "html":
-            typer.echo(f"\nGenerating HTML report: {output_path}")
+            try:
+                manifest_path = write_manifest_sidecar(
+                    audit_results.execution_info["provenance_manifest"],
+                    output_path,
+                )
+                typer.echo(f"Manifest: {manifest_path}")
+            except Exception as e:
+                logger.warning(f"Failed to write manifest sidecar: {e}")
 
-            # Generate HTML
-            html_start = time.time()
-            # Use deterministic timestamp if SOURCE_DATE_EPOCH is set
-
-            # Use deterministic timestamp for reproducibility
-            from glassalpha.utils.determinism import get_deterministic_timestamp
-
-            seed = audit_results.execution_info.get("random_seed") if audit_results.execution_info else None
-            deterministic_ts = get_deterministic_timestamp(seed=seed)
-            report_date = deterministic_ts.strftime("%Y-%m-%d")
-            generation_date = deterministic_ts.strftime("%Y-%m-%d %H:%M:%S UTC")
-
-            html_content = render_audit_report(
-                audit_results=audit_results,
-                output_path=output_path,
-                compact=compact,
-                report_title=f"ML Model Audit Report - {report_date}",
-                generation_date=generation_date,
-            )
-
-            html_time = time.time() - html_start
-            file_size = len(html_content.encode("utf-8"))
-
-            # Generate manifest sidecar if provenance manifest is available
-            manifest_path = None
-            if hasattr(audit_results, "execution_info") and "provenance_manifest" in audit_results.execution_info:
-                from glassalpha.provenance import write_manifest_sidecar
-
-                try:
-                    manifest_path = write_manifest_sidecar(
-                        audit_results.execution_info["provenance_manifest"],
-                        output_path,
-                    )
-                except Exception as e:
-                    logger.warning(f"Failed to write manifest sidecar: {e}")
-
-            # Success message with detailed paths
-            if manifest_path and manifest_path.exists():
-                safe_echo(f"Manifest: {manifest_path}")
+        # Success message with detailed paths
+        if manifest_path and manifest_path.exists():
+            safe_echo(f"Manifest: {manifest_path}")
 
         else:
             typer.secho(

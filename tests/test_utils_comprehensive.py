@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from glassalpha.utils.determinism import compute_file_hash, normalize_pdf_metadata, verify_deterministic_output
+from glassalpha.utils.determinism import compute_file_hash, verify_deterministic_output
 from glassalpha.utils.hashing import (
     hash_array,
     hash_config,
@@ -1048,18 +1048,5 @@ class TestDeterminismUtilities:
         assert not identical
         assert hash1 != hash2
 
-    def test_normalize_pdf_metadata_basic(self, tmp_path):
-        """Test PDF metadata normalization with basic text replacement."""
-        # Create a simple text file that mimics PDF content
-        pdf_file = tmp_path / "test.pdf"
-        # Write content that includes a timestamp pattern
-        content = b"D:20250101120000Some PDF content"
-        pdf_file.write_bytes(content)
-
-        # Normalize metadata
-        normalize_pdf_metadata(pdf_file)
-
-        # File should still exist and be readable
-        assert pdf_file.exists()
-        new_content = pdf_file.read_bytes()
-        assert isinstance(new_content, bytes)
+    # Test removed: normalize_pdf_metadata() was deleted as PDF determinism is no longer a goal
+    # PDF generation is now for human review only; HTML format provides byte-identical outputs

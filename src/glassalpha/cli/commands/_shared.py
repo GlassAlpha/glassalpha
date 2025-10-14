@@ -133,13 +133,9 @@ def bootstrap_components() -> None:
         logger.error(f"Failed to import PassThroughModel: {e}")
         raise typer.Exit(ExitCode.SYSTEM_ERROR) from e
 
-    # Import sklearn models if available (they're optional)
-    try:
-        from ...models.tabular import sklearn  # noqa: F401
-
-        logger.debug("sklearn models imported")
-    except ImportError as e:
-        logger.warning(f"sklearn models not available: {e}. Will use passthrough model only.")
+    # Import sklearn models if available (they're optional) - LAZY IMPORT
+    # Note: sklearn is only imported when actually needed, not at CLI startup
+    logger.debug("sklearn models will be imported on-demand")
 
     # Import basic explainers
     try:

@@ -58,20 +58,22 @@ explain = ["glassalpha[shap,xgboost,lightgbm]"]
 # Enhanced visualization dependencies (seaborn adds nicer defaults)
 viz = ["seaborn>=0.13"]
 
-# PDF generation dependencies (jinja2 is now in core)
+# PDF export - Playwright/Chrome (recommended)
 pdf = [
-    "weasyprint>=60.0; platform_system!='Windows'",
-    "reportlab>=4.1; platform_system=='Windows'",
+    "playwright>=1.40",
+    "pillow>=10.0",  # Image optimization
 ]
 
-# PDF determinism infrastructure (separate from generation)
-# This is used for "best effort" PDF metadata normalization to reduce variations
-pdf_determinism = [
-    "pypdf>=3.0,<7.0",  # For PDF metadata normalization (best effort)
+# PDF fallback - WeasyPrint (air-gapped environments)
+pdf_weasyprint = [
+    "weasyprint>=60.0",
 ]
+
+# All PDF backends
+pdf_all = ["glassalpha[pdf,pdf_weasyprint]"]
 
 # Docs alias for backward compatibility
-docs = ["glassalpha[pdf,pdf_determinism]"]
+docs = ["glassalpha[pdf_all]"]
 
 # Development dependencies
 dev = [
@@ -92,7 +94,7 @@ dev = [
 ]
 
 # Everything - all optional features
-all = ["glassalpha[explain,viz,pdf,pdf_determinism]"]
+all = ["glassalpha[explain,viz,pdf_all]"]
 
 # Enterprise dependencies (not included in OSS)
 # These would be in glassalpha-enterprise package

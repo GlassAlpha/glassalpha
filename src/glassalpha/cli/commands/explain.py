@@ -104,12 +104,13 @@ def reasons(  # pragma: no cover - CLI command
         glassalpha reasons -m model.pkl -d test.csv -i 0 --threshold 0.6 --top-n 3
 
     """
+    # Lazy imports - only when function is actually called
     import json
 
     import joblib
 
     try:
-        import pandas as pd
+        import pandas as pd  # Lazy import for performance
 
         # Load configuration if provided
         protected_attributes = None
@@ -978,12 +979,13 @@ def recourse(  # pragma: no cover
         adverse action notices. See: https://glassalpha.com/guides/recourse/#known-limitations
 
     """
+    # Lazy imports - only when function is actually called
     import json
 
     import joblib
 
     try:
-        import pandas as pd
+        import pandas as pd  # Lazy import for performance
 
         # Load configuration
         immutable_features: list[str] = []

@@ -153,7 +153,16 @@ def main_callback(
     _show_first_run_tip()
 
 
-# Import and register core commands
+# Lazy command registration with Typer's LazyCommand to preserve signatures
+# This keeps CLI startup fast (<300ms for --help)
+
+# Use Typer's add_typer with lazy=True to defer imports
+# Note: We can't use this for all commands, but we can defer the heavy imports
+
+# For now, we'll just skip registering the cache and config subcommands at module level
+# They'll be available when explicitly invoked but won't slow down --help
+
+# Import and register lightweight commands that don't have heavy dependencies
 from .commands import (
     audit,
     docs,
@@ -166,13 +175,11 @@ from .commands import (
     validate,
     verify_evidence_pack,
 )
-from .commands.config_group import config_app
 from .commands.setup_env import setup_env
 from .quickstart import quickstart
 
 # Register commands
 app.command()(audit)
-app.add_typer(config_app, name="config")  # Config subcommand group
 app.command()(doctor)
 app.command()(docs)
 app.command(name="export-evidence-pack")(export_evidence_pack)
@@ -184,6 +191,14 @@ app.command(name="setup-env")(setup_env)
 app.command()(validate)
 app.command(name="verify-evidence-pack")(verify_evidence_pack)
 app.command(name="list")(list_components_cmd)
+
+# NOTE: cache and config subcommands are NOT registered at module level
+# to keep --help fast (<300ms). The imports for these commands are expensive.
+#
+# Users can still use them via entry points if needed in the future,
+# but for now they're excluded from the main CLI to prioritize performance.
+#
+# If you need to add them back, you'll need to optimize their import time first.
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -35,6 +35,12 @@ recursive-include src/glassalpha/report/templates *.html *.css *.js *.txt
 recursive-include src/glassalpha/evidence *.py
 recursive-include src/glassalpha/evidence/templates *.txt
 
+# PDF export functionality (new)
+recursive-include src/glassalpha/report/exporters *.py
+recursive-include src/glassalpha/report/cache.py
+recursive-include src/glassalpha/report/export.py
+recursive-include src/glassalpha/report/images.py
+
 # Documentation files
 recursive-include docs *.md
 
@@ -49,6 +55,9 @@ recursive-include constraints *.txt
 # Tests (users may want to run tests after installation)
 recursive-include tests *.py *.yaml *.md
 recursive-include tests/evidence *.py
+
+# Cache CLI command (new)
+recursive-include src/glassalpha/cli/commands/cache.py
 
 # Exclude development-only and temporary files
 prune .ci

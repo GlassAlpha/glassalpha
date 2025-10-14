@@ -39,6 +39,27 @@ glassalpha --version
 glassalpha doctor
 ```
 
+### PDF Export (Optional)
+
+PDF export uses Playwright (headless Chrome) for fast, reliable generation.
+
+#### Install Playwright (Recommended)
+
+```bash
+pip install 'glassalpha[pdf]'
+playwright install chromium
+```
+
+#### Pure Python Fallback (Air-gapped)
+
+If you cannot install Chromium:
+
+```bash
+pip install 'glassalpha[pdf_weasyprint]'
+```
+
+Note: WeasyPrint fallback uses simplified styling for reliability.
+
 **For isolated environments:** Create a virtual environment first:
 
 ```bash
