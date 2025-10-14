@@ -71,7 +71,7 @@ def test_registered_commands_match_imports():
     main_file = Path(__file__).parent.parent.parent / "src" / "glassalpha" / "cli" / "main.py"
     assert main_file.exists(), f"main.py not found at {main_file}"
 
-    main_content = main_file.read_text()
+    main_content = main_file.read_text(encoding="utf-8")
 
     # Check that imports and registrations are consistent
     # Import line: from .commands import audit, doctor, docs, ...

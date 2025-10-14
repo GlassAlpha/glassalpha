@@ -6,6 +6,7 @@ Tests for from_model, from_predictions, from_config API surfaces.
 import pytest
 
 from glassalpha.api import from_config, from_model, from_predictions
+from glassalpha.exceptions import NonBinaryClassificationError
 
 # Mark as contract test (must pass before release)
 pytestmark = pytest.mark.contract
@@ -71,7 +72,7 @@ class TestFromModelSignature:
     def test_requires_valid_inputs(self):
         """from_model() validates inputs"""
         # Should raise error for None inputs
-        with pytest.raises((AttributeError, ValueError)):
+        with pytest.raises(NonBinaryClassificationError):
             from_model(model=None, X=None, y=None)
 
 
