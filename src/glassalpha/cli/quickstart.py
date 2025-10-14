@@ -302,6 +302,7 @@ runtime:
 report:
   template: standard_audit
   output_format: html
+  output_path: "reports/audit_report.html"  # Save reports in reports/ subdirectory
 
 # Manifest configuration
 manifest:

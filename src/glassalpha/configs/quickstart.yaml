@@ -48,3 +48,4 @@ metrics:
 report:
   template: standard_audit
   output_format: html
+  output_path: "reports/audit_report.html"

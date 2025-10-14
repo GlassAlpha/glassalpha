@@ -532,12 +532,11 @@ def _display_audit_summary(audit_results) -> None:
             if isinstance(result, dict) and "accuracy" in result:
                 accuracy = result["accuracy"]
 
-                # Warn about suspiciously high accuracy (>98%) which may indicate data leakage or overfitting
+                # Warn about very high accuracy (>98%) which may indicate data leakage or overfitting
                 if accuracy > 0.98:
-                    status = "SUSPICIOUS"
-                    typer.echo(f"     {status} {name}: {accuracy:.1%}")
+                    typer.echo(f"     ⚠️  High {name}: {accuracy:.1%}")
                     typer.secho(
-                        "     ⚠️  Accuracy >98% may indicate data leakage or overfitting",
+                        "     Note: Verify on held-out test set. High training accuracy may indicate overfitting.",
                         fg=typer.colors.YELLOW,
                     )
                 else:
@@ -1312,7 +1311,7 @@ def audit(  # pragma: no cover
         from glassalpha.explain import select_explainer
 
         selected_explainer = select_explainer(model_type=audit_config.model.type, config=audit_config.model_dump())
-        typer.echo(f"Explainer: {type(selected_explainer).__name__}")
+        typer.echo(f"Explainer: {selected_explainer}")
 
         # Apply repro mode if requested
         if repro:

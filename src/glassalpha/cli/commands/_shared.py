@@ -18,6 +18,7 @@ def _check_and_warn_determinism() -> None:
     """Check if determinism environment variables are set and warn if missing.
 
     This provides immediate feedback during audit generation, not just in doctor command.
+    Only shows warning if variables are actually missing (suppresses noise after setup).
     """
     required_vars = {
         "TZ": "UTC",
@@ -27,6 +28,7 @@ def _check_and_warn_determinism() -> None:
 
     missing = [var for var in required_vars if not os.environ.get(var)]
 
+    # Only show warning if variables are missing
     if missing:
         typer.echo()
         typer.secho("⚠️  One-time setup required for reproducible audits", fg=typer.colors.YELLOW, bold=True)
