@@ -1236,7 +1236,7 @@ def run_audit(
         except ImportError:
             raise RuntimeError(
                 "PDF generation requires additional dependencies.\n"
-                "Install with: pip install 'glassalpha[docs]'\n"
+                "Install with: pip install 'glassalpha[all]'\n"
                 "Or use HTML output: --output audit.html",
             ) from None
 

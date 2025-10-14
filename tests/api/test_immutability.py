@@ -538,7 +538,7 @@ class TestAuditResultMethods:
             assert output.exists(), "PDF should be created"
         except ImportError as e:
             # Expected if PDF dependencies not installed
-            assert "glassalpha[pdf]" in str(e)
+            assert "glassalpha[all]" in str(e)
 
     def test_save_pdf_requires_pdf_deps(self, sample_result, tmp_path):
         """save() with .pdf extension works when PDF deps available."""
@@ -550,4 +550,4 @@ class TestAuditResultMethods:
             assert output.exists(), "PDF should be created"
         except ImportError as e:
             # Expected if PDF dependencies not installed
-            assert "glassalpha[pdf]" in str(e)
+            assert "glassalpha[all]" in str(e)

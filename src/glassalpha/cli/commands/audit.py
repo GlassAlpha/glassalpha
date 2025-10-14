@@ -147,8 +147,9 @@ def _run_audit_pipeline(
 
     # Fallback to HTML if PDF requested but not available
     if output_format == "pdf" and not _PDF_AVAILABLE:
-        typer.echo("⚠️  PDF backend not available. Generating HTML report instead.")
-        typer.echo("💡 To enable PDF reports: pip install 'glassalpha[pdf]' or pip install weasyprint\n")
+        typer.echo("⚠️  PDF dependencies not installed. Generating HTML report instead.")
+        typer.echo("💡 For PDF export: pip install 'glassalpha[all]'")
+        typer.echo("   (HTML reports are faster and work everywhere—PDF is optional)\n")
         output_format = "html"
         # Update output path extension if needed
         if output_path.suffix.lower() == ".pdf":
@@ -206,7 +207,7 @@ def _run_audit_pipeline(
             except ImportError:
                 output_error(
                     "PDF generation requires additional dependencies.\n"
-                    "Install with: pip install 'glassalpha[docs]'\n"
+                    "Install with: pip install 'glassalpha[all]'\n"
                     "Falling back to HTML output...",
                 )
                 output_format = "html"
@@ -377,7 +378,7 @@ def _run_audit_pipeline(
                     typer.echo("\nSolutions:", err=True)
                     typer.echo("  1. Use HTML output instead: --output report.html", err=True)
                     typer.echo("  2. Check PDF dependencies: glassalpha doctor", err=True)
-                    typer.echo("  3. Install PDF dependencies: pip install 'glassalpha[pdf]'", err=True)
+                    typer.echo("  3. Install PDF dependencies: pip install 'glassalpha[all]'", err=True)
                     raise typer.Exit(ExitCode.SYSTEM_ERROR)
 
                 file_size = pdf_path.stat().st_size
@@ -444,7 +445,7 @@ def _run_audit_pipeline(
                 f"Error: Unsupported output format '{output_format}'\n\n"
                 f"Supported formats:\n"
                 f"  - html (recommended): --output audit.html\n"
-                f"  - pdf (requires weasyprint): --output audit.pdf\n\n"
+                f"  - pdf (requires glassalpha[all]): --output audit.pdf\n\n"
                 f"Fix: Change output file extension to .html or .pdf",
                 fg=typer.colors.RED,
                 err=True,

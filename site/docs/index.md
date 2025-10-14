@@ -5,13 +5,13 @@ hide:
 
 # GlassAlpha
 
-GlassAlpha makes **deterministic, regulator-ready PDF audit reports** for tabular ML models. It's an open-source ([Apache 2.0](reference/trust-deployment.md#licensing-dependencies)) toolkit for reproducible, audit-ready model documentation.
+GlassAlpha makes **deterministic, regulator-ready audit reports** for tabular ML models. It's an open-source ([Apache 2.0](reference/trust-deployment.md#licensing-dependencies)) toolkit for reproducible, audit-ready model documentation (HTML/PDF).
 
 _Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable with 1000+ passing tests and comprehensive documentation. Breaking API changes may occur before v1.0. First stable release expected Q1 2025._
 
 ## How it works
 
-**Single command**: `glassalpha audit --config your_config.yaml --output audit.pdf`
+**Single command**: `glassalpha audit --config your_config.yaml --output audit.html`
 
 <div class="index-hero-diagram" markdown>
 
@@ -132,9 +132,9 @@ GlassAlpha is beta software. Current limitations:
 
 ## Why choose GlassAlpha?
 
-GlassAlpha is the only OSS tool that combines professional audit PDFs, easy custom data support, and complete regulatory compliance.
+GlassAlpha is the only OSS tool that combines professional audit reports, easy custom data support, and complete regulatory compliance.
 
-- **Deterministic outputs** - Byte-identical PDFs on same platform+Python+config
+- **Deterministic outputs** - Byte-identical HTML reports on same platform+Python+config
 - **Complete lineage** - Git SHA, config hash, data hash, seeds recorded
 - **Professional formatting** - Publication-quality reports with visualizations
 - **No external dependencies** - Runs completely offline

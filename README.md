@@ -4,7 +4,7 @@
 
 GlassAlpha is an ([open source](https://glassalpha.com/reference/trust-deployment/#licensing-dependencies)) ML compliance toolkit that makes tabular models **transparent, auditable, and regulator-ready**.
 
-Generate deterministic PDF audit reports with statistical confidence intervals, fairness analysis, and deployment gates for CI/CD. No dashboards. No black boxes. Byte-stable outputs for regulatory reproducibility.
+Generate deterministic audit reports with statistical confidence intervals, fairness analysis, and deployment gates for CI/CD. HTML by default (fast, portable), PDF export available for regulatory submissions. No dashboards. No black boxes. Byte-stable outputs for regulatory reproducibility.
 
 _Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable with 1000+ passing tests and comprehensive documentation. Breaking API changes may occur before v1.0. First stable release expected Q1 2025._
 
@@ -23,7 +23,7 @@ source glassalpha-env/bin/activate  # Windows: glassalpha-env\Scripts\activate
 pip install glassalpha
 ```
 
-> **Note**: Base install includes LogisticRegression with coefficient explanations. For XGBoost/LightGBM with SHAP: `pip install "glassalpha[all]"`
+> **Note**: Base install includes HTML reports + LogisticRegression (fast, zero extra dependencies). For full features (SHAP, XGBoost, LightGBM, PDF export): `pip install "glassalpha[all]"`
 
 ### 2. Generate Your First Audit
 
@@ -78,11 +78,10 @@ Creates verifiable audit package with checksums and manifest for regulators.
 
 ## Optional Features
 
-Install additional capabilities:
+Install full feature set for production use:
 
 ```bash
-pip install "glassalpha[explain]"  # SHAP + XGBoost + LightGBM
-pip install "glassalpha[all]"      # All features (recommended for production)
+pip install "glassalpha[all]"  # SHAP, XGBoost, LightGBM, PDF export (recommended)
 ```
 
 ### One-Time Setup for Reproducibility
@@ -106,10 +105,10 @@ glassalpha setup-env >> ~/.bashrc  # or ~/.zshrc
 ### From PyPI (Recommended)
 
 ```bash
-# Base installation
+# Base installation (HTML reports + LogisticRegression)
 pip install glassalpha
 
-# With all features
+# Full feature set (SHAP, XGBoost, LightGBM, PDF export)
 pip install "glassalpha[all]"
 ```
 
@@ -178,7 +177,7 @@ glassalpha audit --config audit.yaml \
 # Exit code 1 if degradation exceeds 5 percentage points
 ```
 
-**Byte-identical reproducibility.** Same audit config → byte-identical HTML reports every time (on same platform+Python). PDFs are suitable for human review but may have minor layout variations due to rendering engine limitations. SHA256 hashes in manifests for verification.
+**Byte-identical reproducibility.** Same audit config → byte-identical HTML reports every time (on same platform+Python). HTML is the primary format for speed and determinism. PDF export available as optional feature for print-ready documents. SHA256 hashes in manifests for verification.
 
 **Statistical rigor.** Not just point estimates—95% confidence intervals on fairness and calibration metrics with bootstrap resampling.
 
@@ -212,7 +211,7 @@ glassalpha audit --config audit.yaml \
 
 - **[SR 11-7 Mapping](site/docs/compliance/sr-11-7-mapping.md)**: Complete Federal Reserve guidance coverage (banking)
 - **Evidence Packs** (available in v0.2.1): SHA256-verified bundles for regulatory submission via `glassalpha export-evidence-pack`
-- **Reproducibility**: Deterministic execution, version pinning, byte-identical PDFs (same platform+Python)
+- **Reproducibility**: Deterministic execution, version pinning, byte-identical HTML reports (same platform+Python)
 - **CI/CD Gates**: Shift testing with `--fail-on-degradation` blocks deployments on metric degradation
 
 - XGBoost, LightGBM, Logistic Regression (binary classification only; multi-class in v0.3.0)

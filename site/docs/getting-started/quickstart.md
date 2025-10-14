@@ -53,7 +53,7 @@ glassalpha audit --config your_config.yaml
 
 ## The 5-minute version
 
-Get your first professional audit report in 5 minutes:
+Get your first professional audit report in 5 minutes (HTML format):
 
 ### Using quickstart generator (easiest)
 
@@ -74,12 +74,16 @@ start reports/audit_report.html  # Windows
 
 # Optional: Create evidence pack for regulatory submission
 glassalpha export-evidence-pack reports/audit_report.html --output evidence.zip
+
+# For PDF export (regulatory submission):
+# pip install "glassalpha[all]"
+# glassalpha audit --config audit_config.yaml --output reports/audit_report.pdf
 ```
 
 [Evidence pack guide →](../guides/evidence-packs.md) - Package audits for regulatory submission
 
-**Note**: Base installation uses LogisticRegression model (fast, zero extra dependencies).
-For advanced models only, install with `pip install "glassalpha[explain]"` instead.
+**Note**: Base installation includes LogisticRegression + HTML reports (fast, zero extra dependencies).
+For advanced models and PDF export, install with `pip install "glassalpha[all]"`.
 
 ### Using example configs
 
@@ -178,8 +182,8 @@ result = from_model(
 # View inline in Jupyter
 result  # Auto-displays HTML summary
 
-# Or export PDF
-result.to_pdf("audit.pdf")
+# Or export PDF (requires glassalpha[all])
+# result.to_pdf("audit.pdf")
 ```
 
 **What you get:**
@@ -196,9 +200,34 @@ result.to_pdf("audit.pdf")
 
 ---
 
+## Output Formats
+
+GlassAlpha supports two output formats optimized for different use cases:
+
+**HTML (default):**
+
+- ✅ Fast generation (2-3 seconds)
+- ✅ Works everywhere, no dependencies
+- ✅ Byte-identical across platforms
+- ✅ Perfect for: Development, iteration, CI/CD, sharing with teams
+- Command: `glassalpha audit` (auto-detects .html extension)
+
+**PDF (optional):**
+
+- ✅ Print-ready professional documents
+- ✅ Regulatory submission format
+- ✅ Formal audit trails
+- ⚠️ Requires: `pip install "glassalpha[all]"`
+- ⚠️ Slower: 1-3 minutes for complex reports
+- Command: `glassalpha audit --output audit.pdf`
+
+**Smart default:** HTML for speed, PDF when needed for formal submission.
+
+---
+
 ## The 10-minute version
 
-Get up and running with GlassAlpha in less than 10 minutes. This guide will take you from installation to generating your first professional audit PDF.
+Get up and running with GlassAlpha in less than 10 minutes. This guide will take you from installation to generating your first professional audit report (HTML format).
 
 ## Prerequisites
 

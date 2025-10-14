@@ -207,7 +207,7 @@ class AuditPDFRenderer:
                 f"PDF backend (WeasyPrint) is not installed. "
                 f"Wrote HTML report to {html_path} instead.\n\n"
                 "To enable PDF generation:\n"
-                "  pip install 'glassalpha[pdf]'\n"
+                "  pip install 'glassalpha[all]'\n"
                 "  # or: pip install weasyprint\n\n"
                 "Note: HTML reports are fully functional and can be printed as PDF.",
             ) from e
@@ -565,7 +565,7 @@ class AuditPDFRenderer:
                 f"PDF backend (WeasyPrint) is not installed. "
                 f"Wrote HTML report to {html_path} instead.\n\n"
                 "To enable PDF generation:\n"
-                "  pip install 'glassalpha[pdf]'\n"
+                "  pip install 'glassalpha[all]'\n"
                 "  # or: pip install weasyprint\n\n"
                 "Note: HTML reports are fully functional and can be printed as PDF.",
             ) from e

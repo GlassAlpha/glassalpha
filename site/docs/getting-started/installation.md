@@ -71,7 +71,7 @@ Choose your installation based on your needs:
 | Goal                          | Command                             | What's Included                                            | Use Case                                          |
 | ----------------------------- | ----------------------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
 | **Minimal quickstart (HTML)** | `pip install glassalpha`            | Core functionality, LogisticRegression model, HTML reports | Quick audits, development, lightweight deployment |
-| **Generate PDFs**             | `pip install "glassalpha[docs]"`    | PDF report generation (`jinja2`, `weasyprint`)             | Professional reports, regulatory submissions      |
+| **Full features (HTML+PDF)**  | `pip install "glassalpha[all]"`     | All models + PDF export (`jinja2`, `weasyprint`)           | Complete toolkit, regulatory submissions          |
 | **SHAP + tree models**        | `pip install "glassalpha[explain]"` | SHAP + XGBoost + LightGBM models                           | Production ML systems, complex models             |
 | **Visualization**             | `pip install "glassalpha[viz]"`     | Matplotlib + Seaborn for enhanced plots                    | Better visualizations in reports                  |
 | **Full installation**         | `pip install "glassalpha[all]"`     | All optional features and models                           | Complete toolkit, maximum compatibility           |
@@ -79,7 +79,7 @@ Choose your installation based on your needs:
 
 **Tip:** Run `glassalpha doctor` after installation to check your environment and see what features are available.
 
-**Why HTML by default?** Lighter, portable, works anywhere. PDF available via optional `docs` extra for professional reports.
+**Why HTML by default?** Fast, portable, works everywhere. PDF export available via optional `all` extra for regulatory submissions.
 
 ### Quick start (recommended for new users)
 
@@ -203,7 +203,7 @@ pip install 'glassalpha[all]'  # All features
 ```bash
 pip install 'glassalpha[explain]'   # SHAP + XGBoost + LightGBM
 pip install 'glassalpha[viz]'       # Matplotlib + Seaborn
-pip install 'glassalpha[docs]'      # PDF generation
+pip install 'glassalpha[all]'       # PDF generation
 ```
 
 ## Platform-specific installation

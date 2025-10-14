@@ -301,7 +301,7 @@ runtime:
 # Report configuration
 report:
   template: standard_audit
-  output_format: html
+  output_format: html  # HTML is fast (2-3s) and works everywhere. For PDF: pip install "glassalpha[all]"
   output_path: "reports/audit_report.html"  # Save reports in reports/ subdirectory
 
 # Manifest configuration

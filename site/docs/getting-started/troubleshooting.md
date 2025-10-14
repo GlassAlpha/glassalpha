@@ -122,7 +122,7 @@ pip install "glassalpha[all]"
 **Solution**:
 
 ```bash
-pip install "glassalpha[pdf]"
+pip install "glassalpha[all]"
 ```
 
 On macOS, you may also need:

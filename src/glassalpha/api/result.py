@@ -405,7 +405,7 @@ class AuditResult:
 
         Raises:
             GlassAlphaError: If file exists and overwrite=False
-            ImportError: If PDF dependencies not installed (pip install glassalpha[pdf])
+            ImportError: If PDF dependencies not installed (pip install glassalpha[all])
 
         Example:
             >>> result = ga.audit.from_model(model, X, y)
@@ -455,7 +455,7 @@ class AuditResult:
         except ImportError:
             raise ImportError(
                 "PDF generation requires additional dependencies.\n"
-                "Install with: pip install 'glassalpha[pdf]'\n"
+                "Install with: pip install 'glassalpha[all]'\n"
                 "Or use HTML output: result.to_html('audit.html')",
             ) from None
 

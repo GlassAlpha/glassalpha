@@ -110,7 +110,7 @@ def ensure_docs_if_pdf(output_path: str) -> None:
                 raise SystemExit(
                     "PDF backend (WeasyPrint) is not installed.\n\n"
                     "To enable PDF generation:\n"
-                    "  pip install 'glassalpha[pdf]'\n"
+                    "  pip install 'glassalpha[all]'\n"
                     "  # or: pip install weasyprint\n\n"
                     "Note: Use --output audit.html to generate HTML reports instead.",
                 )

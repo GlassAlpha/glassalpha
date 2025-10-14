@@ -152,7 +152,7 @@ report:
         if not has_pdf_backend:
             # When PDF backend is not available, should exit with error and mention docs
             assert result.exit_code != 0
-            assert 'pip install "glassalpha[docs]"' in (result.stdout + result.stderr)
+            assert 'pip install "glassalpha[all]"' in (result.stdout + result.stderr)
         else:
             # When PDF backend is available, may fail for other reasons but not for missing PDF backend
             # (the test doesn't check for other failures, just that it doesn't fail for missing PDF backend)
@@ -191,9 +191,9 @@ def test_environment_aware_quickstart_adaptation(tmp_path):
     if has_pdf_backend:
         # When PDF backend is available, should recommend PDF
         assert "quickstart.pdf" in result.stdout
-        assert "PDF generation: ✅ installed" in result.stdout
+        assert "PDF export: ✅ installed" in result.stdout
     else:
         # When PDF backend is not available, should recommend HTML
         assert "quickstart.html" in result.stdout
-        assert "PDF generation: ❌ not installed" in result.stdout
-        assert 'pip install "glassalpha[docs]"' in result.stdout
+        assert "PDF export: ❌ not installed" in result.stdout
+        assert 'pip install "glassalpha[all]"' in result.stdout

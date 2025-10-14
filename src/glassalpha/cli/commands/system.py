@@ -111,9 +111,9 @@ def doctor(
 
     # PDF backend
     if has_pdf_backend:
-        typer.echo(f"  PDF generation: ✅ installed ({pdf_backend_name})")
+        typer.echo(f"  PDF export: ✅ installed ({pdf_backend_name})")
     else:
-        typer.echo("  PDF generation: ❌ not installed")
+        typer.echo("  PDF export: ❌ not installed")
 
     # Visualization
     if has_matplotlib:
@@ -133,7 +133,7 @@ def doctor(
     if not has_tree_explain:
         missing_features.append("SHAP + tree models")
     if not has_pdf_backend:
-        missing_features.append("PDF generation")
+        missing_features.append("PDF export")
     if not has_matplotlib:
         missing_features.append("visualization")
 
@@ -152,8 +152,8 @@ def doctor(
             typer.echo()
 
         if not has_pdf_backend:
-            typer.echo("  📄 For PDF reports:")
-            typer.echo("     pip install 'glassalpha[docs]'")
+            typer.echo("  📄 For PDF export:")
+            typer.echo("     pip install 'glassalpha[all]'")
             typer.echo()
 
         if not has_matplotlib:
