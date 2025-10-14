@@ -52,13 +52,20 @@ app = typer.Typer(
     no_args_is_help=True,
     pretty_exceptions_enable=True,
     epilog="""Common Mistakes:
-  • Running audit before quickstart → Run 'glassalpha quickstart' first
-  • Using multi-class models → Binary classification only (for now)
-  • Missing determinism setup → Automatically handled in quickstart projects
-  • Can't find config file → Run from project directory (cd my-audit-project)
+
+  • Running audit before quickstart
+    → Run 'glassalpha quickstart' first
+
+  • Using multi-class models
+    → Binary classification only (for now)
+
+  • Missing determinism setup
+    → Automatically handled in quickstart projects
+
+  • Can't find config file
+    → Run from project directory
 
 Need help? glassalpha doctor  # Check your environment
-
 For more information, visit: https://glassalpha.com""",
 )
 
