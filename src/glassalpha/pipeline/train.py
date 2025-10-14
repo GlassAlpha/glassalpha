@@ -50,9 +50,12 @@ def train_from_config(cfg: Any, X: pd.DataFrame, y: Any) -> Any:
     # Extract parameters from config
     params = dict(getattr(cfg.model, "params", {}))
 
-    # Add random_state if specified in reproducibility config
-    if hasattr(cfg, "reproducibility") and hasattr(cfg.reproducibility, "random_seed"):
-        params["random_state"] = cfg.reproducibility.random_seed
+    # Add random_state if specified in config
+    if hasattr(cfg, "random_seed"):
+        params["random_state"] = cfg.random_seed
+    elif isinstance(cfg, dict) and "reproducibility" in cfg:
+        # Backward compatibility for dict configs
+        params["random_state"] = cfg.get("reproducibility", {}).get("random_seed", 42)
 
     # Fit model with parameters
     if not hasattr(model, "fit"):

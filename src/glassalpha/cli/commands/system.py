@@ -19,6 +19,11 @@ def doctor(
         "-v",
         help="Show detailed environment information including package versions and paths",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output as JSON for CI integration",
+    ),
 ):  # pragma: no cover
     """Check environment and optional features.
 
@@ -32,9 +37,54 @@ def doctor(
         # Verbose output with package versions
         glassalpha doctor --verbose
 
+        # JSON output for CI integration
+        glassalpha doctor --json
+
     """
     import importlib.util
+    import json
     import platform
+
+    # Collect data first
+    env_data = {
+        "python_version": sys.version,
+        "python_executable": sys.executable,
+        "platform": {
+            "system": platform.system(),
+            "machine": platform.machine(),
+            "version": platform.version(),
+        },
+        "determinism": {
+            "PYTHONHASHSEED": os.environ.get("PYTHONHASHSEED"),
+            "TZ": os.environ.get("TZ"),
+            "MPLBACKEND": os.environ.get("MPLBACKEND"),
+            "SOURCE_DATE_EPOCH": os.environ.get("SOURCE_DATE_EPOCH"),
+        },
+        "features": {
+            "shap": importlib.util.find_spec("shap") is not None,
+            "xgboost": importlib.util.find_spec("xgboost") is not None,
+            "lightgbm": importlib.util.find_spec("lightgbm") is not None,
+            "matplotlib": importlib.util.find_spec("matplotlib") is not None,
+        },
+    }
+
+    # Try to get package versions
+    try:
+        import importlib.metadata
+
+        env_data["versions"] = {}
+        for pkg in ["numpy", "pandas", "scikit-learn", "glassalpha"]:
+            try:
+                env_data["versions"][pkg] = importlib.metadata.version(pkg)
+            except Exception:
+                pass
+    except ImportError:
+        pass
+
+    # JSON output mode
+    if json_output:
+        typer.echo(json.dumps(env_data, indent=2))
+        return
 
     typer.echo("GlassAlpha Environment Check")
     typer.echo("=" * 40)
@@ -232,33 +282,17 @@ def doctor(
 
         # Python details
         typer.echo("\nPython Environment:")
-        typer.echo(f"  Executable: {sys.executable}")
-        typer.echo(f"  Version: {sys.version}")
+        typer.echo(f"  Executable: {env_data['python_executable']}")
+        typer.echo(f"  Version: {env_data['python_version']}")
         typer.echo(f"  Path: {sys.path[0]}")
 
         # Package versions
         typer.echo("\nInstalled Package Versions:")
-        packages = [
-            "numpy",
-            "pandas",
-            "scikit-learn",
-            "matplotlib",
-            "jinja2",
-            "xgboost",
-            "lightgbm",
-            "shap",
-            "weasyprint",
-            "reportlab",
-            "glassalpha",
-        ]
-        for package in packages:
-            try:
-                import importlib.metadata
-
-                version = importlib.metadata.version(package)
+        if "versions" in env_data:
+            for package, version in env_data["versions"].items():
                 typer.echo(f"  {package}: {version}")
-            except Exception:
-                typer.echo(f"  {package}: not installed")
+        else:
+            typer.echo("  (unable to retrieve package versions)")
 
         # Configuration locations
         typer.echo("\nConfiguration Locations:")
@@ -281,10 +315,8 @@ def doctor(
 
         # Environment checks
         typer.echo("\nEnvironment Variables:")
-        env_vars = ["PYTHONHASHSEED", "TZ", "MPLBACKEND", "SOURCE_DATE_EPOCH"]
-        for var in env_vars:
-            value = os.environ.get(var, "(not set)")
-            typer.echo(f"  {var}: {value}")
+        for var, value in env_data["determinism"].items():
+            typer.echo(f"  {var}: {value or '(not set)'}")
 
         typer.echo()
 

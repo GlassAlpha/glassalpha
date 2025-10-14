@@ -1,6 +1,8 @@
-"""Canonical representation for deterministic hashing.
+"""Simplified canonical representation for deterministic hashing.
 
-Phase 4: Byte-identical reproducibility via strict canonicalization.
+Focuses on essential JSON normalization and NaN/Inf handling for
+audit data. Simpler implementation is easier to maintain and debug
+while preserving determinism guarantees.
 
 Key principles:
 - NaN → "NaN" (string)
@@ -8,14 +10,12 @@ Key principles:
 - -0.0 → 0.0 (normalized)
 - Floats → 17 decimal places (full precision)
 - Dicts → sorted by key
-- Arrays → lists with shape metadata
-- Datetimes → ISO 8601 UTC
-- Bytes → base64 strings
+- Arrays → simple lists
+- Datetimes → ISO 8601 UTC strings
 """
 
 from __future__ import annotations
 
-import base64
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from typing import Any
@@ -27,14 +27,15 @@ import pandas as pd
 def canonicalize(obj: Any) -> Any:
     """Convert object to canonical form for deterministic hashing.
 
+    Simplified implementation focusing on actual audit data types.
+    Preserves determinism while reducing complexity.
+
     Rules:
     - float: NaN → "NaN", Inf → "Infinity", -Inf → "-Infinity", -0.0 → 0.0
-    - np.ndarray: Convert to list with {"_type": "ndarray", "data": [...], "shape": [...], "dtype": str}
+    - np.ndarray: Convert to list (flattened)
     - dict: Sort keys recursively
     - list/tuple: Recursively canonicalize elements
     - datetime: ISO 8601 UTC string (naive treated as UTC)
-    - bytes: Base64 string with {"_type": "bytes", "data": "..."}
-    - pd.Timestamp: Convert to datetime then ISO 8601
     - None, bool, int, str: Pass through
 
     Args:
@@ -51,7 +52,7 @@ def canonicalize(obj: Any) -> Any:
         >>> canonicalize(-0.0)
         0.0
         >>> canonicalize(np.array([1, 2, 3]))
-        {"_type": "ndarray", "data": [1, 2, 3], "shape": [3], "dtype": "int64"}
+        [1, 2, 3]
 
     """
     # None, bool (before int check since bool is subclass of int)
@@ -78,30 +79,18 @@ def canonicalize(obj: Any) -> Any:
     if isinstance(obj, str):
         return obj
 
-    # Bytes
-    if isinstance(obj, bytes):
-        return {
-            "_type": "bytes",
-            "data": base64.b64encode(obj).decode("ascii"),
-        }
-
-    # NumPy array
+    # NumPy array - simple list conversion
     if isinstance(obj, np.ndarray):
-        return {
-            "_type": "ndarray",
-            "data": [canonicalize(x) for x in obj.ravel()],
-            "shape": list(obj.shape),
-            "dtype": str(obj.dtype),
-        }
+        return [canonicalize(x) for x in obj.ravel()]
 
-    # Pandas Timestamp
+    # Pandas Timestamp - convert to ISO string
     if isinstance(obj, pd.Timestamp):
         dt = obj.to_pydatetime()
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=UTC)
         return dt.isoformat()
 
-    # Python datetime
+    # Python datetime - convert to ISO string
     if isinstance(obj, datetime):
         if obj.tzinfo is None:
             obj = obj.replace(tzinfo=UTC)
@@ -123,7 +112,7 @@ def canonicalize(obj: Any) -> Any:
     if isinstance(obj, Sequence):
         return [canonicalize(x) for x in obj]
 
-    # Fallback: try to convert to string
+    # Fallback: convert to string
     return str(obj)
 
 
@@ -280,40 +269,3 @@ def hash_data_for_manifest(
 
     hash_hex = hasher.hexdigest()
     return f"sha256:{hash_hex}" if prefix else hash_hex
-
-
-def _atomic_write(path: str, content: bytes) -> None:
-    """Write file atomically using temp file + rename.
-
-    This prevents corrupted files if write fails mid-operation.
-    Uses os.replace() which is atomic on POSIX systems.
-
-    Args:
-        path: Target file path
-        content: Bytes to write
-
-    Raises:
-        OSError: If write fails
-
-    """
-    import os
-    import tempfile
-    from pathlib import Path
-
-    target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-
-    # Write to temp file in same directory (ensures same filesystem)
-    fd, temp_path = tempfile.mkstemp(dir=target.parent, suffix=".tmp")
-    try:
-        os.write(fd, content)
-        os.close(fd)
-        # Atomic rename (POSIX guarantees atomicity)
-        os.replace(temp_path, target)
-    except Exception:
-        # Clean up temp file on failure
-        try:
-            os.unlink(temp_path)
-        except OSError:
-            pass
-        raise

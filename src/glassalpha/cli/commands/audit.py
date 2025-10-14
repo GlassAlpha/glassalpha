@@ -1341,13 +1341,7 @@ def audit(  # pragma: no cover
         # Use deterministic context for entire pipeline execution
         from glassalpha.utils.determinism import deterministic
 
-        seed = (
-            audit_config.reproducibility.random_seed
-            if hasattr(audit_config, "reproducibility")
-            and audit_config.reproducibility
-            and hasattr(audit_config.reproducibility, "random_seed")
-            else 42
-        )
+        seed = getattr(audit_config, "random_seed", 42)
 
         # Get strict mode from config, defaulting appropriately
         strict_mode = getattr(config.runtime, "strict_mode", False) if hasattr(config, "runtime") else False

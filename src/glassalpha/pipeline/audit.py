@@ -140,11 +140,12 @@ class AuditPipeline:
         self._ensure_components_loaded()
 
         # Get seed from config for deterministic manifest generation
-        seed = None
-        if hasattr(config, "reproducibility") and hasattr(config.reproducibility, "random_seed"):
-            seed = config.reproducibility.random_seed
-        elif isinstance(config, dict):
-            seed = config.get("reproducibility", {}).get("random_seed")
+        if isinstance(config, dict):
+            # Handle dict format (backward compatibility)
+            seed = config.get("random_seed") or config.get("reproducibility", {}).get("random_seed", 42)
+        else:
+            # Handle AuditConfig object
+            seed = getattr(config, "random_seed", 42)
 
         # Initialize manifest generator with seed for deterministic audit IDs
         self.manifest_generator = ManifestGenerator(seed=seed)
@@ -409,7 +410,7 @@ class AuditPipeline:
         logger.info("Setting up reproducible execution environment")
 
         # Set global seed from config
-        master_seed = self.config.reproducibility.random_seed if self.config.reproducibility else 42
+        master_seed = getattr(self.config, "random_seed", 42)
         set_global_seed(master_seed)
 
         # Store seed in execution_info for report generation
@@ -417,20 +418,16 @@ class AuditPipeline:
             self.results.execution_info = {}
         self.results.execution_info["random_seed"] = master_seed
 
-        # Apply advanced reproduction controls if configured
-        if (
-            self.config.reproducibility
-            and hasattr(self.config.reproducibility, "strict")
-            and self.config.reproducibility.strict
-        ):
+        # Apply advanced reproduction controls if strict mode enabled
+        if getattr(self.config, "strict", False):
             from ..runtime import set_repro
 
             logger.info("Applying advanced deterministic reproduction controls")
             repro_status = set_repro(
                 seed=master_seed,
-                strict=self.config.reproducibility.strict,
-                thread_control=getattr(self.config.reproducibility, "thread_control", False),
-                warn_on_failure=getattr(self.config.reproducibility, "warn_on_failure", True),
+                strict=getattr(self.config, "strict", False),
+                thread_control=getattr(self.config, "thread_control", True),
+                warn_on_failure=getattr(self.config, "warn_on_failure", True),
             )
 
             # Store repro status in results for provenance

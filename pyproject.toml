@@ -38,42 +38,26 @@ dependencies = [
     "pillow>=10.0",          # PNG optimization for report file size reduction
 
     # Utilities
-    "orjson>=3.9.0",         # Fast JSON serialization
     "platformdirs>=4.0.0",   # Cross-platform user data directories
     "jinja2>=3.1,<4",        # HTML templating - required for all report generation
-    "tqdm>=4.66",            # Progress bars for long-running operations (auto-detects notebook vs terminal)
 ]
 
 [project.optional-dependencies]
-# SHAP explainers - enables TreeSHAP, KernelSHAP
+# Tree model support (XGBoost + LightGBM)
+tree_models = [
+    "xgboost>=2.0",
+    "lightgbm>=4.0",
+]
+
+# SHAP explainers (TreeSHAP + KernelSHAP)
 shap = ["shap>=0.44"]
 
-# Tree model support - XGBoost, LightGBM
-xgboost = ["xgboost>=2.0"]
-lightgbm = ["lightgbm>=4.0"]
-
-# Combined explainer support (SHAP + tree models)
-explain = ["glassalpha[shap,xgboost,lightgbm]"]
-
-# Enhanced visualization dependencies (seaborn adds nicer defaults)
-viz = ["seaborn>=0.13"]
-
-# PDF export - Playwright/Chrome (recommended)
+# PDF export (Playwright primary, WeasyPrint fallback)
 pdf = [
-    "playwright>=1.40",
-    "pillow>=10.0",  # Image optimization
+    "playwright>=1.40",  # Primary: Chromium-based PDF generation
+    "weasyprint>=60.0",  # Fallback: Air-gapped environments
+    "pillow>=10.0",      # Image optimization
 ]
-
-# PDF fallback - WeasyPrint (air-gapped environments)
-pdf_weasyprint = [
-    "weasyprint>=60.0",
-]
-
-# All PDF backends
-pdf_all = ["glassalpha[pdf,pdf_weasyprint]"]
-
-# Docs alias for backward compatibility
-docs = ["glassalpha[pdf_all]"]
 
 # Development dependencies
 dev = [
@@ -81,20 +65,26 @@ dev = [
     "pytest-cov>=4.1",
     "pytest-asyncio>=0.21",
     "pytest-timeout>=2.2",  # Prevent tests from hanging indefinitely
-    # "pytest-xdist>=3.8",  # REMOVED: Parallel testing breaks determinism (single-threaded only)
-    "hypothesis>=6.92",  # Property-based testing for calibration and fairness
-    "nbmake>=1.5",  # Notebook execution testing
+    "hypothesis>=6.92",      # Property-based testing for calibration and fairness
+    "nbmake>=1.5",          # Notebook execution testing
     "black>=23.0",
     "ruff>=0.6",
     "mypy>=1.11",
-    "yamllint>=1.35",  # YAML syntax validation for workflow files
+    "yamllint>=1.35",       # YAML syntax validation for workflow files
     "pre-commit>=3.5",
-    "build>=1.0",  # Required for wheel packaging tests
-    "types-PyYAML>=6.0.12",  # Type stubs for YAML
+    "build>=1.0",           # Required for wheel packaging tests
+    "types-PyYAML>=6.0.12", # Type stubs for YAML
 ]
 
 # Everything - all optional features
-all = ["glassalpha[explain,viz,pdf_all]"]
+all = ["glassalpha[tree_models,shap,pdf]"]
+
+# Backward compatibility aliases (deprecated)
+xgboost = ["glassalpha[tree_models]"]
+lightgbm = ["glassalpha[tree_models]"]
+explain = ["glassalpha[tree_models,shap]"]
+pdf_all = ["glassalpha[pdf]"]
+docs = ["glassalpha[pdf]"]
 
 # Enterprise dependencies (not included in OSS)
 # These would be in glassalpha-enterprise package

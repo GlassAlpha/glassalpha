@@ -1,0 +1,76 @@
+name: Constraints Validation
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - "pyproject.toml"
+            - "constraints/*.txt"
+    pull_request:
+        branches: [main]
+        paths:
+            - "pyproject.toml"
+            - "constraints/*.txt"
+
+permissions:
+    contents: read
+
+jobs:
+    check-constraints:
+        name: Validate Constraints Match PyProject
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.12"
+
+            - name: Check constraints are documented
+              run: |
+                  echo "=== Verifying constraint files exist ==="
+                  required_files=(
+                    "constraints/constraints-ubuntu-latest-py3.11.txt"
+                    "constraints/constraints-ubuntu-latest-py3.12.txt"
+                    "constraints/constraints-macos-14-py3.11.txt"
+                    "constraints/constraints-macos-14-py3.12.txt"
+                  )
+
+                  for file in "${required_files[@]}"; do
+                    if [ ! -f "$file" ]; then
+                      echo "❌ Missing required constraint file: $file"
+                      exit 1
+                    fi
+                    echo "✅ Found: $file"
+                  done
+
+            - name: Validate constraints are not empty
+              run: |
+                  echo "=== Checking constraint files are not empty ==="
+                  for file in constraints/constraints-*.txt; do
+                    if [ ! -s "$file" ]; then
+                      echo "❌ Empty constraint file: $file"
+                      exit 1
+                    fi
+                    lines=$(wc -l < "$file")
+                    echo "✅ $file: $lines lines"
+                  done
+
+            - name: Check for stale constraints (optional warning)
+              run: |
+                  echo "=== Checking for potentially stale constraints ==="
+                  echo "If pyproject.toml changed recently, constraints may need regeneration"
+                  echo "See CONSTRAINTS.md for regeneration instructions"
+
+                  # Get last modification times
+                  pyproject_mtime=$(stat -c %Y pyproject.toml 2>/dev/null || stat -f %m pyproject.toml)
+                  constraints_mtime=$(find constraints -name "*.txt" -type f -exec stat -c %Y {} \; 2>/dev/null | sort -n | head -1 || echo "0")
+
+                  if [ "$pyproject_mtime" -gt "$constraints_mtime" ]; then
+                    echo "⚠️  pyproject.toml is newer than constraints files"
+                    echo "   Consider regenerating constraints if dependencies changed"
+                  else
+                    echo "✅ Constraints appear up-to-date"
+                  fi

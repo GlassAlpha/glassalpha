@@ -2,6 +2,9 @@
 
 Main API surface for generating audit results.
 
+This module re-exports from focused submodules for backward compatibility.
+Direct imports from submodules are also supported for explicit usage.
+
 LAZY IMPORTS: numpy and pandas are imported inside functions to enable
 basic module imports without scientific dependencies installed.
 """
@@ -16,6 +19,8 @@ if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
 
+from glassalpha.api.from_model import from_model
+from glassalpha.api.from_predictions import from_predictions
 from glassalpha.api.result import AuditResult
 from glassalpha.exceptions import (
     CategoricalDataError,
@@ -27,6 +32,15 @@ from glassalpha.exceptions import (
     NoPredictProbaError,
     ResultIDMismatchError,
 )
+
+# Re-export for backward compatibility
+__all__ = [
+    "AuditResult",
+    "from_config",
+    "from_model",
+    "from_predictions",
+    "run_audit",
+]
 
 
 def _validate_sklearn_compatible(X: pd.DataFrame, model: Any) -> None:

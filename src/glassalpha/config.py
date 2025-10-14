@@ -87,24 +87,6 @@ class PreprocessingConfig(BaseModel):
     artifact_path: Path | None = Field(None, description="Path to preprocessing artifact (.joblib)")
 
 
-class ReproducibilityConfig(BaseModel):
-    """Reproducibility configuration for determinism."""
-
-    random_seed: int = Field(42, description="Random seed for reproducibility")
-    strict: bool = Field(
-        False,
-        description="Enable strict determinism controls (thread control, advanced seeding)",
-    )
-    thread_control: bool = Field(
-        True,
-        description="Control thread counts for deterministic parallel processing",
-    )
-    warn_on_failure: bool = Field(
-        True,
-        description="Warn if some determinism controls fail to apply",
-    )
-
-
 class ReportConfig(BaseModel):
     """Report generation configuration."""
 
@@ -139,97 +121,66 @@ class ExplainerConfig(BaseModel):
         return v
 
 
-class PerformanceConfig(BaseModel):
-    """Performance metrics configuration."""
-
-    config: dict[str, Any] = Field(default_factory=dict, description="Performance metric configuration")
-    metrics: list[str] = Field(default_factory=lambda: ["accuracy"], description="Performance metrics to compute")
-
-    @field_validator("metrics", mode="before")
-    @classmethod
-    def handle_legacy_format(cls, v):
-        """Handle legacy list format for backwards compatibility."""
-        if isinstance(v, list):
-            return v
-        return v
-
-
-class FairnessConfig(BaseModel):
-    """Fairness metrics configuration."""
-
-    config: dict[str, Any] = Field(default_factory=dict, description="Fairness metric configuration")
-    metrics: list[str] = Field(default_factory=list, description="Fairness metrics to compute")
-
-    @field_validator("metrics", mode="before")
-    @classmethod
-    def handle_legacy_format(cls, v):
-        """Handle legacy list format for backwards compatibility."""
-        if isinstance(v, list):
-            return v
-        return v
-
-
-class StabilityConfig(BaseModel):
-    """Stability analysis configuration."""
-
-    enabled: bool = Field(True, description="Enable stability analysis")
-    config: dict[str, Any] = Field(default_factory=dict, description="Stability analysis configuration")
-    epsilon_values: list[float] = Field(
-        default_factory=lambda: [0.01, 0.05, 0.1],
-        description="Epsilon values for perturbation analysis",
-    )
-    threshold: float = Field(0.05, description="Threshold for stability analysis")
-
-    @field_validator("threshold")
-    @classmethod
-    def validate_threshold(cls, v: float) -> float:
-        """Validate threshold is in valid range."""
-        if not 0.0 <= v <= 1.0:
-            # Check if user provided percentage instead of probability
-            if v > 1.0 and v <= 100.0:
-                raise ValueError(
-                    f"Invalid threshold: {v}\n\n"
-                    f"Threshold must be between 0.0 and 1.0 (probability/decimal format).\n"
-                    f"Did you mean {v / 100:.3f}? (Use decimal 0.{int(v)}, not percentage {v}%)"
-                )
-            raise ValueError(f"Invalid threshold: {v}\n\nThreshold must be between 0.0 and 1.0 (probability format).")
-        return v
-
-
 class MetricsConfig(BaseModel):
-    """Metrics configuration."""
+    """Metrics configuration - consolidated for simplicity.
 
+    Combines performance, fairness, and stability metrics into a single
+    configuration class. Uses nested dicts for flexibility while reducing
+    the number of config classes users need to understand.
+    """
+
+    # High-level toggles
     compute_fairness: bool = Field(True, description="Compute fairness metrics")
     compute_calibration: bool = Field(True, description="Compute calibration metrics")
-    performance: PerformanceConfig | list[str] = Field(
-        default_factory=PerformanceConfig,
-        description="Performance metrics configuration",
-    )
-    fairness: FairnessConfig | list[str] = Field(
-        default_factory=FairnessConfig,
-        description="Fairness metrics configuration",
-    )
-    n_bootstrap: int = Field(1000, description="Number of bootstrap samples for confidence intervals")
     compute_confidence_intervals: bool = Field(True, description="Compute confidence intervals")
+    n_bootstrap: int = Field(1000, description="Number of bootstrap samples for confidence intervals")
+
+    # Performance metrics (dict or list for backward compatibility)
+    performance: dict[str, Any] | list[str] = Field(
+        default_factory=lambda: {"metrics": ["accuracy"]},
+        description="Performance metrics: dict with 'metrics' key or list of metric names",
+    )
+
+    # Fairness metrics (dict or list for backward compatibility)
+    fairness: dict[str, Any] | list[str] = Field(
+        default_factory=lambda: {},
+        description="Fairness metrics: dict with 'metrics' key or list of metric names",
+    )
+
+    # Stability analysis
+    stability: dict[str, Any] = Field(
+        default_factory=lambda: {
+            "enabled": True,
+            "epsilon_values": [0.01, 0.05, 0.1],
+            "threshold": 0.05,
+        },
+        description="Stability analysis: dict with 'enabled', 'epsilon_values', 'threshold' keys",
+    )
+
+    # Other metric configurations
     performance_mode: str = Field("comprehensive", description="Performance computation mode")
-    individual_fairness: dict[str, Any] = Field(default_factory=dict, description="Individual fairness configuration")
-    stability: StabilityConfig = Field(default_factory=StabilityConfig, description="Stability analysis configuration")
+    individual_fairness: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Individual fairness configuration",
+    )
 
     @field_validator("performance", mode="before")
     @classmethod
-    def handle_legacy_performance_format(cls, v):
-        """Handle legacy performance format (list vs object)."""
+    def normalize_performance(cls, v: Any) -> dict[str, Any]:
+        """Normalize performance to dict format."""
         if isinstance(v, list):
-            return PerformanceConfig(metrics=v)
+            return {"metrics": v}
+        if isinstance(v, dict) and "metrics" not in v:
+            return {"metrics": ["accuracy"]}
         return v
 
     @field_validator("fairness", mode="before")
     @classmethod
-    def handle_legacy_fairness_format(cls, v):
-        """Handle legacy fairness format (list vs object)."""
+    def normalize_fairness(cls, v: Any) -> dict[str, Any]:
+        """Normalize fairness to dict format."""
         if isinstance(v, list):
-            return FairnessConfig(metrics=v)
-        return v
+            return {"metrics": v}
+        return v if isinstance(v, dict) else {}
 
 
 class RuntimeConfig(BaseModel):
@@ -245,6 +196,7 @@ class AuditConfig(BaseModel):
     """GlassAlpha audit configuration - main config model.
 
     Provides canonical_json() method for deterministic manifest hashing.
+    Incorporates reproducibility settings directly for simplicity.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -252,29 +204,24 @@ class AuditConfig(BaseModel):
     # Optional audit profile name (defaults to "default" if not specified)
     audit_profile: str = Field(default="default")
 
+    # Core configuration
     model: ModelConfig
     data: DataConfig
     preprocessing: PreprocessingConfig = Field(
         default_factory=lambda: PreprocessingConfig(mode="auto", artifact_path=None),
     )
-    reproducibility: ReproducibilityConfig = Field(default_factory=lambda: ReproducibilityConfig(random_seed=42))
-    report: ReportConfig = Field(default_factory=lambda: ReportConfig(output_format="html", output_path=None))
+    report: ReportConfig = Field(
+        default_factory=lambda: ReportConfig(
+            output_format="html",
+            output_path=None,
+            pdf_profile="fast",
+            pdf_cache=True,
+        ),
+    )
     explainers: ExplainerConfig = Field(
         default_factory=lambda: ExplainerConfig(strategy="first_compatible", priority=[]),
     )
-    metrics: MetricsConfig = Field(
-        default_factory=lambda: MetricsConfig(
-            compute_fairness=True,
-            compute_calibration=True,
-            performance=PerformanceConfig(),
-            fairness=FairnessConfig(),
-            n_bootstrap=1000,
-            compute_confidence_intervals=True,
-            performance_mode="comprehensive",
-            individual_fairness={},
-            stability=StabilityConfig(threshold=0.05),
-        ),
-    )
+    metrics: MetricsConfig = Field(default_factory=lambda: MetricsConfig())
     runtime: RuntimeConfig = Field(
         default_factory=lambda: RuntimeConfig(
             strict_mode=False,
@@ -283,6 +230,30 @@ class AuditConfig(BaseModel):
             no_fallback=False,
         ),
     )
+
+    # Reproducibility settings (incorporated directly for simplicity)
+    random_seed: int = Field(42, description="Random seed for reproducibility")
+    strict: bool = Field(
+        False,
+        description="Enable strict determinism controls",
+    )
+    thread_control: bool = Field(
+        True,
+        description="Control thread counts for deterministic parallel processing",
+    )
+    warn_on_failure: bool = Field(
+        True,
+        description="Warn if some determinism controls fail to apply",
+    )
+
+    # Backward compatibility: accept 'reproducibility' dict and flatten it
+    @field_validator("random_seed", mode="before")
+    @classmethod
+    def extract_from_reproducibility(cls, v: Any, info: Any) -> int:
+        """Extract random_seed from reproducibility dict if present."""
+        if isinstance(info.data.get("reproducibility"), dict):
+            return info.data["reproducibility"].get("random_seed", 42)
+        return v if v is not None else 42
 
     def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary (backwards compatibility)."""
@@ -300,7 +271,11 @@ class AuditConfig(BaseModel):
         )
 
 
-def load_config(config_path: str | Path, profile_name: str | None = None, strict: bool | None = None) -> AuditConfig:
+def load_config(
+    config_path: str | Path,
+    profile_name: str | None = None,
+    strict: bool | None = None,
+) -> AuditConfig:
     """Load and validate configuration from YAML file.
 
     Args:
@@ -435,7 +410,10 @@ def load_yaml(config_path: str | Path) -> dict[str, Any]:
 # Stub functions for test compatibility
 
 
-def apply_profile_defaults(config: dict[str, Any], profile: str = "default") -> dict[str, Any]:
+def apply_profile_defaults(
+    config: dict[str, Any],
+    profile: str = "default",
+) -> dict[str, Any]:
     """Stub for test compatibility - profile system removed."""
     return config
 
@@ -501,7 +479,7 @@ def _validate_strict_mode(config: AuditConfig) -> None:
     if not config.data.protected_attributes:
         errors.append("Explicit protected attributes are required in strict mode")
 
-    if config.reproducibility.random_seed == 42:  # Default value
+    if config.random_seed == 42:  # Default value
         errors.append("Explicit random seed is required in strict mode")
 
     if not config.explainers.priority:
@@ -516,14 +494,14 @@ def _validate_strict_mode(config: AuditConfig) -> None:
 
 
 __all__ = [
-    "AuditConfig",  # Backwards compatibility
+    "AuditConfig",
     "DataConfig",
-    "ExplainerConfig",  # Stub for test compatibility
-    "MetricsConfig",  # Stub for test compatibility
+    "ExplainerConfig",
+    "MetricsConfig",
     "ModelConfig",
     "PreprocessingConfig",
     "ReportConfig",
-    "ReproducibilityConfig",
+    "RuntimeConfig",
     "apply_profile_defaults",  # Stub for test compatibility
     "load_config",
     "load_config_from_file",  # Backwards compatibility

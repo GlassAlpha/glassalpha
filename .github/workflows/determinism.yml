@@ -85,7 +85,7 @@ jobs:
       - name: Install dependencies with constraints
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -c constraints.txt -e ".[all,pdf_determinism,dev]"
+          pip install -c constraints.txt -e ".[all,dev]"
           pip install shap  # Required for deterministic explainer selection
 
       - name: Verify dependencies
@@ -95,8 +95,6 @@ jobs:
             (echo "❌ SHAP not available"; exit 1)
           python -c "import weasyprint; print(f'✅ WeasyPrint {weasyprint.__version__}')" || \
             (echo "❌ WeasyPrint not available"; exit 1)
-          python -c "import pypdf; print(f'✅ pypdf {pypdf.__version__}')" || \
-            (echo "❌ pypdf not available"; exit 1)
 
       - name: Verify environment setup
         run: |

@@ -366,7 +366,7 @@ def validate(  # pragma: no cover
                 )
 
         # Show other warnings
-        if not audit_config.reproducibility.random_seed:
+        if not getattr(audit_config, "random_seed", None):
             typer.secho("Warning: No random seed specified - results may vary", fg=typer.colors.YELLOW)
 
         if not audit_config.data.protected_attributes:

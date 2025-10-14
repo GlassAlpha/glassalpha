@@ -1,5 +1,10 @@
 # GlassAlpha
 
+[![PyPI version](https://img.shields.io/pypi/v/glassalpha.svg)](https://pypi.org/project/glassalpha/)
+[![License](https://img.shields.io/pypi/l/glassalpha.svg)](https://github.com/glassalpha/glassalpha/blob/main/LICENSE)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/glassalpha/glassalpha/badge)](https://securityscorecards.dev/viewer/?uri=github.com/glassalpha/glassalpha)
+[![Python versions](https://img.shields.io/pypi/pyversions/glassalpha.svg)](https://pypi.org/project/glassalpha/)
+
 **Ever tried explaining your ML model to a regulator?**
 
 GlassAlpha is an ([open source](https://glassalpha.com/reference/trust-deployment/#licensing-dependencies)) ML compliance toolkit that makes tabular models **transparent, auditable, and regulator-ready**.
@@ -23,7 +28,7 @@ source glassalpha-env/bin/activate  # Windows: glassalpha-env\Scripts\activate
 pip install glassalpha
 ```
 
-> **Note**: Base install includes HTML reports + LogisticRegression (fast, zero extra dependencies). For full features (SHAP, XGBoost, LightGBM, PDF export): `pip install "glassalpha[all]"`
+> **Note**: Base install includes HTML reports + LogisticRegression (fast, minimal dependencies). For full features (tree models, SHAP, PDF export): `pip install "glassalpha[all]"`
 
 ### 2. Generate Your First Audit
 
@@ -81,7 +86,7 @@ Creates verifiable audit package with checksums and manifest for regulators.
 Install full feature set for production use:
 
 ```bash
-pip install "glassalpha[all]"  # SHAP, XGBoost, LightGBM, PDF export (recommended)
+pip install "glassalpha[all]"  # Tree models, SHAP, PDF export (recommended)
 ```
 
 ### One-Time Setup for Reproducibility
@@ -108,8 +113,13 @@ glassalpha setup-env >> ~/.bashrc  # or ~/.zshrc
 # Base installation (HTML reports + LogisticRegression)
 pip install glassalpha
 
-# Full feature set (SHAP, XGBoost, LightGBM, PDF export)
+# Full feature set (tree models, SHAP, PDF export)
 pip install "glassalpha[all]"
+
+# Individual feature groups:
+# pip install "glassalpha[tree_models]"  # XGBoost + LightGBM
+# pip install "glassalpha[shap]"         # SHAP explainers
+# pip install "glassalpha[pdf]"          # PDF export
 ```
 
 ### From Source (Development)

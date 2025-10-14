@@ -71,17 +71,10 @@ echo ""
 echo "=== Test 1: Verify critical dependencies ==="
 $PYTHON -c "import shap; print(f'✅ SHAP {shap.__version__}')" || fail_test "SHAP dependency" "SHAP not available"
 $PYTHON -c "import weasyprint; print(f'✅ WeasyPrint {weasyprint.__version__}')" || fail_test "WeasyPrint dependency" "WeasyPrint not available"
-$PYTHON -c "import pypdf; print(f'✅ pypdf {pypdf.__version__}')" || fail_test "pypdf dependency" "pypdf not available"
 pass_test "All critical dependencies available"
 
-# Test 2: Run PDF determinism tests (Linux only)
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    echo "=== Test 2: PDF determinism tests (Linux) ==="
-    $PYTHON -m pytest tests/test_pdf_determinism.py -v || fail_test "PDF determinism tests" "Tests failed"
-    pass_test "PDF determinism tests passed"
-else
-    warn "Skipping PDF determinism tests (Linux only)"
-fi
+# Note: PDF determinism is handled at HTML level (HTML is byte-identical)
+# PDF generation is for human review only, not determinism guarantees
 
 # Test 3: HTML determinism validation
 echo "=== Test 3: HTML determinism validation ==="

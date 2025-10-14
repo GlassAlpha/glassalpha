@@ -5,6 +5,7 @@ These tests prevent common determinism failures and ensure
 core functionality works in CI environment.
 """
 
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -80,3 +81,65 @@ class TestCriticalRegressions:
 
         # Should be identical
         assert hash1 == hash2, f"Hash inconsistency: {hash1} != {hash2}"
+
+    def test_report_is_byte_stable(self, tmp_path):
+        """Same config produces byte-identical audit reports.
+
+        Critical for regulatory reproducibility - auditors must be able
+        to regenerate exact same output to verify results.
+        """
+        import yaml
+
+        from glassalpha.config import load_config
+
+        # Use golden config (known to work)
+        config_path = Path("examples/german_credit_golden/config.yaml")
+
+        # Run audit twice
+        output1 = tmp_path / "audit1.html"
+        output2 = tmp_path / "audit2.html"
+
+        cmd = ["python", "-m", "glassalpha", "audit", "-c", str(config_path)]
+
+        # First run
+        result1 = subprocess.run(
+            cmd + ["-o", str(output1)],
+            capture_output=True,
+            text=True,
+            check=False,
+            env={
+                **os.environ,
+                "PYTHONHASHSEED": "0",
+                "TZ": "UTC",
+                "MPLBACKEND": "Agg",
+            },
+        )
+        assert result1.returncode == 0, f"First run failed: {result1.stderr}"
+
+        # Second run
+        result2 = subprocess.run(
+            cmd + ["-o", str(output2)],
+            capture_output=True,
+            text=True,
+            check=False,
+            env={
+                **os.environ,
+                "PYTHONHASHSEED": "0",
+                "TZ": "UTC",
+                "MPLBACKEND": "Agg",
+            },
+        )
+        assert result2.returncode == 0, f"Second run failed: {result2.stderr}"
+
+        # Compute hashes
+        import hashlib
+
+        hash1 = hashlib.sha256(output1.read_bytes()).hexdigest()
+        hash2 = hashlib.sha256(output2.read_bytes()).hexdigest()
+
+        assert hash1 == hash2, (
+            f"Byte-identical guarantee violated:\n"
+            f"  Run 1: {hash1}\n"
+            f"  Run 2: {hash2}\n"
+            f"Same config must produce identical output for regulatory compliance."
+        )
