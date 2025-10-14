@@ -4,6 +4,7 @@ Ensures CLI responsiveness for user-facing commands.
 """
 
 import subprocess
+import sys
 import time
 
 import pytest
@@ -25,10 +26,11 @@ class TestCLIPerformance:
         """
         start = time.time()
         result = subprocess.run(
-            ["python", "-m", "glassalpha", "--help"],
+            [sys.executable, "-m", "glassalpha", "--help"],
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         elapsed = time.time() - start
 
@@ -44,10 +46,11 @@ class TestCLIPerformance:
         """Audit help command should be fast (<300ms)."""
         start = time.time()
         result = subprocess.run(
-            ["python", "-m", "glassalpha", "audit", "--help"],
+            [sys.executable, "-m", "glassalpha", "audit", "--help"],
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         elapsed = time.time() - start
 
@@ -61,10 +64,11 @@ class TestCLIPerformance:
         """Doctor command should complete reasonably fast (<2 seconds)."""
         start = time.time()
         result = subprocess.run(
-            ["python", "-m", "glassalpha", "doctor"],
+            [sys.executable, "-m", "glassalpha", "doctor"],
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         elapsed = time.time() - start
 
@@ -76,7 +80,7 @@ class TestCLIPerformance:
         """Version command should be instant (<100ms)."""
         start = time.time()
         result = subprocess.run(
-            ["python", "-m", "glassalpha", "--version"],
+            [sys.executable, "-m", "glassalpha", "--version"],
             check=False,
             capture_output=True,
             text=True,
