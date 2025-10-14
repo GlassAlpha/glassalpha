@@ -110,7 +110,7 @@ def publish_check(
 
     # Check 3: Determinism verified
     checks_total += 1
-    determinism_script = project_root / "scripts" / "check-determinism-quick.sh"
+    determinism_script = project_root / "scripts" / "test_determinism.sh"
     if determinism_script.exists():
         typer.secho("✅ Determinism verification script exists", fg=typer.colors.GREEN)
         checks_passed += 1

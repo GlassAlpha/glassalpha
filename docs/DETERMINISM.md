@@ -140,7 +140,7 @@ Check that your local setup produces deterministic outputs:
 source scripts/setup-determinism-env.sh
 
 # Run quick determinism check (3 audits)
-./scripts/check-determinism-quick.sh
+./scripts/test_determinism.sh quick
 
 # Expected output:
 # ✅ SUCCESS: All runs produced identical output
@@ -290,7 +290,7 @@ Every PR must pass determinism checks:
 ```bash
 # Local check before pushing
 source scripts/setup-determinism-env.sh
-./scripts/check-determinism-quick.sh
+./scripts/test_determinism.sh quick
 
 # CI check (automatic)
 # Validates within-combo determinism on 4 platform+Python combos
@@ -347,7 +347,7 @@ source scripts/setup-determinism-env.sh
 2. Sort dict keys when serializing JSON
 3. Avoid system time (use `get_deterministic_timestamp()`)
 4. Test determinism locally before pushing
-5. Run `./scripts/check-determinism-quick.sh` before submitting PRs
+5. Run `./scripts/test_determinism.sh quick` before submitting PRs
 6. Update constraints.txt when adding new dependencies
 
 ### Implementation Reference

@@ -204,9 +204,9 @@ check-packaging:
 # Validate determinism (matches CI requirements)
 check-determinism:
 	@echo "🔬 Validating determinism (CI compatibility check)..."
-	@if [ -f "./scripts/test_determinism_local.sh" ]; then \
+	@if [ -f "./scripts/test_determinism.sh" ]; then \
 		if python3 -c "import shap, weasyprint" 2>/dev/null; then \
-			./scripts/test_determinism_local.sh || exit 1; \
+			./scripts/test_determinism.sh full || exit 1; \
 		else \
 			echo "   ⚠️  Optional determinism dependencies not available (shap, weasyprint)"; \
 			echo "   💡 Run 'pip install -e \".[all]\"' to enable determinism validation"; \

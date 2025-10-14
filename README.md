@@ -152,7 +152,7 @@ source scripts/setup-determinism-env.sh
 pip install -e ".[dev,all]"
 
 # Verify determinism
-./scripts/check-determinism-quick.sh
+./scripts/test_determinism.sh quick
 ```
 
 ### Local vs CI Environment
@@ -308,10 +308,10 @@ Before pushing changes that affect audit generation, verify determinism:
 
 ```bash
 # Quick check (30 seconds) - run 3 audits and verify identical hashes
-./scripts/check-determinism-quick.sh
+./scripts/test_determinism.sh quick
 
 # Full CI mirror (5 minutes) - comprehensive determinism suite
-./scripts/test_determinism_local.sh
+./scripts/test_determinism.sh full
 ```
 
 If determinism breaks, check:

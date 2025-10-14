@@ -136,10 +136,10 @@ Before pushing changes:
 
 ```bash
 # Quick check (30 seconds)
-./scripts/check-determinism-quick.sh
+./scripts/test_determinism.sh quick
 
 # Full check (5 minutes)
-./scripts/test_determinism_local.sh
+./scripts/test_determinism.sh full
 ```
 
 If determinism breaks, check:

@@ -133,7 +133,7 @@ ruff check src/
 mypy src/
 
 # Or use the convenience script
-./lint-and-fix.sh
+./scripts/lint.sh
 ```
 
 ### Testing requirements
@@ -312,7 +312,7 @@ glassalpha audit --config german_credit_simple.yaml --output test.pdf
 
 ```bash
 # Comprehensive quality check
-./lint-and-fix.sh
+./scripts/lint.sh
 
 # Manual checks if needed
 black src/
@@ -734,7 +734,7 @@ Understanding our direction helps target valuable contributions:
 pip install -e ".[dev]" && pre-commit install
 
 # Development
-./lint-and-fix.sh              # Code quality checks
+./scripts/lint.sh              # Code quality checks
 pytest                         # Run tests
 glassalpha audit --config german_credit_simple.yaml --output test.pdf
 
