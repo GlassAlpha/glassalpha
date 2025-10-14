@@ -74,7 +74,14 @@ class PDFConfig:
 
 
 class AuditPDFRenderer:
-    """Professional PDF renderer for audit reports."""
+    """Professional PDF renderer for audit reports.
+
+    Note: PDF generation is "best effort" for determinism. HTML reports
+    are byte-identical across runs (verified), but PDF rendering may have
+    minor variations due to WeasyPrint's layout engine. PDFs are suitable
+    for human review and regulatory submission but should not be used for
+    cryptographic verification of audit reproducibility.
+    """
 
     def __init__(self, config: PDFConfig | None = None):
         """Initialize PDF renderer with configuration.

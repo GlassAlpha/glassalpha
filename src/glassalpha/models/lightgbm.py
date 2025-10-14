@@ -32,22 +32,8 @@ def _import_lightgbm():
         raise ImportError(msg) from e
 
 
-def register_lightgbm():
-    """Register LightGBM model plugin."""
-    try:
-        _import_lightgbm()  # Check if LightGBM is available
-        return LightGBMWrapper
-    except ImportError:
-        # Return a dummy class that raises an error when instantiated
-        class UnavailableLightGBM:
-            def __init__(self, *args, **kwargs):
-                msg = (
-                    "LightGBM is not installed. "
-                    "Install with: pip install 'glassalpha[lightgbm]' or pip install lightgbm"
-                )
-                raise ImportError(msg)
-
-        return UnavailableLightGBM
+# Registration function removed - using explicit dispatch pattern
+# See models/__init__.py for explicit model loading
 
 
 class LightGBMWrapper(BaseTabularWrapper):

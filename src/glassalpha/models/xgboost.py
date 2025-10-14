@@ -33,19 +33,8 @@ def _import_xgboost():
         raise ImportError(msg) from e
 
 
-def register_xgboost():
-    """Register XGBoost model plugin."""
-    try:
-        _import_xgboost()  # Check if XGBoost is available
-        return XGBoostWrapper
-    except ImportError:
-        # Return a dummy class that raises an error when instantiated
-        class UnavailableXGBoost:
-            def __init__(self, *args, **kwargs):
-                msg = "XGBoost is not installed. Install with: pip install 'glassalpha[xgboost]' or pip install xgboost"
-                raise ImportError(msg)
-
-        return UnavailableXGBoost
+# Registration function removed - using explicit dispatch pattern
+# See models/__init__.py for explicit model loading
 
 
 class XGBoostWrapper(BaseTabularWrapper):

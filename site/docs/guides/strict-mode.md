@@ -169,5 +169,5 @@ preprocessing:
 ## See Also
 
 - [Preprocessing Guide](preprocessing.md)
-- [Configuration Patterns](../getting-started/configuration-patterns.md)
+- [Configuration Guide](../getting-started/configuration.md)
 - [Regulatory Compliance](../compliance/index.md)

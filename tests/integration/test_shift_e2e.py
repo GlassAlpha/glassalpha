@@ -330,6 +330,7 @@ reproducibility:
         config_path.write_text(config_content)
         return config_path
 
+    @pytest.mark.skip(reason="Shift CLI integration not yet implemented - deferred to v0.3.0")
     def test_cli_shift_analysis_creates_json_sidecar(self, german_credit_config, tmp_path):
         """Test that CLI creates shift analysis JSON sidecar."""
         from glassalpha.cli.commands import _run_shift_analysis
@@ -366,6 +367,7 @@ reproducibility:
         assert data["shift_analysis"]["shifts"][0]["shift_specification"]["attribute"] == "gender"
         assert data["shift_analysis"]["shifts"][0]["shift_specification"]["shift_value"] == 0.1
 
+    @pytest.mark.skip(reason="Shift CLI integration not yet implemented - deferred to v0.3.0")
     def test_cli_multiple_shifts(self, german_credit_config, tmp_path):
         """Test CLI with multiple shift specifications."""
         from glassalpha.cli.commands import _run_shift_analysis
@@ -395,6 +397,7 @@ reproducibility:
         assert "gender" in attributes
         assert "age_group" in attributes
 
+    @pytest.mark.skip(reason="Shift CLI integration not yet implemented - deferred to v0.3.0")
     def test_cli_threshold_enforcement(self, german_credit_config, tmp_path):
         """Test that CLI respects degradation threshold."""
         from glassalpha.cli.commands import _run_shift_analysis

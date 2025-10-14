@@ -328,8 +328,8 @@ explainer = select_explainer("xgboost")  # Falls back to Permutation if TreeSHAP
 ## Related Documentation
 
 - [User Guide: Determinism](../../guides/determinism.md)
-- [Explainer Selection Guide](../explainers.md)
-- [Troubleshooting Guide](../troubleshooting.md)
+- [Explainer Selection Guide](../../reference/explainers.md)
+- [Troubleshooting Guide](../../reference/troubleshooting.md)
 
 ---
 

@@ -657,7 +657,7 @@ result = run_cached_audit(config_hash, "audit.yaml")
 
 ## Related Documentation
 
-- **[Audit API](api-audit.md)** - `from_model()` for notebooks
+- **[Audit API](audit-entry-points.md)** - `from_model()` for notebooks
 - **[Configuration API](api-config.md)** - Configuration objects and validation
 - **[CLI Reference](../cli.md)** - Command-line interface
 - **[ML Engineer Workflow](../../guides/ml-engineer-workflow.md)** - Production usage patterns

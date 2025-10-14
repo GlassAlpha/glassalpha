@@ -71,7 +71,12 @@ cd my-audit-project && python run_audit.py
 open reports/audit_report.html  # macOS
 xdg-open reports/audit_report.html  # Linux
 start reports/audit_report.html  # Windows
+
+# Optional: Create evidence pack for regulatory submission
+glassalpha export-evidence-pack reports/audit_report.html
 ```
+
+[Evidence pack guide →](../guides/evidence-packs.md) - Package audits for regulatory submission
 
 **Note**: Base installation uses LogisticRegression model (fast, zero extra dependencies).
 For advanced models only, install with `pip install "glassalpha[explain]"` instead.
@@ -95,7 +100,7 @@ open audit_config.html  # macOS (auto-named from config)
 # start audit_config.html  # Windows
 ```
 
-**Tip**: Example configs are also available in the repository at `src/glassalpha/data/configs/` if you install from source.
+**Tip**: Example configs are also available in the repository at `src/glassalpha/configs/` if you install from source.
 
 **What you get**: A comprehensive audit report with:
 
@@ -112,7 +117,7 @@ open audit_config.html  # macOS (auto-named from config)
 
 - [Use your own data](custom-data.md)
 - [Verify preprocessing artifacts](../guides/preprocessing.md) (for production audits)
-- [Try other datasets](data-sources.md)
+- [Try other datasets](datasets.md)
 - [Understand the configuration](configuration.md)
 
 ---
@@ -186,7 +191,7 @@ result.to_pdf("audit.pdf")
 
 **Try it now**: [Open our Colab quickstart notebook](https://colab.research.google.com/github/GlassAlpha/glassalpha/blob/main/examples/notebooks/quickstart_colab.ipynb) (zero setup, runs in browser)
 
-**API Reference**: See [`from_model()` documentation](../reference/api/api-audit.md) for all parameters
+**API Reference**: See [`from_model()` documentation](../reference/api/audit-entry-points.md) for all parameters
 
 ---
 
@@ -379,7 +384,7 @@ GlassAlpha shows progress bars for long-running bootstrap operations (calibratio
 
 ### What happens
 
-1. **Automatic Dataset Resolution**: Uses built-in German Credit dataset from registry
+1. **Automatic Dataset Resolution**: Uses built-in German Credit dataset
 2. **Model Training**: Trains LogisticRegression classifier (baseline model)
 3. **Explanations**: Generates coefficient-based feature importance
 4. **Fairness Analysis**: Computes bias metrics for protected attributes (gender, age)
@@ -614,12 +619,12 @@ Validate configuration without running audit:
 glassalpha validate --config german_credit_simple.yaml
 ```
 
-Manage datasets:
+View available templates and configs:
 
 ```bash
-glassalpha datasets list        # See available datasets
-glassalpha datasets info german_credit  # Show dataset details
-glassalpha datasets cache-dir   # Show where datasets are cached
+glassalpha config-list          # See available config templates
+glassalpha config-template german_credit  # View a template
+glassalpha list                 # List available models, explainers, metrics
 ```
 
 ### Work with your own data
@@ -628,7 +633,7 @@ Ready to audit your own models? We've made it easy:
 
 1. **Follow the tutorial**: See [Using Custom Data](custom-data.md) for step-by-step guidance
 2. **Use our template**: The fully-commented configuration template `custom_template.yaml` (packaged with GlassAlpha)
-3. **Try public datasets**: Browse [freely available data sources](data-sources.md) for testing
+3. **Try public datasets**: Browse [built-in datasets](datasets.md) for testing
 
 **Need to choose a model?** The [Model Selection Guide](../reference/model-selection.md) helps you pick between LogisticRegression, XGBoost, and LightGBM with performance benchmarks.
 
@@ -760,18 +765,21 @@ cd glassalpha
 
 **Symptom**: `DatasetError: Failed to fetch german_credit dataset`
 
-**Cause**: Network issue or cache directory problem
+**Cause**: Network issue or data loading problem
 
 **Solution**:
 
 ```bash
-# Check dataset cache location
-glassalpha datasets cache-dir
+# Check if config specifies built-in dataset
+# Built-in datasets (german_credit, adult_income) load automatically
+# If using custom data, verify the path in your config:
+glassalpha validate --config your_config.yaml --check-data
 
-# Try manual dataset fetch
-glassalpha datasets fetch german_credit
-
-# If network issues, use offline mode (download dataset separately)
+# For offline use, set fetch: never in config:
+# data:
+#   dataset: german_credit
+#   fetch: never
+#   offline: true
 ```
 
 ### Issue: Permission errors on macOS
@@ -807,11 +815,16 @@ pip install --user -e .
 **Solution**: Subsequent runs will be faster (3-5 seconds). If consistently slow:
 
 ```bash
-# Check if large dataset is being used
-glassalpha datasets info german_credit
+# Enable fast mode for faster iterations
+# Edit config and add:
+# runtime:
+#   fast_mode: true  # Reduces to 100 bootstrap samples (2-3s vs 5-7s)
 
-# Reduce explainer samples for faster iterations
-# Edit config: explainer.background_samples: 100
+# Or reduce SHAP samples in config:
+# explainers:
+#   config:
+#     treeshap:
+#       max_samples: 100  # Fewer background samples
 ```
 
 ### Issue: PDF generation fails
@@ -921,7 +934,7 @@ pip install --user glassalpha
 - **Guides**:
   - [Using Custom Data](custom-data.md) - Audit your own models
   - [Preprocessing Verification](../guides/preprocessing.md) - Verify production artifacts
-  - [Freely Available Data Sources](data-sources.md) - Public datasets for testing
+  - [Built-in Datasets](datasets.md) - Automatic dataset fetching and caching
   - [Configuration Reference](configuration.md) - All configuration options
   - [Model Selection Guide](../reference/model-selection.md) - Choose the right model
   - [Explainer Deep Dive](../reference/explainers.md) - Understanding explanations

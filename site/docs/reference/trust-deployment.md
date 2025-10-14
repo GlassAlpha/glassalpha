@@ -158,4 +158,4 @@ pip install -e .
 3. **Customize**: Create your own configuration files for your specific use case
 4. **Deploy**: Use in production with confidence in licensing and security
 
-For detailed technical information, see the [Contributing Guide](contributing.md) and [Troubleshooting](troubleshooting.md).
+For detailed technical information, see the [Contributing Guide](../reference/contributing.md) and [Troubleshooting](../reference/troubleshooting.md).

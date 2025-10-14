@@ -73,12 +73,12 @@ GlassAlpha capabilities and where to learn more:
 
 ## Designed for regulatory compliance
 
-- **Deterministic outputs** - Byte-identical PDFs on same platform+Python+config
+- **Deterministic outputs** - Byte-identical HTML reports on same platform+Python+config
 - **Complete lineage** - Git SHA, config hash, data hash, seeds recorded
 - **Professional formatting** - Publication-quality reports with visualizations
 - **Audit trails** - Immutable run manifests for regulatory submission
 
-**Note**: Different platforms (Ubuntu vs macOS) or Python versions produce different PDFs, but each combination is internally consistent. See [determinism guide](../guides/determinism.md) for details.
+**Note**: HTML reports are byte-identical across platforms when using the same Python version and config. PDFs may have minor visual differences across platforms due to font rendering and layout engine variations, but are suitable for human review and regulatory submission. See [determinism guide](../guides/determinism.md) for details.
 
 [See compliance mapping →](../compliance/sr-11-7-mapping.md)
 

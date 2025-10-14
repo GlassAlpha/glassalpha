@@ -671,11 +671,14 @@ joblib.dump(preprocessor, f'preprocessing_v{model_version}.joblib')
 file_hash = compute_file_hash('preprocessing_v1.joblib')
 params_hash = compute_params_hash(extract_manifest(preprocessor))
 
-# Store hashes in model registry or config management
-model_registry.update(version=1, preprocessing_hashes={
-    'file': file_hash,
-    'params': params_hash
-})
+# Store hashes in your version control or config management system
+# Example: Save to YAML config
+with open('preprocessing_hashes_v1.yaml', 'w') as f:
+    yaml.dump({
+        'version': 1,
+        'file_hash': file_hash,
+        'params_hash': params_hash
+    }, f)
 ```
 
 ### 2. Version Your Artifacts

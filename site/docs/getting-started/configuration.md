@@ -163,8 +163,9 @@ glassalpha audit --config my_audit.yaml --output audit.html
 Every configuration has this structure (minimal → production):
 
 ```yaml
-# Required: Audit profile determines component selection
-# Direct configuration (no profiles needed)
+# Optional: Audit profile (provides default metrics/settings)
+# audit_profile: tabular_compliance  # Default profile, can be omitted
+# Most configs specify components directly instead of using profiles
 
 # Required: Reproducibility settings
 reproducibility:
@@ -179,27 +180,17 @@ data:
 model:
   type: xgboost
 
-# Optional: Additional sections
+# Optional: Additional sections (override profile defaults)
 explainers: { ... }
 metrics: { ... }
 report: { ... }
 ```
 
+**Note on Profiles:**
+
+The `audit_profile` field is **optional** and provides default settings. Most users specify components directly (`model`, `explainers`, `metrics`) rather than using profiles. If you see `audit_profile: tabular_compliance` in templates, it's safe to remove it and specify settings explicitly.
+
 ## Core configuration sections
-
-### Audit profile
-
-The audit profile determines which components are available and what validations are enforced.
-
-```yaml
-# Determines the audit context and available components
-# Direct configuration (no profiles needed) # Currently supported profile
-```
-
-**Available Profiles:**
-
-- `tabular_compliance` - Standard tabular ML compliance audit
-- `german_credit_default` - German Credit dataset specific profile
 
 ### Reproducibility settings
 
@@ -262,7 +253,7 @@ data:
 
 **Using your own data?** See [Using Custom Data](custom-data.md) for a complete tutorial on data preparation and requirements.
 
-**Need example datasets?** Browse our [Freely Available Data Sources](data-sources.md) for curated public datasets with example configurations.
+**Need example datasets?** See our [Built-in Datasets](datasets.md) for automatic dataset fetching and caching.
 
 ### Model configuration
 
@@ -278,6 +269,10 @@ model:
 
   # Optional: Pre-trained model path
   path: models/my_model.pkl
+
+  # Optional: Auto-save trained model for reasons/recourse commands
+  save_path: models/my_trained_model.pkl
+  # Note: Paths are relative to working directory where glassalpha runs
 
   # Optional: Model parameters (for training)
   params:
@@ -498,7 +493,9 @@ report:
   template: standard_audit
 
   # Output format
-  output_format: pdf
+  output_format: html # Options: html, pdf
+  # Note: CLI --output flag file extension overrides this setting
+  # Example: --output report.html will generate HTML regardless of config
 
   # Optional: Report sections to include
   include_sections:
@@ -519,6 +516,14 @@ report:
     margins: standard
     compliance_statement: true
 ```
+
+**CLI Precedence:**
+
+The `--output` flag's file extension takes precedence over the config `output_format`:
+
+- `--output report.html` → HTML format (even if config says `pdf`)
+- `--output report.pdf` → PDF format (even if config says `html`)
+- No extension → Uses config `output_format` setting
 
 **Available Templates:**
 
@@ -676,8 +681,6 @@ performance:
 ### Basic German Credit audit
 
 ```yaml
-audit_profile: german_credit_default
-
 reproducibility:
   random_seed: 42
 
@@ -990,9 +993,9 @@ data:
 **Invalid Model Type:**
 
 ```yaml
-# Error: Model type 'invalid_model' not found in registry
+# Error: Unknown model_type: 'invalid_model'
 model:
-  type: invalid_model # Should be: xgboost, lightgbm, etc.
+  type: invalid_model # Should be: xgboost, lightgbm, logistic_regression
 ```
 
 **Incompatible Components:**

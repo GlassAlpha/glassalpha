@@ -7,12 +7,22 @@ template processing, and asset management.
 
 import base64
 import logging
+import warnings
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 import jinja2
+
+# Import PIL for warning suppression
+try:
+    from PIL import Image
+
+    _PIL_AVAILABLE = True
+except ImportError:
+    Image = None  # type: ignore
+    _PIL_AVAILABLE = False
 
 # Lazy import matplotlib to avoid dependency for HTML-only reports
 try:
@@ -326,37 +336,47 @@ class AuditReportRenderer:
         logger.debug("Generating plots for template embedding")
         plots = {"shap": {}, "performance": {}, "fairness": {}}
 
-        try:
-            # Generate SHAP plots
-            if audit_results.explanations:
-                feature_names = list(audit_results.schema_info.get("features", [])) if audit_results.schema_info else []
-                shap_figures = create_shap_plots(audit_results.explanations, feature_names)
+        # Suppress PIL decompression bomb warnings for SHAP plots
+        # These warnings are false positives - our plots are legitimate, just data-dense
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=".*Image size.*exceeds limit.*")
+            warnings.filterwarnings("ignore", message=".*decompression bomb.*")
+            if _PIL_AVAILABLE and hasattr(Image, "DecompressionBombWarning"):
+                warnings.filterwarnings("ignore", category=Image.DecompressionBombWarning)
 
-                for plot_name, figure in shap_figures.items():
-                    plots["shap"][plot_name] = self._figure_to_base64(figure)
+            try:
+                # Generate SHAP plots
+                if audit_results.explanations:
+                    feature_names = (
+                        list(audit_results.schema_info.get("features", [])) if audit_results.schema_info else []
+                    )
+                    shap_figures = create_shap_plots(audit_results.explanations, feature_names)
 
-                logger.debug(f"Generated {len(shap_figures)} SHAP plots")
+                    for plot_name, figure in shap_figures.items():
+                        plots["shap"][plot_name] = self._figure_to_base64(figure)
 
-            # Generate performance plots
-            if audit_results.model_performance:
-                perf_figures = create_performance_plots(audit_results.model_performance)
+                    logger.debug(f"Generated {len(shap_figures)} SHAP plots")
 
-                for plot_name, figure in perf_figures.items():
-                    plots["performance"][plot_name] = self._figure_to_base64(figure)
+                # Generate performance plots
+                if audit_results.model_performance:
+                    perf_figures = create_performance_plots(audit_results.model_performance)
 
-                logger.debug(f"Generated {len(perf_figures)} performance plots")
+                    for plot_name, figure in perf_figures.items():
+                        plots["performance"][plot_name] = self._figure_to_base64(figure)
 
-            # Generate fairness plots
-            if audit_results.fairness_analysis:
-                fairness_figures = create_fairness_plots(audit_results.fairness_analysis)
+                    logger.debug(f"Generated {len(perf_figures)} performance plots")
 
-                for plot_name, figure in fairness_figures.items():
-                    plots["fairness"][plot_name] = self._figure_to_base64(figure)
+                # Generate fairness plots
+                if audit_results.fairness_analysis:
+                    fairness_figures = create_fairness_plots(audit_results.fairness_analysis)
 
-                logger.debug(f"Generated {len(fairness_figures)} fairness plots")
+                    for plot_name, figure in fairness_figures.items():
+                        plots["fairness"][plot_name] = self._figure_to_base64(figure)
 
-        except Exception as e:
-            logger.warning(f"Failed to generate some plots: {e}")
+                    logger.debug(f"Generated {len(fairness_figures)} fairness plots")
+
+            except Exception as e:
+                logger.warning(f"Failed to generate some plots: {e}")
 
         return plots
 
@@ -400,8 +420,9 @@ class AuditReportRenderer:
             # Load PNG from buffer
             img = Image.open(buffer)
             compressed_buffer = BytesIO()
-            # Save with optimize=True (PIL supports this)
-            img.save(compressed_buffer, format="PNG", optimize=True)
+            # Save without optimize=True for deterministic PNG compression
+            # (optimize=True can introduce non-determinism in compression algorithms)
+            img.save(compressed_buffer, format="PNG", optimize=False, compress_level=6)
             compressed_buffer.seek(0)
             image_data = compressed_buffer.getvalue()
             compressed_buffer.close()

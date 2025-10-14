@@ -444,15 +444,16 @@ CMD ["glassalpha", "audit", "--config", "config.yaml", "--out", "audit.pdf", "--
 Use strict mode to fail fast when preferred explainers unavailable:
 
 ```python
-from glassalpha.explain.registry import select_explainer_deterministic
+from glassalpha.explain import select_explainer
 
-# Strict mode - fails if SHAP unavailable
-explainer_name, explainer = select_explainer_deterministic(
+# Explicit explainer selection with fallback
+explainer_name, explainer = select_explainer(
     model=model,
     X_test=X_test,
     priority=['treeshap', 'kernelshap'],
-    strict=True,  # Fail if none available
 )
+
+# In strict mode, audit fails if preferred explainers unavailable
 ```
 
 ### Test Isolation
@@ -504,7 +505,7 @@ sha256sum linux.pdf macos.pdf
 ## Related Documentation
 
 - [API Reference: DeterminismValidator](../reference/utils/determinism-validator.md)
-- [API Reference: Deterministic Explainer Selection](../reference/explain/registry.md)
+- [API Reference: Explainer Selection](../reference/explainers.md)
 - [Troubleshooting Guide](../reference/troubleshooting.md)
 
 ## For Contributors
@@ -529,7 +530,8 @@ Implementation details and CI setup for GlassAlpha developers:
 
 **Success criteria**:
 
-- Same config + same data + same environment = byte-identical PDF
-- Hash verification works offline
-- Auditors can reproduce results years later
-- No platform-specific differences (within same platform+Python combo)
+- Same config + same data + same environment = byte-identical HTML report
+- Hash verification works offline for HTML reports
+- Auditors can reproduce results years later using HTML reports
+- No platform-specific differences for HTML reports (within same platform+Python combo)
+- PDFs are suitable for human review but may have minor layout variations

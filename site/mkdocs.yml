@@ -103,50 +103,50 @@ nav:
   - Getting Started:
       - Overview: getting-started/overview.md
       - Quick Start: getting-started/quickstart.md
-      - Quick Reference: getting-started/quick-reference.md
       - Installation: getting-started/installation.md
       - Using Your Own Data: getting-started/custom-data.md
       - Configuration: getting-started/configuration.md
-      - Configuration Patterns: getting-started/configuration-patterns.md
       - Built-in Datasets: getting-started/datasets.md
-      - Public Data Sources: getting-started/data-sources.md
       - Troubleshooting: getting-started/troubleshooting.md
 
-  # === GUIDES (Role-first, then industry, then tasks) ===
+  # === EXAMPLES (Learn by doing) ===
+  - Examples:
+      - Overview: examples/index.md
+      - German Credit Audit: examples/german-credit-audit.md
+      - Fraud Detection: examples/fraud-detection-audit.md
+      - Healthcare Bias Detection: examples/healthcare-bias-detection.md
+
+  # === GUIDES (Task-focused how-tos) ===
   - Guides:
-      # Users first ask "which workflow applies to me?"
-      - Role Guides:
-          - For ML Engineers: guides/ml-engineer-workflow.md
-          - For Data Scientists: guides/data-scientist-workflow.md
-          - For ML Managers: guides/ml-manager-workflow.md
-          - For Compliance Officers: guides/compliance-workflow.md
-          - For Model Validators: guides/validator-workflow.md
+      # === ROLE-BASED WORKFLOWS (Primary user journeys) ===
+      - Role-Based Guides:
+          - ML Engineers: guides/ml-engineer-workflow.md
+          - Data Scientists: guides/data-scientist-workflow.md
+          - Compliance Officers: guides/compliance-workflow.md
+          - Model Validators: guides/validator-workflow.md
+          - ML Managers: guides/ml-manager-workflow.md
 
-      # Then "what industry-specific guidance exists?"
-      - Industry Guides:
-          - Banking & Credit: compliance/banking-guide.md
-          - Insurance: compliance/insurance-guide.md
-          - Healthcare: compliance/healthcare-guide.md
-          - Fraud Detection: compliance/fraud-guide.md
-
-      # Core Concepts (foundational knowledge)
+      # Core concepts
       - Core Concepts:
           - Fairness 101: guides/fairness-101.md
           - Understanding Protected Attributes: guides/understanding-protected-attributes.md
 
-      # Finally specific tasks (foundational → advanced)
-      - How-To Guides:
-          - Choosing a Model: reference/model-selection.md
-          - Choosing an Explainer: guides/how-to/choose-explainer.md
-          - Handling Missing Data: guides/missing-data.md
+      # Essential tasks (most common)
+      - Essential Tasks:
+          - Data Requirements: guides/missing-data.md
           - Understanding Probability Requirements: guides/probability-requirements.md
-          - Debugging Fairness Violations: guides/how-to/debug-fairness-violations.md
-          - Preprocessing Verification: guides/preprocessing.md
+          - Choosing an Explainer: guides/how-to/choose-explainer.md
           - Generating Reason Codes (ECOA): guides/reason-codes.md
+          - Preprocessing Verification: guides/preprocessing.md
+          - Using Saved Models: guides/saved-models.md
+
+      # Advanced tasks
+      - Advanced Tasks:
           - Detecting Dataset Bias: guides/dataset-bias.md
+          - Debugging Fairness Violations: guides/how-to/debug-fairness-violations.md
           - Counterfactual Recourse: guides/recourse.md
           - Testing Demographic Shifts: guides/shift-testing.md
-          - Using Saved Models: guides/saved-models.md
+          - Evidence Pack Export & Verification: guides/evidence-packs.md
           - Strict Mode: guides/strict-mode.md
           - Determinism & Reproducibility: guides/determinism.md
 
@@ -158,12 +158,12 @@ nav:
       - EU AI Act Mapping: compliance/eu-ai-act-mapping.md
       - Trust & Deployment: reference/trust-deployment.md
 
-  # === EXAMPLES (Simple → Advanced) ===
-  - Examples:
-      - Overview: examples/index.md
-      - German Credit Audit: examples/german-credit-audit.md
-      - Fraud Detection: examples/fraud-detection-audit.md
-      - Healthcare Bias Detection: examples/healthcare-bias-detection.md
+      # Industry-specific compliance
+      - Industry Guides:
+          - Banking & Credit: compliance/banking-guide.md
+          - Insurance: compliance/insurance-guide.md
+          - Healthcare: compliance/healthcare-guide.md
+          - Fraud Detection: compliance/fraud-guide.md
 
   # === REFERENCE (High-frequency first) ===
   - Reference:
@@ -175,11 +175,9 @@ nav:
 
       # API Documentation
       - API Reference:
-          - Overview: reference/api/index.md
-          - Entry Points (from_model, from_predictions, from_config): reference/api/audit-entry-points.md
+          - from_model() API: reference/api/audit-entry-points.md
           - Stability Index: reference/api/stability-index.md
           - Tolerance Policy: reference/api/tolerance-policy.md
-          - Audit API (from_model): reference/api/api-audit.md
           - Configuration API: reference/api/api-config.md
           - Pipeline API (Advanced): reference/api/api-pipeline.md
 
@@ -194,12 +192,9 @@ nav:
           - Model Parameters: reference/model-parameters.md
           - Model Selection: reference/model-selection.md
           - Explainer Selection: reference/explainers.md
-          - Model-Explainer Compatibility: reference/model-explainer-compatibility.md
-
-      # Utilities
-      - Utilities:
-          - DeterminismValidator: reference/utils/determinism-validator.md
           - Explainer Registry: reference/explain/registry.md
+          - Model-Explainer Compatibility: reference/model-explainer-compatibility.md
+          - Determinism Validator: reference/utils/determinism-validator.md
 
       # Community
       - Contributing: reference/contributing.md

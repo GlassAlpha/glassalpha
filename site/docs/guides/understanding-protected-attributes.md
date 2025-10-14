@@ -630,7 +630,7 @@ Use this checklist for every ML system:
 ### Try it yourself
 
 - [Quickstart Guide](../getting-started/quickstart.md) - Run your first fairness audit
-- [Configuration Patterns](../getting-started/configuration-patterns.md) - Industry-specific configs
+- [Configuration Guide](../getting-started/configuration.md) - Complete configuration reference
 
 ### Compliance guides
 

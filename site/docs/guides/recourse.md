@@ -25,7 +25,7 @@ Generate recourse for a denied credit application:
 ```bash
 glassalpha recourse \
   --model models/german_credit.pkl \
-  --data data/test.csv \
+  --data models/test_data.csv \
   --instance 42 \
   --config configs/recourse_german_credit.yaml \
   --output recourse/instance_42.json
@@ -33,6 +33,14 @@ glassalpha recourse \
 
 !!! note "Model Compatibility"
 Recourse works best with sklearn-compatible models like `logistic_regression` and `random_forest`. XGBoost models have limited support. See [Known Limitations](#known-limitations) for details.
+
+!!! warning "Data Format Requirements"
+**Use the preprocessed test data saved during audit generation.**
+
+    - ✅ **Correct**: `--data models/test_data.csv` (already preprocessed, matches model format)
+    - ❌ **Wrong**: `--data original_data.csv` (will cause feature mismatch errors)
+
+    The model expects the same feature format it was trained with. The `test_data.csv` file is automatically saved during audit generation and matches the model's expected format exactly.
 
 ### Example Output
 

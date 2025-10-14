@@ -57,7 +57,7 @@ graph TB
 
 **Key features:**
 
-- [**Python API reference**](reference/api/index.md): `from_model()` API for notebooks and programmatic use
+- [**Python API reference**](reference/api/audit-entry-points.md): `from_model()` API for notebooks and programmatic use
 - [**Feature overview**](getting-started/overview.md): Why choose GlassAlpha and how it compares
 - [**Examples**](examples/german-credit-audit.md): Walkthrough ML audits on credit, healthcare, and fraud detection
 
@@ -84,7 +84,7 @@ open reports/audit_report.html  # macOS
 ```bash
 git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha && pip install -e .
-glassalpha audit --config src/glassalpha/data/configs/german_credit_simple.yaml --output audit.html --fast
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.html --fast
 ```
 
 **Result**: A professional audit report with model performance, fairness analysis, feature importance, individual explanations, reason codes, preprocessing verification, and complete audit trail.
@@ -111,8 +111,8 @@ Every GlassAlpha audit includes:
 
 **Additional commands available:**
 
-- **Reason codes**: Generate ECOA-compliant adverse action notices via `glassalpha reasons` (separate from audit report)
-- **Recourse recommendations**: Generate counterfactual explanations via `glassalpha recourse` (separate from audit report)
+- **Reason codes**: Generate ECOA-compliant adverse action notices via `glassalpha reasons`
+- **Recourse recommendations**: Generate counterfactual explanations via `glassalpha recourse`
 
 [See CLI reference for all commands →](reference/cli.md)
 

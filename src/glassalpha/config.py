@@ -1,7 +1,31 @@
-"""Simplified configuration system for GlassAlpha v0.1.
+"""Simplified configuration system for GlassAlpha v0.2.
 
 Single-file Pydantic config with essential validation only.
 Maintains determinism via canonical_json() for manifest hashing.
+
+ARCHITECTURE NOTES:
+
+1. **Configuration Explicitness is Required for Compliance**:
+   - Regulatory audits require explicit configuration (no hidden defaults)
+   - Users must understand what they're auditing (transparency requirement)
+   - DO NOT add "smart profiles" that hide settings - breaks auditability
+
+2. **Why No Profile System**:
+   - Removed in v0.2.0 architectural simplification
+   - Profiles hid important compliance decisions
+   - Current approach: provide example configs at different complexity levels
+     - minimal.yaml (8 lines) - quickstart
+     - german_credit_simple.yaml (50 lines) - common use case
+     - german_credit.yaml (242 lines) - all features documented
+
+3. **Enhanced Error Messages**:
+   - Pydantic validation errors are caught and enhanced with suggestions
+   - Common missing fields get specific fix examples
+   - Errors include references to config templates
+
+4. **Canonical JSON for Determinism**:
+   - canonical_json() method ensures byte-identical output
+   - Critical for regulatory verification and audit trails
 """
 
 from pathlib import Path
@@ -213,8 +237,8 @@ class RuntimeConfig(BaseModel):
     no_fallback: bool = Field(False, description="Disable fallback explainers")
 
 
-class GAConfig(BaseModel):
-    """GlassAlpha configuration - main config model.
+class AuditConfig(BaseModel):
+    """GlassAlpha audit configuration - main config model.
 
     Provides canonical_json() method for deterministic manifest hashing.
     """
@@ -272,7 +296,7 @@ class GAConfig(BaseModel):
         )
 
 
-def load_config(config_path: str | Path, profile_name: str | None = None, strict: bool | None = None) -> GAConfig:
+def load_config(config_path: str | Path, profile_name: str | None = None, strict: bool | None = None) -> AuditConfig:
     """Load and validate configuration from YAML file.
 
     Args:
@@ -281,7 +305,7 @@ def load_config(config_path: str | Path, profile_name: str | None = None, strict
         strict: Enable strict mode validation
 
     Returns:
-        Validated GAConfig instance
+        Validated AuditConfig instance
 
     Raises:
         FileNotFoundError: If config file doesn't exist
@@ -297,12 +321,33 @@ def load_config(config_path: str | Path, profile_name: str | None = None, strict
 
     if not config_path.exists():
         raise FileNotFoundError(
-            f"Configuration file not found: {config_path}\n"
-            f"Run 'glassalpha quickstart' to create a template configuration.",
+            f"Configuration file not found: {config_path}\n\n"
+            f"💡 Get started quickly:\n\n"
+            f"  # Generate project with example config\n"
+            f"  glassalpha quickstart\n\n"
+            f"  # Or copy built-in example config\n"
+            f"  glassalpha config-template german_credit > audit.yaml\n\n"
+            f"Available templates:\n"
+            f"  - german_credit       (credit risk, recommended first audit)\n"
+            f"  - adult_income        (fairness-focused)\n"
+            f"  - minimal             (8-line quickstart)\n"
+            f"  - custom_template     (blank template for your data)\n\n"
+            f"List all: glassalpha config-list"
         )
 
-    with open(config_path, encoding="utf-8") as f:
-        raw_config = yaml.safe_load(f)
+    try:
+        with open(config_path, encoding="utf-8") as f:
+            raw_config = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        raise ValueError(
+            f"Invalid YAML syntax in {config_path}\n\n"
+            f"Error: {e!s}\n\n"
+            "💡 Common YAML issues:\n"
+            "  - Incorrect indentation (use spaces, not tabs)\n"
+            "  - Missing quotes around values with colons\n"
+            "  - Unclosed brackets or quotes\n\n"
+            "Validate your YAML: https://www.yamllint.com/"
+        ) from None
 
     if not raw_config:
         raise ValueError(f"Configuration file is empty: {config_path}")
@@ -312,13 +357,52 @@ def load_config(config_path: str | Path, profile_name: str | None = None, strict
         raw_config.setdefault("runtime", {})
         raw_config["runtime"]["strict_mode"] = strict
 
-    return GAConfig(**raw_config)
+    try:
+        return AuditConfig(**raw_config)
+    except Exception as e:
+        # Enhance Pydantic validation errors with helpful suggestions
+        error_msg = str(e)
+
+        # Add suggestions for common missing fields
+        if "model" in error_msg and "Field required" in error_msg:
+            raise ValueError(
+                f"{error_msg}\n\n"
+                f"💡 Suggestion: Add model configuration to your config:\n\n"
+                f"model:\n"
+                f"  type: logistic_regression  # or xgboost, lightgbm\n"
+                f"  params:\n"
+                f"    random_state: 42\n\n"
+                f"See: glassalpha config-template minimal"
+            ) from None
+        elif "data" in error_msg and "Field required" in error_msg:
+            raise ValueError(
+                f"{error_msg}\n\n"
+                f"💡 Suggestion: Add data configuration to your config:\n\n"
+                f"data:\n"
+                f"  dataset: german_credit     # Use built-in dataset\n"
+                f"  # OR\n"
+                f"  # path: data/my_data.csv   # Use custom CSV file\n"
+                f"  target_column: credit_risk\n"
+                f"  protected_attributes:\n"
+                f"    - gender\n"
+                f"    - age_group\n\n"
+                f"See: glassalpha config-template minimal"
+            ) from None
+        elif "target_column" in error_msg:
+            raise ValueError(
+                f"{error_msg}\n\n"
+                f"💡 Suggestion: Specify your target column name:\n\n"
+                f"data:\n"
+                f'  target_column: "your_target_column_name"\n\n'
+                f"Common target column names: credit_risk, outcome, label, target, y"
+            ) from None
+        else:
+            # Re-raise original error if we don't have a specific suggestion
+            raise
 
 
-# Backwards compatibility aliases
+# Backwards compatibility alias
 load_config_from_file = load_config
-AuditConfig = GAConfig  # Alias for backwards compatibility
-load_config_from_file = load_config  # Alias for backwards compatibility
 
 
 def load_yaml(config_path: str | Path) -> dict[str, Any]:
@@ -373,16 +457,16 @@ def merge_configs(base: dict[str, Any], override: dict[str, Any]) -> dict[str, A
     return deep_merge_dict(base, override)
 
 
-def save_config(config: GAConfig | dict[str, Any], path: str | Path) -> None:
+def save_config(config: AuditConfig | dict[str, Any], path: str | Path) -> None:
     """Stub for test compatibility - save config to YAML."""
     import yaml
 
-    data = config.model_dump() if isinstance(config, GAConfig) else config
+    data = config.model_dump() if isinstance(config, AuditConfig) else config
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(data, f)
 
 
-def validate_config(config: GAConfig) -> GAConfig:
+def validate_config(config: AuditConfig) -> AuditConfig:
     """Validate configuration (pass-through for compatibility).
 
     Pydantic validation happens automatically on construction.
@@ -394,7 +478,7 @@ def validate_config(config: GAConfig) -> GAConfig:
     return config
 
 
-def _validate_strict_mode(config: GAConfig) -> None:
+def _validate_strict_mode(config: AuditConfig) -> None:
     """Validate strict mode requirements.
 
     Args:
@@ -431,7 +515,6 @@ __all__ = [
     "AuditConfig",  # Backwards compatibility
     "DataConfig",
     "ExplainerConfig",  # Stub for test compatibility
-    "GAConfig",
     "MetricsConfig",  # Stub for test compatibility
     "ModelConfig",
     "PreprocessingConfig",

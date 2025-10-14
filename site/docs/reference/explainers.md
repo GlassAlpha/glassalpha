@@ -2,7 +2,7 @@
 
 Choose the right explainer to understand what drives your model's predictions.
 
-!!! info "Quick Links" - **Haven't chosen a model yet?** → Start with [Model Selection Guide](model-selection.md) - **Ready to configure?** → See [Configuration Guide](../getting-started/configuration.md) for explainer YAML setup - **Getting started?** → Try the [Quick Start Guide](../getting-started/quickstart.md) first
+!!! info "Quick Links" - **Haven't chosen a model yet?** → Start with [Model Selection Guide](../reference/model-selection.md) - **Ready to configure?** → See [Configuration Guide](../getting-started/configuration.md) for explainer YAML setup - **Getting started?** → Try the [Quick Start Guide](../getting-started/quickstart.md) first
 
 ## Quick Decision Tree
 
@@ -831,11 +831,11 @@ Now that you've chosen your explainer:
 
 ## Additional Resources
 
-- [Model Selection](model-selection.md) - Choose the right model first
+- [Model Selection](../reference/model-selection.md) - Choose the right model first
 - [Using Custom Data](../getting-started/custom-data.md) - Prepare your data
 - [Configuration Guide](../getting-started/configuration.md) - Full configuration reference
-- [FAQ](faq.md) - Common explainer questions
+- [FAQ](../reference/faq.md) - Common explainer questions
 
 ---
 
-**Questions?** Open an issue on [GitHub](https://github.com/GlassAlpha/glassalpha/issues) or check the [FAQ](faq.md).
+**Questions?** Open an issue on [GitHub](https://github.com/GlassAlpha/glassalpha/issues) or check the [FAQ](../reference/faq.md).

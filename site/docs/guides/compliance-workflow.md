@@ -148,7 +148,9 @@ credit_model_2025Q4.zip
 └── README.txt                              # Verification instructions
 ```
 
-**Note**: Automated evidence pack commands are planned for v0.3.0 (Enhancement E3).
+**Note**: Evidence pack commands (`export-evidence-pack`, `verify-evidence-pack`) are available starting in v0.2.1.
+
+[Complete evidence pack guide →](evidence-packs.md)
 
 #### Step 4: Submit to regulator
 
@@ -247,16 +249,30 @@ glassalpha audit --config audit.yaml --output report.pdf
 
 #### Step 4: Monitor compliance
 
-Track gate failures across model portfolio:
+Track gate failures across model portfolio by maintaining a log of audit results:
 
-```bash
-# Query all audits in registry
-glassalpha registry list --failed-gates
+```python
+# Example: Track audit results in a simple log
+import json
+from pathlib import Path
 
-# Output: Models that failed any gate
-model_id | gate_name | metric_value | threshold | status
-credit_v2 | Demographic Parity | 0.12 | 0.10 | FAILED
-fraud_v5  | Calibration Quality | 0.08 | 0.05 | FAILED
+audit_log_path = Path("audit_results_log.jsonl")
+
+# After each audit, append results
+with open(audit_log_path, 'a') as f:
+    result_entry = {
+        "model_id": "credit_v2",
+        "timestamp": "2025-10-14",
+        "gates": result.gates,  # Gate results from audit
+        "passed": all(g["status"] == "PASS" for g in result.gates)
+    }
+    f.write(json.dumps(result_entry) + "\n")
+
+# Query failed gates
+with open(audit_log_path) as f:
+    failed = [json.loads(line) for line in f if not json.loads(line)["passed"]]
+    for entry in failed:
+        print(f"{entry['model_id']}: {entry['timestamp']}")
 ```
 
 **Action items for failures**:
@@ -409,7 +425,7 @@ Document changes in cover letter to regulator.
 - Store evidence packs in tamper-evident storage (write-once, append-only)
 - Version all policy gate configurations (track changes over time)
 - Archive audits with date and model version in filename
-- Maintain registry of all audits for portfolio-level tracking
+- Maintain audit logs for portfolio-level tracking (e.g., JSONL files with audit results)
 
 ### Reproducibility
 

@@ -735,7 +735,7 @@ df.to_csv('data_with_bins.csv', index=False)
 You're now ready to audit your own models! Here's what to do:
 
 1. **✅ Try it**: Run your first custom data audit using the [quick start](#quick-start) above
-2. **📊 Compare**: [Test with public datasets](data-sources.md) to benchmark your results
+2. **📊 Compare**: [Test with built-in datasets](datasets.md) to benchmark your results
 3. **⚙️ Optimize**: Learn about [configuration options](configuration.md) to customize your audits
 4. **🎯 Choose wisely**: Pick the best model and explainer for your use case (coming soon)
 
@@ -744,7 +744,7 @@ You're now ready to audit your own models! Here's what to do:
 ## Additional resources
 
 - [Configuration Guide](configuration.md) - Full YAML reference
-- [Data Sources](data-sources.md) - Public datasets for testing
+- [Built-in Datasets](datasets.md) - Automatic dataset fetching
 - [Model Selection](../reference/faq.md#model-support) - Choosing the right model
 - [Troubleshooting](../reference/troubleshooting.md) - Common issues
 

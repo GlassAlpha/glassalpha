@@ -308,3 +308,64 @@ def test_from_model_multiindex_error_is_actionable():
     assert "reset_index" in exc_info.value.fix
     assert "GAE1012" in exc_info.value.code
     assert exc_info.value.fix is not None
+
+
+def test_from_model_with_sklearn_pipeline():
+    """Test from_model with sklearn Pipeline containing preprocessing."""
+    from sklearn.compose import ColumnTransformer
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import OneHotEncoder
+
+    # Create data with categorical columns (like real-world ML workflows)
+    np.random.seed(42)
+    X = np.random.randn(100, 3)
+    X_df = pd.DataFrame(X, columns=["num1", "num2", "num3"])
+    X_df["category"] = np.random.choice(["A", "B", "C"], 100)
+    X_df["binary_cat"] = np.random.choice(["X", "Y"], 100)
+
+    y = (X_df["num1"] + X_df["num2"] > 0).astype(int)
+
+    # Create Pipeline with preprocessing (common real-world pattern)
+    cat_cols = ["category", "binary_cat"]
+    num_cols = ["num1", "num2", "num3"]
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("cat", OneHotEncoder(drop="first", handle_unknown="ignore"), cat_cols),
+        ],
+        remainder="passthrough",
+    )
+
+    pipeline = Pipeline(
+        [
+            ("preprocessor", preprocessor),
+            ("model", RandomForestClassifier(n_estimators=10, random_state=42)),
+        ]
+    )
+
+    # Fit pipeline on data with categorical columns
+    pipeline.fit(X_df, y)
+
+    # This should work - Pipeline handles preprocessing internally
+    result = ga.audit.from_model(
+        model=pipeline,
+        X=X_df,  # Original DataFrame with categorical columns
+        y=y,
+        random_seed=42,
+    )
+
+    # Verify audit completed successfully
+    assert result.performance["accuracy"] > 0.5
+    assert "precision" in result.performance
+    assert "recall" in result.performance
+
+    # Check manifest reflects pipeline model type
+    assert result.manifest["model_type"] == "random_forest"
+
+    # Verify feature names include original column names (not transformed)
+    assert len(result.manifest["feature_names"]) == 5  # Original 5 columns
+
+    # Verify explanations work (should use TreeSHAP for RandomForest)
+    assert hasattr(result, "explanations")
+    assert result.explanations is not None

@@ -183,13 +183,16 @@ def normalize_pdf_metadata(
     producer: str = "GlassAlpha/1.0",
     creator: str = "GlassAlpha",
 ) -> None:
-    """Normalize PDF metadata for byte-identical reproducibility.
+    """Normalize PDF metadata for improved reproducibility (best effort).
 
-    This removes or fixes non-deterministic metadata:
+    This removes or fixes non-deterministic metadata to reduce PDF variations:
     - CreationDate and ModDate (timestamps)
     - Producer string (may include version info)
     - Creator string
     - DocumentID (random UUID in some generators)
+
+    Note: PDF determinism is "best effort" due to WeasyPrint layout engine limitations.
+    HTML reports are byte-identical, but PDFs may have minor layout variations.
 
     Args:
         pdf_path: Path to PDF file to normalize

@@ -3,13 +3,30 @@
 This module sets up the command groups and structure for the GlassAlpha CLI,
 enabling future expansion without breaking changes.
 
-ARCHITECTURE NOTE: Uses Typer function-call defaults (B008 lint rule)
-which is the documented Typer pattern. Also uses clean CLI exception
-handling with 'from None' to hide Python internals from end users.
+ARCHITECTURE NOTES:
+
+1. **Command Separation is Intentional**:
+   - `audit` - Main compliance workflow (PDF generation)
+   - `reasons` - Separate ECOA adverse action notices (different data format)
+   - `recourse` - Separate counterfactual generation (different use case)
+   - Each command maps to a distinct regulatory concept and workflow
+   - DO NOT merge these - they serve different personas and regulatory requirements
+
+2. **Dual API Design**:
+   - CLI + YAML configs for compliance officers (reproducible, auditable)
+   - Python `from_model()` API for data scientists (exploratory, no file I/O)
+   - Both are necessary for different user workflows
+
+3. **Technical Notes**:
+   - Uses Typer function-call defaults (B008 lint rule) - this is the documented Typer pattern
+   - Uses clean CLI exception handling with 'from None' to hide Python internals from end users
+   - Command names match regulatory terminology (e.g., "reasons" not "explanations")
 """
 
 import logging
+import os
 import sys
+import warnings
 from pathlib import Path
 
 import typer
@@ -21,6 +38,11 @@ from .exit_codes import ExitCode
 # Configure logging with WARNING as default (clean output for users)
 # User can override with --verbose (INFO) or --quiet (ERROR only)
 logging.basicConfig(level=logging.WARNING, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+# Suppress expected sklearn warnings to keep output clean
+# Only show these warnings in verbose mode
+warnings.filterwarnings("ignore", message="X does not have valid feature names")
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 
 # Main CLI app
 app = typer.Typer(
@@ -103,8 +125,14 @@ def main_callback(
     # Set logging level based on flags
     if quiet:
         logging.getLogger().setLevel(logging.ERROR)
+        # Quiet mode also disables progress bars
+        os.environ["GLASSALPHA_NO_PROGRESS"] = "1"
     elif verbose:
         logging.getLogger().setLevel(logging.INFO)  # INFO shows progress, not DEBUG details
+        # Verbose mode disables progress bars (they interfere with log output)
+        os.environ["GLASSALPHA_NO_PROGRESS"] = "1"
+        # Re-enable warnings in verbose mode for debugging
+        warnings.filterwarnings("default")
 
     # First-run detection - show helpful tip once
     _show_first_run_tip()
@@ -113,6 +141,9 @@ def main_callback(
 # Import and register core commands
 from .commands import (
     audit,
+    config_cheat_cmd,
+    config_list_cmd,
+    config_template_cmd,
     docs,
     doctor,
     export_evidence_pack,
@@ -122,16 +153,21 @@ from .commands import (
     validate,
     verify_evidence_pack,
 )
+from .commands.setup_env import setup_env
 from .quickstart import quickstart
 
 # Register commands
 app.command()(audit)
+app.command(name="config-cheat")(config_cheat_cmd)
+app.command(name="config-list")(config_list_cmd)
+app.command(name="config-template")(config_template_cmd)
 app.command()(doctor)
 app.command()(docs)
 app.command(name="export-evidence-pack")(export_evidence_pack)
 app.command()(quickstart)
 app.command()(reasons)
 app.command()(recourse)
+app.command(name="setup-env")(setup_env)
 app.command()(validate)
 app.command(name="verify-evidence-pack")(verify_evidence_pack)
 app.command(name="list")(list_components_cmd)

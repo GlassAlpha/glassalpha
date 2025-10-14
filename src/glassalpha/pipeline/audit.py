@@ -392,7 +392,8 @@ class AuditPipeline:
             logger.debug(f"Pipeline execution failed: start={start}, end={end}")
             error_msg = f"Audit pipeline failed: {e!s}"
 
-            logger.exception(error_msg)
+            # Log error message (traceback logged at ERROR level for context)
+            logger.error(error_msg)
             logger.debug(f"Full traceback: {traceback.format_exc()}")
 
             self.results.success = False
@@ -524,6 +525,19 @@ class AuditPipeline:
 
         # Load data
         data = self.data_loader.load(data_path, schema)
+
+        # Check dataset size and warn about potential performance issues
+        n_samples = len(data)
+        fast_mode = getattr(self.config.runtime, "fast_mode", False) if hasattr(self.config, "runtime") else False
+
+        if n_samples > 10000 and not fast_mode:
+            logger.warning(
+                f"Large dataset detected ({n_samples:,} samples). "
+                f"SHAP computation may take 2-5 minutes. "
+                f"Enable fast_mode=true in config for faster processing."
+            )
+        elif n_samples > 5000:
+            logger.info(f"Processing {n_samples:,} samples for audit")
 
         # First-class schema validation before proceeding
         from ..data.schema import get_schema_summary, validate_config_schema, validate_data_quality
@@ -742,16 +756,22 @@ class AuditPipeline:
 
                     # Save metadata for compatibility checks
                     meta_path = save_path.with_suffix(".meta.json")
+
+                    # Build preprocessing info dict (always include feature_names_after)
+                    preprocessing_info = {
+                        "feature_names_after": list(X_processed.columns),
+                    }
+                    if self._preprocessing_artifact_path:
+                        preprocessing_info["artifact_path"] = self._preprocessing_artifact_path
+
                     metadata = {
                         "model_type": model_type,
                         "feature_names": list(X_processed.columns),
                         "target_column": self.config.data.target_column,
                         "protected_attributes": self.config.data.protected_attributes or [],
-                        "preprocessing_applied": self._preprocessing_artifact_path is not None,
+                        "preprocessing": preprocessing_info,
                         "n_features": len(X_processed.columns),
                     }
-                    if self._preprocessing_artifact_path:
-                        metadata["preprocessing_artifact"] = self._preprocessing_artifact_path
                     meta_path.write_text(json.dumps(metadata, indent=2))
                     logger.info(f"Model metadata saved to: {meta_path}")
 
@@ -2492,8 +2512,34 @@ class AuditPipeline:
 
         cfg = self.config.data
 
-        # Custom dataset: user provides explicit path
+        # Check if custom path is provided (handle implicit custom mode)
+        if cfg.path is not None:
+            path = Path(cfg.path).expanduser().resolve()
+
+            if path.exists():
+                return path
+
+            # File doesn't exist - check policy
+            if cfg.offline:
+                raise FileNotFoundError(
+                    f"Offline mode: dataset file not found at {path} with fetch='{cfg.fetch}'. "
+                    "Provide a local file or disable offline.",
+                )
+
+            if cfg.fetch in {None, "never"}:
+                raise FileNotFoundError(
+                    f"Dataset file not found at {path} and fetch='{cfg.fetch}'.",
+                )
+
+            # For custom paths, we don't have a fetch function
+            raise FileNotFoundError(
+                f"Custom data file not found: {path}\nPlease provide the file at this location.",
+            )
+
+        # Explicit custom dataset mode (dataset="custom" with path)
         if cfg.dataset == "custom":
+            if cfg.path is None:
+                raise ValueError("dataset='custom' requires data.path to be specified")
             path = Path(cfg.path).expanduser().resolve()
 
             if path.exists():
@@ -2519,10 +2565,22 @@ class AuditPipeline:
         # Built-in dataset
         if cfg.dataset not in BUILT_IN_DATASETS:
             available = list(BUILT_IN_DATASETS.keys())
+
+            # Check if user provided file_path but it was overridden by dataset
+            override_note = ""
+            if cfg.path:
+                override_note = (
+                    f"\n\n💡 Note: You specified file_path='{cfg.path}' in your config, "
+                    f"but it's being ignored because dataset='{cfg.dataset}' takes precedence. "
+                    f"Either:\n"
+                    f"  1. Remove 'dataset:' to use your file_path, OR\n"
+                    f"  2. Use a valid built-in dataset: {', '.join(available)}"
+                )
+
             raise ValueError(
                 f"Unknown dataset key: {cfg.dataset}\n\n"
                 f"Available datasets:\n  " + ", ".join(available) + "\n\n"
-                "Use 'glassalpha list' to see all available components.",
+                "Use 'glassalpha list' to see all available components." + override_note,
             )
 
         cache_root = resolve_data_root()
@@ -2548,19 +2606,8 @@ class AuditPipeline:
         return self._fetch_and_cache_builtin(cfg.dataset, cache_path)
 
     def _fetch_and_cache_builtin(self, dataset_key: str, cache_path: Path) -> Path:
-        """Fetch and cache a built-in dataset.
-
-        Args:
-            dataset_key: Dataset identifier in registry
-            cache_path: Path to cache the dataset
-
-        Returns:
-            Path to the cached dataset file
-
-        Raises:
-            RuntimeError: If fetch fails
-
-        """
+        """Fetch and cache a built-in dataset."""
+        import importlib
         import shutil
         import time
 
@@ -2581,8 +2628,6 @@ class AuditPipeline:
                     time.sleep(sleep_time)
                     sleep_time *= 2
             raise last_error
-
-        import importlib
 
         # Get loader function for built-in dataset
         if dataset_key not in BUILT_IN_DATASETS:
@@ -2712,8 +2757,11 @@ class AuditPipeline:
 
             # Fetch if needed
             if not final_cache_path.exists():
-                logger.info(f"Fetching dataset {spec.key} into cache")
-                produced = Path(spec.fetch_fn()).resolve()
+                logger.info(f"Fetching dataset {dataset_key} into cache")
+                module_name, func_name = BUILT_IN_DATASETS[dataset_key]
+                module = importlib.import_module(module_name)
+                loader = getattr(module, func_name)
+                produced = Path(loader(encoded=True)).resolve()
                 tmp = final_cache_path.with_suffix(final_cache_path.suffix + ".tmp")
 
                 if produced != final_cache_path:

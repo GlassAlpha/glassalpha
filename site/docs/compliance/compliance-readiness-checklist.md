@@ -267,7 +267,8 @@
   - Checksums generated and verified
   - Verification instructions provided
   - Bundle stored in tamper-evident location (ZIP with checksums)
-  - Note: Automated `export-evidence-pack` command planned for v0.3.0 (Enhancement E3)
+  - Use: `glassalpha export-evidence-pack audit.html --config audit.yaml` (available in v0.2.1)
+  - [Evidence pack guide →](../guides/evidence-packs.md)
 
 ---
 
@@ -282,7 +283,7 @@
 - [ ] **Reproducibility Verified**
 
   - Audit reproduced in clean environment
-  - Byte-identical PDF achieved
+  - Byte-identical HTML report achieved
   - Manifests match on rerun
 
 - [ ] **Deployment Gate Configured** (if using CI/CD)

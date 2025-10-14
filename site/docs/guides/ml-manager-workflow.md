@@ -248,103 +248,152 @@ After successful pilot:
 
 **Scenario**: Track compliance status across 20+ models in production.
 
-#### Step 1: Establish registry
+#### Step 1: Establish audit tracking
 
-Create centralized audit registry:
-
-```bash
-# Initialize registry (SQLite for simplicity)
-glassalpha registry init --database model_registry.db
-
-# Or use shared database
-glassalpha registry init --database postgresql://host/model_registry
-```
-
-#### Step 2: Configure automated uploads
-
-Teams submit audits to registry:
-
-```yaml
-# Add to all model configs: common_settings.yaml
-registry:
-  enabled: true
-  database: "postgresql://registry.company.com/models"
-  auto_submit: true
-  metadata:
-    team: "{{ TEAM_NAME }}"
-    cost_center: "{{ COST_CENTER }}"
-```
-
-**In CI/CD pipeline:**
+Create centralized audit log using simple JSONL format:
 
 ```bash
-# Audit runs and automatically submits to registry
-export TEAM_NAME="credit-risk"
-export COST_CENTER="CR-4501"
+# Create audit logs directory
+mkdir -p audit_logs
 
+# Each audit appends to the log
 glassalpha audit \
   --config model_config.yaml \
-  --policy-gates org_policy.yaml \
-  --output audit.pdf
+  --output audits/credit_model_v2.pdf
+
+# Store metadata in JSONL log
+echo '{"model_id":"credit_model_v2","timestamp":"2025-01-05","gates_passed":true,"team":"credit-risk"}' >> audit_logs/all_audits.jsonl
 ```
 
-#### Step 3: Query registry for portfolio view
+#### Step 2: Configure automated logging in CI/CD
 
-```bash
-# List all models with failed gates
-glassalpha registry list --failed-gates
+Teams track audits using manifest files:
 
-# Output:
-# model_id          | team        | last_audit | failed_gates | status
-# credit_model_v2   | credit-risk | 2025-01-05 | 2            | BLOCKED
-# fraud_model_v3    | fraud       | 2025-01-03 | 0            | APPROVED
-# loan_pricing_v1   | lending     | 2024-12-20 | 1            | REVIEW
+```yaml
+# CI/CD pipeline configuration
+name: Model Audit
+on: [push]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run audit
+        run: |
+          glassalpha audit \
+            --config model_config.yaml \
+            --output audit.pdf
+
+      - name: Log audit result
+        run: |
+          python scripts/log_audit.py \
+            --manifest audit.manifest.json \
+            --team ${{ vars.TEAM_NAME }} \
+            --log audit_logs/all_audits.jsonl
+```
+
+**Log script example:**
+
+```python
+# scripts/log_audit.py
+import json
+import sys
+from pathlib import Path
+
+def log_audit(manifest_path, team, log_path):
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+
+    log_entry = {
+        "model_id": manifest["model_id"],
+        "timestamp": manifest["timestamp"],
+        "gates_passed": all(g["status"] == "PASS" for g in manifest.get("gates", [])),
+        "team": team,
+        "audit_file": str(Path(manifest_path).with_suffix('.pdf'))
+    }
+
+    with open(log_path, 'a') as f:
+        f.write(json.dumps(log_entry) + '\n')
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--manifest", required=True)
+    parser.add_argument("--team", required=True)
+    parser.add_argument("--log", required=True)
+    args = parser.parse_args()
+    log_audit(args.manifest, args.team, args.log)
+```
+
+#### Step 3: Query audit logs for portfolio view
+
+```python
+# scripts/query_audits.py
+import json
+from pathlib import Path
+from datetime import datetime, timedelta
+
+def get_recent_audits(log_path, days=30):
+    cutoff = datetime.now() - timedelta(days=days)
+    audits = []
+
+    with open(log_path) as f:
+        for line in f:
+            audit = json.loads(line)
+            audit_date = datetime.fromisoformat(audit["timestamp"])
+            if audit_date > cutoff:
+                audits.append(audit)
+
+    return audits
+
+# Get failed audits
+audits = get_recent_audits("audit_logs/all_audits.jsonl")
+failed = [a for a in audits if not a["gates_passed"]]
+
+print("Failed audits:")
+for audit in failed:
+    print(f"  {audit['model_id']} ({audit['team']}) - {audit['timestamp']}")
 ```
 
 #### Step 4: Generate executive dashboard
 
 ```python
 # scripts/generate_dashboard.py
-import glassalpha as ga
+import json
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 
-# Query registry
-registry = ga.Registry.connect("postgresql://host/registry")
-audits = registry.query_all(last_n_days=30)
+# Load audit log
+audits = []
+with open("audit_logs/all_audits.jsonl") as f:
+    audits = [json.loads(line) for line in f]
 
 # Summary metrics
 total_models = len(audits)
-passed = sum(1 for a in audits if a.status == "PASSED")
-blocked = sum(1 for a in audits if a.status == "BLOCKED")
-review = sum(1 for a in audits if a.status == "REVIEW")
+passed = sum(1 for a in audits if a["gates_passed"])
+failed = total_models - passed
 
 # Create summary
 summary = pd.DataFrame({
-    "Status": ["Passed", "Blocked", "Needs Review"],
-    "Count": [passed, blocked, review],
+    "Status": ["Passed", "Failed"],
+    "Count": [passed, failed],
     "Percentage": [
         passed/total_models*100,
-        blocked/total_models*100,
-        review/total_models*100
+        failed/total_models*100
     ]
 })
 
 # Generate plots
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+fig, ax = plt.subplots(1, 1, figsize=(10, 6))
 
 # Status pie chart
-ax1.pie(summary["Count"], labels=summary["Status"], autopct='%1.1f%%')
-ax1.set_title("Model Compliance Status")
-
-# Failed gates breakdown
-failed_gates = registry.query_failed_gates_summary()
-ax2.barh(failed_gates["gate_name"], failed_gates["count"])
-ax2.set_xlabel("Number of Models Failing Gate")
-ax2.set_title("Most Common Failed Gates")
+ax.pie(summary["Count"], labels=summary["Status"], autopct='%1.1f%%')
+ax.set_title("Model Compliance Status (Last 30 Days)")
 
 plt.tight_layout()
 plt.savefig("reports/portfolio_dashboard.pdf")
+print(f"Dashboard saved: reports/portfolio_dashboard.pdf")
 ```
 
 #### Step 5: Executive reporting

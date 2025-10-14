@@ -656,7 +656,7 @@ metadata:
 
 ## Related Documentation
 
-- **[Audit API](api-audit.md)** - `from_model()` API for notebooks
+- **[Audit API](audit-entry-points.md)** - `from_model()` API for notebooks
 - **[Pipeline API](api-pipeline.md)** - Lower-level pipeline interface
 - **[CLI Reference](../cli.md)** - Command-line configuration
 - **[Configuration Guide](../../getting-started/configuration.md)** - Configuration best practices

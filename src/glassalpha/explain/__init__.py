@@ -8,8 +8,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING:
-    from glassalpha.explain.base import ExplainerBase
+from glassalpha.explain.noop import noop as _noop
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +41,7 @@ def select_explainer(model_type: str, requested_priority: list[str] | None = Non
         "xgb": ["treeshap", "kernelshap"],
         "lgb": ["treeshap", "kernelshap"],
         "lgbm": ["treeshap", "kernelshap"],
+        "random_forest": ["treeshap", "kernelshap"],
         "logistic_regression": ["coefficients"],
         "logistic": ["coefficients"],
         "linear": ["coefficients"],
@@ -69,7 +69,7 @@ def select_explainer(model_type: str, requested_priority: list[str] | None = Non
                     # Try next priority or fall back to default
                     if len(valid_priority) > 1:
                         next_choice = valid_priority[1]
-                        if next_choice == "kernelshap" or next_choice == "coefficients":
+                        if next_choice in {"kernelshap", "coefficients"}:
                             logger.info(f"Explainer: selected {next_choice} for {model_type} (priority fallback)")
                             return next_choice
             elif first_choice == "kernelshap":
@@ -84,10 +84,8 @@ def select_explainer(model_type: str, requested_priority: list[str] | None = Non
         raise RuntimeError(f"No explainer from {requested_priority} is available for {model_type}")
 
     # Default selection logic
-    if model_type in ("xgboost", "lightgbm", "xgb", "lgb", "lgbm"):
+    if model_type in ("xgboost", "lightgbm", "xgb", "lgb", "lgbm", "random_forest"):
         try:
-            from glassalpha.explain.shap.tree import TreeSHAPExplainer
-
             result = "treeshap"
             logger.info(f"Explainer: selected {result} for {model_type}")
             return result
@@ -113,11 +111,95 @@ def _available(explainer_name: str) -> bool:
     return True
 
 
+def compute_explanations(
+    model: Any,
+    X: Any,
+    feature_names: list[str],
+    random_seed: int = 42,
+    n_samples: int = 100,
+) -> dict[str, Any]:
+    """Compute SHAP explanations for model predictions.
+
+    Args:
+        model: Fitted model object
+        X: Feature matrix (DataFrame or array)
+        feature_names: List of feature names
+        random_seed: Random seed for deterministic sampling
+        n_samples: Number of samples to explain (default: 100)
+
+    Returns:
+        Dictionary with explanation summary including:
+        - method: Explainer method used (treeshap, kernelshap, coefficients)
+        - global_importance: Mean absolute SHAP values per feature
+        - n_samples_explained: Number of samples explained
+
+    """
+    import numpy as np
+    import pandas as pd
+
+    from glassalpha.models.detection import detect_model_type
+
+    model_type = detect_model_type(model)
+    explainer_name = select_explainer(model_type)
+
+    # Import appropriate explainer
+    if explainer_name == "treeshap":
+        from glassalpha.explain.shap import TreeSHAPExplainer
+
+        explainer = TreeSHAPExplainer()
+    elif explainer_name == "coefficients":
+        from glassalpha.explain.coefficients import CoefficientsExplainer
+
+        explainer = CoefficientsExplainer()
+    else:  # kernelshap
+        from glassalpha.explain.shap import KernelSHAPExplainer
+
+        explainer = KernelSHAPExplainer()
+
+    # Sample data if too large
+    if len(X) > n_samples:
+        np.random.seed(random_seed)
+        sample_idx = np.random.choice(len(X), n_samples, replace=False)
+        X_sample = X.iloc[sample_idx] if isinstance(X, pd.DataFrame) else X[sample_idx]
+    else:
+        X_sample = X
+
+    # Create a simple wrapper object that explainers expect
+    class ModelWrapper:
+        def __init__(self, model):
+            self.model = model
+            self._model = model
+
+        def predict(self, X):
+            return model.predict(X)
+
+        def predict_proba(self, X):
+            if hasattr(model, "predict_proba"):
+                return model.predict_proba(X)
+            raise AttributeError("Model doesn't have predict_proba")
+
+    wrapper = ModelWrapper(model)
+
+    # Fit explainer with wrapper and background data
+    explainer.fit(wrapper, X_sample, feature_names=feature_names)
+
+    # Generate explanations
+    result = explainer.explain(X_sample)
+
+    # Return summary
+    return {
+        "method": explainer_name,
+        "global_importance": result.get("global_importance", {}),
+        "n_samples_explained": len(X_sample),
+        "feature_names": feature_names,
+    }
+
+
 # Import noop explainer for CLI registration
-from glassalpha.explain.noop import noop as _noop
 
 __all__ = [
     "_available",
+    "compute_explanations",
     "noop",
     "select_explainer",
 ]

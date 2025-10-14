@@ -120,6 +120,14 @@ report:
 # PREPROCESSING CONFIGURATION
 # =============================================================================
 
+# =============================================================================
+# RUNTIME CONFIGURATION
+# =============================================================================
+
+runtime:
+  # Fast mode reduces bootstrap samples for quicker demo (reduces accuracy)
+  fast_mode: false
+
 preprocessing:
   # Mode for preprocessing
   mode: "auto"

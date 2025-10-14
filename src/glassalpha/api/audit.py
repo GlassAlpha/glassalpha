@@ -29,18 +29,30 @@ from glassalpha.exceptions import (
 )
 
 
-def _validate_sklearn_compatible(X: pd.DataFrame) -> None:
+def _validate_sklearn_compatible(X: pd.DataFrame, model: Any) -> None:
     """Validate that DataFrame is compatible with sklearn models.
 
     Checks for categorical columns that would cause "could not convert string to float" errors.
+    Skips validation for sklearn Pipelines (they handle preprocessing internally).
 
     Args:
         X: Feature DataFrame to validate
+        model: Model instance to check if it's a Pipeline
 
     Raises:
-        CategoricalDataError: If categorical columns are found
+        CategoricalDataError: If categorical columns are found and model is not a Pipeline
 
     """
+    # Skip validation if model is a sklearn Pipeline (handles preprocessing internally)
+    try:
+        from sklearn.pipeline import Pipeline
+
+        if isinstance(model, Pipeline):
+            return  # Pipeline will handle categorical encoding
+    except ImportError:
+        pass
+
+    # Check for categorical columns only for non-Pipeline models
     categorical_cols = X.select_dtypes(include=["object", "category", "string"]).columns.tolist()
 
     if categorical_cols:
@@ -127,7 +139,7 @@ def from_model(
     # Validate inputs before any model operations
     if isinstance(X, pd.DataFrame):
         _validate_no_multiindex(X)
-        _validate_sklearn_compatible(X)
+        _validate_sklearn_compatible(X, model)
 
     # Extract feature names
     if feature_names is None:
@@ -173,6 +185,27 @@ def from_model(
         calibration=calibration,
     )
 
+    # Compute explanations if requested
+    explanations_dict = None
+    if explain:
+        try:
+            from glassalpha.explain import compute_explanations
+
+            explanations_dict = compute_explanations(
+                model=model,
+                X=X,
+                feature_names=feature_names_list,
+                random_seed=random_seed,
+            )
+        except Exception as e:
+            import logging
+            import traceback
+
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to compute explanations: {e}")
+            logger.debug(f"Explanation error traceback: {traceback.format_exc()}")
+            # Continue without explanations rather than failing the entire audit
+
     # Update manifest with model-specific info
     result_dict = {
         "id": result.id,
@@ -188,7 +221,7 @@ def from_model(
         "fairness": dict(result.fairness),
         "calibration": dict(result.calibration),
         "stability": dict(result.stability),
-        "explanations": result.explanations,
+        "explanations": explanations_dict,
         "recourse": result.recourse,
     }
 
@@ -1063,6 +1096,13 @@ def run_audit(
         strict=strict,
     )
 
+    # Resolve save_path relative to config file directory
+    if hasattr(audit_config.model, "save_path") and audit_config.model.save_path:
+        config_dir = config_path.parent
+        # If save_path is relative, make it absolute relative to config directory
+        if not audit_config.model.save_path.is_absolute():
+            audit_config.model.save_path = config_dir / audit_config.model.save_path
+
     # Determine explainer selection (explicit dispatch)
     from glassalpha.explain import select_explainer
 
@@ -1169,9 +1209,13 @@ def run_audit(
     # HTML output
     from glassalpha.report import render_audit_report
 
+    # Get compact setting from config (defaults to True to avoid massive files)
+    compact = audit_config.runtime.compact_report if hasattr(audit_config, "runtime") else True
+
     render_audit_report(
         audit_results=audit_results,
         output_path=output_path,
+        compact=compact,
         report_title=f"ML Model Audit Report - {datetime.now().strftime('%Y-%m-%d')}",
         generation_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
     )

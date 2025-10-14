@@ -71,7 +71,7 @@ sha256sum -c SHA256SUMS.txt
 - Package versions are documented in manifest
 - Git SHA is present (for reproducibility)
 
-**Note**: Automated `verify-evidence-pack` command is planned for v0.3.0 (Enhancement E3).
+**Note**: Automated `verify-evidence-pack` command is available starting in v0.2.1.
 
 **Red flags**:
 
@@ -280,7 +280,7 @@ sha256sum original_audit.pdf reproduced_audit.pdf
 diff original.manifest.json reproduced.manifest.json
 ```
 
-**Expected**: Byte-identical PDFs and manifests (if environment and config match).
+**Expected**: Byte-identical HTML reports and manifests (if environment and config match).
 
 **If different**:
 
@@ -560,6 +560,7 @@ Date: ________________
 ## Related Resources
 
 - [Compliance Officer Workflow](compliance-workflow.md) - Evidence pack generation
+- [Evidence Pack Guide](evidence-packs.md) - Complete export & verification guide
 - [ML Engineer Workflow](ml-engineer-workflow.md) - Implementation details
 - [Banking Compliance Guide](../compliance/banking-guide.md) - SR 11-7 requirements
 - [Troubleshooting](../reference/troubleshooting.md) - Common issues

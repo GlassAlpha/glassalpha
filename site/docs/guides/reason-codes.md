@@ -21,12 +21,20 @@ Generate a reason code notice for a single instance:
 ```bash
 glassalpha reasons \
   --model models/german_credit.pkl \
-  --data data/test.csv \
+  --data models/test_data.csv \
   --instance 42 \
   --output notices/instance_42.txt
 ```
 
 This generates an ECOA-compliant adverse action notice explaining why instance 42 was denied.
+
+!!! warning "Data Format Requirements"
+**Use the preprocessed test data saved during audit generation.**
+
+    - ✅ **Correct**: `--data models/test_data.csv` (already preprocessed, includes one-hot encoding)
+    - ❌ **Wrong**: `--data original_data.csv` (needs preprocessing, will cause column mismatch errors)
+
+    The model expects the same feature format it was trained with. The `test_data.csv` file is automatically saved during audit generation and matches the model's expected format exactly.
 
 ## How It Works
 

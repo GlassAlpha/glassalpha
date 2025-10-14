@@ -648,4 +648,4 @@ This configuration works for all model types and provides optimal performance.
 
 ---
 
-**Questions?** See our [FAQ](faq.md) or [open a discussion](https://github.com/GlassAlpha/glassalpha/discussions).
+**Questions?** See our [FAQ](../reference/faq.md) or [open a discussion](https://github.com/GlassAlpha/glassalpha/discussions).

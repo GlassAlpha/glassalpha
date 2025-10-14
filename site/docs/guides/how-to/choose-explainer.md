@@ -855,7 +855,7 @@ Measured on German Credit dataset (1000 rows, 20 features) on MacBook Pro M1.
 ### Try it yourself
 
 - [Quickstart Guide](../../getting-started/quickstart.md) - See explainers in action
-- [Configuration Patterns](../../getting-started/configuration-patterns.md) - Example configs
+- [Configuration Guide](../../getting-started/configuration.md) - Complete configuration reference
 
 ### Troubleshooting
 

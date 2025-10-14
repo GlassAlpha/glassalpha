@@ -356,13 +356,13 @@ Dataset-Level Bias Analysis (E12):
 
 **GlassAlpha Artifacts:**
 
-| Reproducibility Element      | Feature                | Verification Method     | Regulatory Evidence            |
-| ---------------------------- | ---------------------- | ----------------------- | ------------------------------ |
-| **Deterministic execution**  | Global seed management | `seed: 42` in config    | Byte-identical PDF on rerun    |
-| **Environment capture**      | Version manifest       | Package versions logged | `{"sklearn": "1.3.0", ...}`    |
-| **Data provenance**          | Dataset hash           | SHA256 in manifest      | Tamper-proof data integrity    |
-| **Model provenance**         | Model hash             | SHA256 in manifest      | Verifiable model artifact      |
-| **Pipeline reproducibility** | Preprocessing hash     | Dual-hash system        | Byte-identical transformations |
+| Reproducibility Element      | Feature                | Verification Method     | Regulatory Evidence                 |
+| ---------------------------- | ---------------------- | ----------------------- | ----------------------------------- |
+| **Deterministic execution**  | Global seed management | `seed: 42` in config    | Byte-identical HTML report on rerun |
+| **Environment capture**      | Version manifest       | Package versions logged | `{"sklearn": "1.3.0", ...}`         |
+| **Data provenance**          | Dataset hash           | SHA256 in manifest      | Tamper-proof data integrity         |
+| **Model provenance**         | Model hash             | SHA256 in manifest      | Verifiable model artifact           |
+| **Pipeline reproducibility** | Preprocessing hash     | Dual-hash system        | Byte-identical transformations      |
 
 **Validation workflow**:
 
@@ -382,7 +382,7 @@ sha256sum report_original.pdf report_validation.pdf
 
 > "Model validation independence per SR 11-7 Section IV.A:
 >
-> - Reproducibility: Byte-identical audit reports achieved with fixed seed (verified SHA256)
+> - Reproducibility: Byte-identical HTML audit reports achieved with fixed seed (verified SHA256)
 > - Environment: Package versions captured in manifest (sklearn 1.3.0, xgboost 1.7.6)
 > - Data integrity: Test set hash SHA256:{hash} (unchanged since validation)
 > - Pipeline integrity: Preprocessing artifact hash SHA256:{hash} (verified)
@@ -396,12 +396,12 @@ sha256sum report_original.pdf report_validation.pdf
 
 **GlassAlpha Artifacts:**
 
-| Artifact                    | Purpose                      | How to Provide                           | Contents                           |
-| --------------------------- | ---------------------------- | ---------------------------------------- | ---------------------------------- |
-| **Audit report (HTML/PDF)** | Complete audit documentation | `glassalpha audit --output report.html`  | Full audit with all sections       |
-| **Manifest JSON**           | Provenance tracking          | Auto-generated as `report.manifest.json` | All hashes, seeds, versions        |
-| **Policy decisions JSON**   | Gates/compliance             | `policy_decision.json` sidecar           | PASS/FAIL per policy rule (v0.3.0) |
-| **Shift analysis JSON**     | Robustness evidence          | `.shift_analysis.json` sidecar           | Degradation under shifts           |
+| Artifact                    | Purpose                      | How to Provide                           | Contents                                       |
+| --------------------------- | ---------------------------- | ---------------------------------------- | ---------------------------------------------- |
+| **Audit report (HTML/PDF)** | Complete audit documentation | `glassalpha audit --output report.html`  | Full audit with all sections                   |
+| **Manifest JSON**           | Provenance tracking          | Auto-generated as `report.manifest.json` | All hashes, seeds, versions                    |
+| **Policy decisions JSON**   | Gates/compliance             | `policy_decision.json` sidecar           | PASS/FAIL per policy rule (planned for v0.3.0) |
+| **Shift analysis JSON**     | Robustness evidence          | `.shift_analysis.json` sidecar           | Degradation under shifts                       |
 
 **Documentation bundle structure**:
 
@@ -409,7 +409,7 @@ sha256sum report_original.pdf report_validation.pdf
 validation_evidence/
 ├── credit_model_audit_2025Q4.html      # Main audit
 ├── credit_model_audit_2025Q4.manifest.json  # Provenance
-├── policy_decision.json                # Gate results (v0.3.0)
+├── policy_decision.json                # Gate results (planned for v0.3.0)
 ├── credit_model_audit_2025Q4.shift_analysis.json  # Shift testing
 ├── audit_config.yaml                   # Exact configuration used
 └── README.txt                          # Verification instructions
@@ -434,7 +434,9 @@ glassalpha audit --config audit_config.yaml --output validation_rerun.html
 sha256sum validation_rerun.html
 ```
 
-**Note**: Automated evidence pack export/verification commands are planned for v0.3.0 (Track 2, Enhancement E3). Currently, package artifacts manually as shown above.
+**Note**: Automated evidence pack export/verification commands are available in v0.2.1. Use `glassalpha export-evidence-pack` and `glassalpha verify-evidence-pack` for tamper-evident bundling. Policy gates (E1) are planned for v0.3.0.
+
+[Complete evidence pack guide →](../guides/evidence-packs.md)
 
 **Example citation**:
 
@@ -515,12 +517,12 @@ These artifacts are generated automatically by GlassAlpha during the audit proce
 
 **A**: "Per SR 11-7 Section IV.A, reproducibility is ensured through:
 
-1. **Deterministic execution**: All random processes seeded (seed=42 in config)
+1. **Deterministic execution**: All random processes seeded (seed=42 in config) - produces byte-identical HTML reports
 2. **Version pinning**: Package versions captured in manifest (sklearn 1.3.0, xgboost 1.7.6)
 3. **Data integrity**: Dataset hash (SHA256) verified before each run
 4. **Pipeline integrity**: Preprocessing artifact dual-hash (file + params)
 
-We verify reproducibility by generating byte-identical PDF reports on reruns. Independent validators can reproduce using our audit config + manifest."
+We verify reproducibility by generating byte-identical HTML reports on reruns. Independent validators can reproduce using our audit config + manifest."
 
 ### Q3: "How do you test for fairness and discrimination?"
 

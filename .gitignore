@@ -50,6 +50,8 @@ ENV/
 env.bak/
 venv.bak/
 .Python
+glassalpha-env/
+*-env/
 
 # ----------------------------------------------------------------------------
 # Python: Testing / Coverage
@@ -223,8 +225,10 @@ pachages/audit.html
 # MkDocs build output
 site/site/
 
-# Audit outputs and manifests
+# Audit outputs and manifests (except example fixtures)
 *.manifest.json
+!examples/*/audit_report.manifest.json
+!examples/*/*.manifest.json
 outputs/
 runs/
 test_outputs/
@@ -240,10 +244,16 @@ logs/
 /*_simple_audit.html
 /*_simple_audit.manifest.json
 /malformed.yaml
+/*_test.html
+/*_test.manifest.json
+/*_test.yaml
 
 # Generated model artifacts (from audit runs with save_path)
 models/quickstart_model.pkl
 # Note: german_credit_*_model.pkl files are intentional examples, not generated artifacts
+# Allow example files in examples/models/
+!examples/models/*.csv
+!examples/models/*.meta.json
 
 # Test config outputs in root (but allow tests/fixtures/*.yaml)
 /adult_config.yaml
@@ -260,6 +270,8 @@ models/quickstart_model.pkl
 # Test project directories
 /my-audit-project/
 /notebook-test/
+/test-audit-project/
+/test-audit-project-*/
 
 # Config overrides (user-specific configurations)
 configs/local/
@@ -284,3 +296,4 @@ notebook-test/
 # - PDFs are ignored except in site/docs/examples/ for documentation
 # - Documentation files in .github/ are ignored except permanent docs in site/
 tmp/
+*_venv/

@@ -422,7 +422,8 @@ Complete audit trail for regulatory submission:
 
 This manifest enables byte-identical reproduction of the audit on the same inputs.
 
-[See determinism guide →](../guides/preprocessing.md#determinism)
+[See determinism guide →](../guides/determinism.md)
+[See evidence pack guide →](../guides/evidence-packs.md) - Package audits for regulatory submission
 
 ## Example audit
 

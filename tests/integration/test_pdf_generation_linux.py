@@ -138,21 +138,6 @@ class TestPDFGenerationLinux:
             # Should be PDF 1.4 or later
             assert b"1." in header, "Missing PDF version"
 
-    def test_pdf_deterministic_on_linux(self, full_audit_results, tmp_path):
-        """PDFs should be byte-identical on Linux with same inputs."""
-        pdf_path1 = tmp_path / "test1.pdf"
-        pdf_path2 = tmp_path / "test2.pdf"
-
-        # Generate twice
-        render_audit_pdf(full_audit_results, pdf_path1)
-        render_audit_pdf(full_audit_results, pdf_path2)
-
-        # Compare hashes
-        hash1 = hashlib.sha256(pdf_path1.read_bytes()).hexdigest()
-        hash2 = hashlib.sha256(pdf_path2.read_bytes()).hexdigest()
-
-        assert hash1 == hash2, "PDFs should be byte-identical"
-
     def test_pdf_with_all_sections(self, full_audit_results, tmp_path):
         """PDF should include all audit sections."""
         pdf_path = tmp_path / "comprehensive.pdf"

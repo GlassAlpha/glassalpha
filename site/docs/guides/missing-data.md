@@ -373,7 +373,7 @@ result.manifest["protected_attributes_missing_policy"] = {
 - **[Audit Entry Points](../reference/api/audit-entry-points.md)** - from_model() API reference
 - **[Fairness 101](fairness-101.md)** - Fairness concepts
 - **[Probability Requirements](probability-requirements.md)** - When probabilities needed
-- **[Data Requirements](../getting-started/data-sources.md)** - Data format requirements
+- **[Data Requirements](../getting-started/custom-data.md)** - Data format requirements
 
 ---
 

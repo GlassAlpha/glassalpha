@@ -63,5 +63,5 @@ Browse all notebooks: [GitHub Repository](https://github.com/GlassAlpha/glassalp
 
 - [Quick Start Guide](../getting-started/quickstart.md) - CLI-based first audit
 - [Custom Data Guide](../getting-started/custom-data.md) - Using your own datasets
-- [API Reference](../reference/api/index.md) - Python API documentation
+- [API Reference](../reference/api/audit-entry-points.md) - Python API documentation
 - [Configuration Guide](../getting-started/configuration.md) - YAML configuration reference

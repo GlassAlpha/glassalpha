@@ -75,7 +75,7 @@ def quickstart(
     """Generate a complete audit project with config and directory structure.
 
     Creates a project directory with:
-    - Configuration file (audit_config.yaml)
+    - Configuration file (audit.yaml)
     - Directory structure (data/, models/, reports/, configs/)
     - Example run script (run_audit.py)
     - README with next steps
@@ -167,7 +167,7 @@ def quickstart(
         typer.echo(f"  1. cd {output}")
         typer.echo("  2. python run_audit.py")
         typer.echo()
-        typer.echo("Your audit will be generated in: reports/audit_report.pdf")
+        typer.echo("Your audit will be generated in: reports/audit_report.html")
 
     except KeyboardInterrupt:
         typer.echo()
@@ -179,7 +179,7 @@ def quickstart(
 
 
 def _ask_dataset() -> str:
-    """Ask user about dataset choice.
+    """Ask user about dataset choice with robust input validation.
 
     Returns:
         Dataset name (german_credit, adult_income)
@@ -191,17 +191,36 @@ def _ask_dataset() -> str:
     typer.echo("  2. Adult Income (income prediction, 48842 samples)")
     typer.echo()
 
-    try:
-        choice = typer.prompt("Select dataset (1-2)", type=int, default=1, show_default=True)
-    except (EOFError, RuntimeError):
-        # Handle non-interactive environments or EOF
-        typer.echo("Using default: 1")
-        choice = 1
-
     dataset_map = {
         1: "german_credit",
         2: "adult_income",
     }
+
+    # Retry loop for robust input handling
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        try:
+            choice = typer.prompt("Select dataset (1-2)", type=int, default=1, show_default=True)
+            if choice in dataset_map:
+                break
+            typer.secho("Please enter 1 or 2", fg=typer.colors.YELLOW)
+        except typer.Abort:
+            # Handle Ctrl+C abort
+            typer.echo("Using default: 1")
+            choice = 1
+            break
+        except (EOFError, RuntimeError):
+            # Handle non-interactive environments or EOF
+            typer.echo("Using default: 1")
+            choice = 1
+            break
+        except ValueError:
+            if attempt < max_attempts - 1:
+                typer.secho("Please enter a number (1 or 2)", fg=typer.colors.YELLOW)
+            else:
+                typer.echo("Using default: 1")
+                choice = 1
+                break
 
     dataset = dataset_map.get(choice, "german_credit")
 
@@ -249,24 +268,53 @@ def _ask_model() -> str:
 
     typer.echo()
 
-    try:
-        if has_explain:
-            choice = typer.prompt("Select model (1-3)", type=int, default=default_choice, show_default=True)
-        else:
-            # Only accept option 1 if explain not installed
-            choice = typer.prompt("Select model (1 only)", type=int, default=1, show_default=True)
-            if choice != 1:
-                typer.secho(
-                    "⚠️  Advanced models require 'glassalpha[explain]'. Using Logistic Regression.",
-                    fg=typer.colors.YELLOW,
-                )
-                choice = 1
-    except (EOFError, RuntimeError):
-        # Handle non-interactive environments or EOF
-        typer.echo(f"Using default: {default_choice}")
-        choice = default_choice
-
     model_map = {1: "logistic_regression", 2: "xgboost", 3: "lightgbm"}
+
+    # Retry loop for robust input handling
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        try:
+            if has_explain:
+                choice = typer.prompt("Select model (1-3)", type=int, default=default_choice, show_default=True)
+            else:
+                # Only accept option 1 if explain not installed
+                choice = typer.prompt("Select model (1 only)", type=int, default=1, show_default=True)
+                if choice != 1:
+                    typer.secho(
+                        "⚠️  Advanced models require 'glassalpha[explain]'. Using Logistic Regression.",
+                        fg=typer.colors.YELLOW,
+                    )
+                    choice = 1
+
+            # Validate choice
+            if choice in model_map and (choice <= max_choice):
+                break
+
+            if has_explain:
+                typer.secho("Please enter 1, 2, or 3", fg=typer.colors.YELLOW)
+            else:
+                typer.secho("Please enter 1", fg=typer.colors.YELLOW)
+
+        except typer.Abort:
+            # Handle Ctrl+C abort
+            typer.echo(f"Using default: {default_choice}")
+            choice = default_choice
+            break
+        except (EOFError, RuntimeError):
+            # Handle non-interactive environments or EOF
+            typer.echo(f"Using default: {default_choice}")
+            choice = default_choice
+            break
+        except ValueError:
+            if attempt < max_attempts - 1:
+                if has_explain:
+                    typer.secho("Please enter a number (1, 2, or 3)", fg=typer.colors.YELLOW)
+                else:
+                    typer.secho("Please enter 1", fg=typer.colors.YELLOW)
+            else:
+                typer.echo(f"Using default: {default_choice}")
+                choice = default_choice
+                break
 
     model = model_map.get(choice, "logistic_regression")
 
@@ -293,8 +341,8 @@ def _create_project_structure(output: Path, dataset: str, model: str) -> None:
     (output / "reports").mkdir(exist_ok=True)
     (output / "configs").mkdir(exist_ok=True)
 
-    # Create audit config
-    _create_audit_config(output / "audit_config.yaml", dataset, model)
+    # Create audit config (audit.yaml for auto-detection)
+    _create_audit_config(output / "audit.yaml", dataset, model)
 
     # Create run script
     _create_run_script(output / "run_audit.py", dataset, model)
@@ -306,7 +354,7 @@ def _create_project_structure(output: Path, dataset: str, model: str) -> None:
     _create_gitignore(output / ".gitignore")
 
     typer.echo("  ✓ Created directory structure")
-    typer.echo("  ✓ Created audit_config.yaml")
+    typer.echo("  ✓ Created audit.yaml")
     typer.echo("  ✓ Created run_audit.py")
     typer.echo("  ✓ Created README.md")
     typer.echo("  ✓ Created .gitignore")
@@ -475,9 +523,8 @@ try:
 except ImportError:
     print("Error: GlassAlpha not installed.")
     print()
-    print("Install with one of these commands:")
-    print("  pip install 'glassalpha[all]'  # From PyPI")
-    print("  cd ../packages && pip install -e '.[all]'  # From source")
+    print("Install with:")
+    print("  pip install 'glassalpha[all]'")
     print()
     sys.exit(1)
 
@@ -488,7 +535,7 @@ if __name__ == "__main__":
     print()
 
     # Configuration paths
-    config_path = Path("audit_config.yaml")
+    config_path = Path("audit.yaml")
     output_path = Path("reports/audit_report.html")
 
     print(f"Configuration: {{config_path}}")
@@ -510,7 +557,7 @@ if __name__ == "__main__":
         print()
         print("Next steps:")
         print("  1. Open reports/audit_report.html to view the audit")
-        print("  2. Modify audit_config.yaml to customize metrics")
+        print("  2. Modify audit.yaml to customize metrics")
         print("  3. Try CLI for shift testing: glassalpha audit --check-shift gender:+0.1")
         print()
 
@@ -548,16 +595,14 @@ open reports/audit_report.html
 
 **Note**: Make sure GlassAlpha is installed first:
 ```bash
-pip install 'glassalpha[all]'  # From PyPI
-# OR from source:
-cd ../packages && pip install -e '.[all]'
+pip install 'glassalpha[all]'
 ```
 
 ## Project Structure
 
 ```
 {path.parent.name}/
-├── audit_config.yaml      # Audit configuration
+├── audit.yaml             # Audit configuration
 ├── run_audit.py           # Example run script
 ├── data/                  # (Optional) Custom datasets
 ├── models/                # (Optional) Pre-trained models
@@ -567,7 +612,7 @@ cd ../packages && pip install -e '.[all]'
 
 ## Configuration
 
-Edit `audit_config.yaml` to customize:
+Edit `audit.yaml` to customize:
 
 - **Protected attributes**: Which features to analyze for fairness
 - **Model parameters**: Hyperparameters for training
@@ -581,7 +626,7 @@ Edit `audit_config.yaml` to customize:
 Test model stability under population shifts:
 
 ```bash
-glassalpha audit --config audit_config.yaml \\
+glassalpha audit \\
   --check-shift gender:+0.1 \\
   --check-shift age:-0.05 \\
   --fail-on-degradation 0.05
@@ -594,7 +639,7 @@ Add to `.github/workflows/model-validation.yml`:
 ```yaml
 - name: Run compliance audit
   run: |
-    glassalpha audit --config audit_config.yaml \\
+    glassalpha audit \\
       --check-shift gender:+0.1 \\
       --fail-on-degradation 0.05
 ```
@@ -604,7 +649,7 @@ Add to `.github/workflows/model-validation.yml`:
 Replace built-in dataset with your own:
 
 1. Add CSV to `data/` directory
-2. Update `audit_config.yaml`:
+2. Update `audit.yaml`:
    ```yaml
    data:
      path: data/my_data.csv

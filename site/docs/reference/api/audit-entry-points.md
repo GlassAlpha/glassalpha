@@ -165,7 +165,7 @@ result = ga.audit.from_model(
 - **Determinism**: Results are deterministic when `random_seed` is fixed and model predictions are deterministic
 - **Performance**: SHAP explanations take ~80% of execution time. Set `explain=False` for 5x speedup.
 - **Probabilities**: AUC, calibration metrics require `predict_proba()`. Models with only `decision_function()` will skip these metrics.
-- **Binary only**: Currently supports binary classification only. Multi-class support planned for v0.3.
+- **Multi-class support**: Supports both binary and multi-class classification with appropriate metrics for each.
 
 ### Related
 

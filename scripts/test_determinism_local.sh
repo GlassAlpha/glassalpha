@@ -83,10 +83,10 @@ else
     warn "Skipping PDF determinism tests (Linux only)"
 fi
 
-# Test 3: Cross-platform hash validation (local simulation)
-echo "=== Test 3: Local hash validation ==="
+# Test 3: HTML determinism validation
+echo "=== Test 3: HTML determinism validation ==="
 
-# Create test config
+# Create test config (HTML output for deterministic validation)
 cat > /tmp/test_config.yaml << 'EOF'
 audit_profile: tabular_compliance
 data:
@@ -98,36 +98,36 @@ reproducibility:
   random_seed: 42
 EOF
 
-# Run audit twice
+# Run audit twice (HTML for deterministic validation)
 echo "Running first audit..."
-$PYTHON -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit1.pdf || fail_test "First audit" "Audit failed"
+$PYTHON -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit1.html || fail_test "First audit" "Audit failed"
 
 echo "Running second audit..."
-$PYTHON -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit2.pdf || fail_test "Second audit" "Audit failed"
+$PYTHON -m glassalpha audit -c /tmp/test_config.yaml -o /tmp/audit2.html || fail_test "Second audit" "Audit failed"
 
 # Verify files exist
-if [ ! -f /tmp/audit1.pdf ]; then
-    fail_test "File creation" "/tmp/audit1.pdf was not created"
+if [ ! -f /tmp/audit1.html ]; then
+    fail_test "File creation" "/tmp/audit1.html was not created"
 fi
 
-if [ ! -f /tmp/audit2.pdf ]; then
-    fail_test "File creation" "/tmp/audit2.pdf was not created"
+if [ ! -f /tmp/audit2.html ]; then
+    fail_test "File creation" "/tmp/audit2.html was not created"
 fi
 
-pass_test "Both audit PDFs created successfully"
+pass_test "Both audit HTMLs created successfully"
 
-# Compute hashes
-hash1=$(sha256sum /tmp/audit1.pdf | cut -d' ' -f1)
-hash2=$(sha256sum /tmp/audit2.pdf | cut -d' ' -f1)
+# Compute hashes (HTML is byte-identical, PDFs are not)
+hash1=$(sha256sum /tmp/audit1.html | cut -d' ' -f1)
+hash2=$(sha256sum /tmp/audit2.html | cut -d' ' -f1)
 
 echo "Hash 1: $hash1"
 echo "Hash 2: $hash2"
 
 # Compare
 if [ "$hash1" = "$hash2" ]; then
-    pass_test "Hashes match - deterministic"
+    pass_test "HTML hashes match - deterministic"
 else
-    fail_test "Hash comparison" "Hashes differ - non-deterministic"
+    fail_test "Hash comparison" "HTML hashes differ - non-deterministic"
 fi
 
 # Test 4: DeterminismValidator framework

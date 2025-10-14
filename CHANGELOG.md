@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - v0.2.1 Pre-PyPI Simplification
 
+### Changed
+
+- **BREAKING**: Renamed `GAConfig` → `AuditConfig` for clarity and consistency
+- **BREAKING**: Moved example configs from `src/glassalpha/data/configs/` → `src/glassalpha/configs/` for clearer structure
+- **CLI Command Organization** (Complete Refactor)
+  - Extracted 4530-line `_legacy.py` monolith into 5 focused modules:
+    - `audit.py` (1562 lines): Core audit command with shift analysis
+    - `explain.py` (1733 lines): Explanation commands (reasons, recourse)
+    - `config_cmds.py` (612 lines): Configuration management commands
+    - `system.py` (453 lines): Environment checking and system info
+    - `evidence.py` (156 lines): Evidence pack export and verification
+  - Removed redundant `commands.py` backward compatibility shim
+  - Updated architecture rules to prevent half-done refactors (Section 9: "No Half-Done Refactors")
+  - Result: 36% reduction in largest file, clear functional organization, all tests passing
+- Removed unused model registration functions (`register_xgboost`, `register_lightgbm`)
+- Removed empty `config/` directory to eliminate architectural confusion
+- Updated all documentation and manifest files to reference new config paths
+
 ### Removed
 
 - **Registry Compatibility Stubs** (Architectural Cleanup)

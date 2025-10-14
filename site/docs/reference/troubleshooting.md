@@ -216,8 +216,8 @@ Warning: Model type 'unknown_model' not supported
 **Solution:**
 
 ```bash
-# Check available models
-glassalpha list models
+# Check available components (models, explainers, metrics)
+glassalpha list
 
 # Use correct model type
 # Valid options: xgboost, lightgbm, logistic_regression, sklearn_generic
@@ -419,6 +419,57 @@ explainers:
 ```
 
 ## Data issues
+
+### Data format mismatch in reasons/recourse commands
+
+**Error:**
+
+```
+Error: Test data missing 15 columns.
+Expected 22 columns: age_group, checking_account_status, ...
+Actual 67 columns: age_group_middle_aged, age_group_middle_young, ...
+```
+
+**Cause:**
+
+The `reasons` and `recourse` commands expect data in the same format the model was trained with (including preprocessing/one-hot encoding). If you provide the original CSV data, it won't match the model's expected format.
+
+**Solution:**
+
+**Always use the preprocessed test data saved during audit generation:**
+
+```bash
+# ✅ CORRECT - Use preprocessed test data
+glassalpha reasons \
+  --model models/german_credit.pkl \
+  --data models/test_data.csv \
+  --instance 0
+
+# ❌ WRONG - Original data needs preprocessing
+glassalpha reasons \
+  --model models/german_credit.pkl \
+  --data data/german_credit.csv \
+  --instance 0
+```
+
+**Why this happens:**
+
+1. During audit generation, GlassAlpha applies preprocessing (one-hot encoding categorical features)
+2. The model is trained on this preprocessed data
+3. The preprocessed test data is saved to `models/test_data.csv`
+4. Reason codes/recourse need the same preprocessed format
+
+**Automatic detection (v0.2.0+):**
+
+GlassAlpha now automatically detects if data is already preprocessed and skips double preprocessing. You'll see:
+
+```
+✓ Data is already preprocessed (matches model's expected features)
+```
+
+If you see "Applying preprocessing to match model training..." but still get errors, use the `test_data.csv` file instead.
+
+---
 
 ### Dataset not found
 
@@ -821,7 +872,7 @@ print(f"Minimum class size: {df['target'].value_counts().min()}")
 
 2. **Use a larger dataset:**
 
-   - Browse [freely available data sources](../getting-started/data-sources.md)
+   - Browse [built-in datasets](../getting-started/datasets.md)
    - Combine multiple datasets if possible
    - Use German Credit (1,000 rows) for testing
 

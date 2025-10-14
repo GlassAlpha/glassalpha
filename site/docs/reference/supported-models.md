@@ -157,7 +157,7 @@ explainers:
 - Imbalanced classes handled well
 - Fast inference required
 
-[See model selection guide →](model-selection.md)
+[See model selection guide →](../reference/model-selection.md)
 
 ## Model-Explainer Compatibility
 
@@ -194,7 +194,7 @@ class CustomModel(ModelInterface):
         }
 ```
 
-[See contributing guide for details →](contributing.md)
+[See contributing guide for details →](../reference/contributing.md)
 
 ## Roadmap
 
@@ -209,6 +209,6 @@ Future model support planned:
 
 ## Questions?
 
-- [FAQ](faq.md) - Common questions
-- [Troubleshooting](troubleshooting.md) - Debugging help
+- [FAQ](../reference/faq.md) - Common questions
+- [Troubleshooting](../reference/troubleshooting.md) - Debugging help
 - [GitHub Discussions](https://github.com/GlassAlpha/glassalpha/discussions) - Ask the community

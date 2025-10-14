@@ -2,7 +2,7 @@
 
 This guide provides comprehensive parameter references for all supported models in GlassAlpha.
 
-!!! info "Quick Links" - **Choosing a model?** → Start with [Model Selection Guide](model-selection.md) - **Need configuration help?** → See [Configuration Guide](../getting-started/configuration.md) - **Getting started?** → Try the [Quick Start Guide](../getting-started/quickstart.md) first
+!!! info "Quick Links" - **Choosing a model?** → Start with [Model Selection Guide](../reference/model-selection.md) - **Need configuration help?** → See [Configuration Guide](../getting-started/configuration.md) - **Getting started?** → Try the [Quick Start Guide](../getting-started/quickstart.md) first
 
 ## Understanding Parameter Validation
 
@@ -324,12 +324,12 @@ If you're unsure about a parameter:
 1. Check this reference guide
 2. Run `glassalpha validate --config your_config.yaml`
 3. Check official library documentation
-4. See our [FAQ](faq.md) for common issues
+4. See our [FAQ](../reference/faq.md) for common issues
 
 ---
 
 ## See Also
 
-- [Model Selection Guide](model-selection.md) - Choosing the right model
+- [Model Selection Guide](../reference/model-selection.md) - Choosing the right model
 - [Configuration Guide](../getting-started/configuration.md) - Full config reference
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- [Troubleshooting](../reference/troubleshooting.md) - Common issues and solutions

@@ -12,17 +12,22 @@ _Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable wi
 
 ### Quick install
 
+**Recommended: Use a virtual environment to avoid conflicts**
+
 ```bash
-# Install with all features
+# Step 1: Create and activate virtual environment
+python3 -m venv glassalpha-env
+source glassalpha-env/bin/activate  # On Windows: glassalpha-env\Scripts\activate
+
+# Step 2: Install GlassAlpha with all features
 pip install "glassalpha[all]"
 
-# Or minimal installation (HTML reports only)
-pip install glassalpha
-
-# Verify installation
+# Step 3: Verify installation
 glassalpha --version
 glassalpha doctor
 ```
+
+> **💡 Troubleshooting**: If you see `externally-managed-environment` error, you must use a virtual environment (Step 1 above). This is required on Python 3.11+ systems with PEP 668.
 
 **Base installation** includes LogisticRegression model with coefficient-based explanations (fast, zero extra dependencies).
 
@@ -39,6 +44,11 @@ pip install "glassalpha[all]"      # All features (recommended)
 For development or latest features:
 
 ```bash
+# Create virtual environment
+python3 -m venv glassalpha-env
+source glassalpha-env/bin/activate
+
+# Clone and install
 git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha
 pip install -e ".[all]"
@@ -143,11 +153,11 @@ glassalpha audit --config audit.yaml \
 # Exit code 1 if degradation exceeds 5 percentage points
 ```
 
-**Byte-identical reproducibility.** Same audit config → same PDF, every time (on same platform+Python). SHA256 hashes in manifests for verification.
+**Byte-identical reproducibility.** Same audit config → byte-identical HTML reports every time (on same platform+Python). PDFs are suitable for human review but may have minor layout variations due to rendering engine limitations. SHA256 hashes in manifests for verification.
 
 **Statistical rigor.** Not just point estimates—95% confidence intervals on fairness and calibration metrics with bootstrap resampling.
 
-**Note**: Policy-as-code gates (E1) and evidence pack export (E3) are coming in v0.3.0. Current version supports shift testing gates for CI/CD.
+**Note**: Evidence pack export (E3) is available in v0.2.1 via `glassalpha export-evidence-pack`. Policy-as-code gates (E1) planned for v0.3.0. Current version supports shift testing gates for CI/CD.
 
 ## Core Capabilities
 
@@ -174,7 +184,7 @@ glassalpha audit --config audit.yaml \
 ### Regulatory Compliance
 
 - **[SR 11-7 Mapping](site/docs/compliance/sr-11-7-mapping.md)**: Complete Federal Reserve guidance coverage (banking)
-- **Evidence Packs** (coming in v0.3.0): SHA256-verified bundles for regulatory submission
+- **Evidence Packs** (available in v0.2.1): SHA256-verified bundles for regulatory submission via `glassalpha export-evidence-pack`
 - **Reproducibility**: Deterministic execution, version pinning, byte-identical PDFs (same platform+Python)
 - **CI/CD Gates**: Shift testing with `--fail-on-degradation` blocks deployments on metric degradation
 

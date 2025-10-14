@@ -86,18 +86,18 @@ data:
   # For built-in datasets, use dataset: german_credit
   dataset: custom
 
-  # Path to your dataset file (required for custom data)
-  # IMPORTANT: Use absolute paths or ~ for home directory
+  # Path to your dataset file (REQUIRED - replace this!)
+  # Use relative paths from your project directory or absolute paths
   # Examples:
-  #   - ~/data/my_model_data.csv
-  #   - ~/projects/data/training_set.parquet
-  #   - ~/ml_data/audit_dataset.feather
-  path: /path/to/your/dataset.csv
+  #   - data/my_data.csv  # Relative path (recommended)
+  #   - ~/data/my_model_data.csv  # Home directory
+  #   - /absolute/path/to/training_set.parquet  # Absolute path
+  path: data/my_data.csv # REQUIRED: Replace with your CSV path
 
   # Target column (the variable your model predicts)
   # Must be a binary column (0/1, True/False, Yes/No)
   # Examples: 'credit_risk', 'will_default', 'outcome', 'label'
-  target_column: target
+  target_column: target # REQUIRED: Replace with your target column name
 
   # Protected attributes (sensitive demographic features)
   # These are analyzed for fairness and bias
@@ -110,10 +110,9 @@ data:
   #   - marital_status
   #
   # IMPORTANT: Column names must match your dataset exactly (case-sensitive)
-  protected_attributes:
-    - sex
-    - race
-    - age
+  protected_attributes: # REQUIRED: Replace with your protected attributes
+    - gender # Example - replace with actual column name
+    - age_group # Example - replace with actual column name
 
   # Feature columns (optional)
   # If not specified, uses all columns except target and protected attributes

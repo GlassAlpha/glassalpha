@@ -33,7 +33,7 @@ This is the main command for GlassAlpha. It loads a configuration file,
 runs the audit pipeline, and generates a deterministic audit report.
 
 Smart Defaults:
-    If no --config is provided, searches for: glassalpha.yaml, audit.yaml, config.yaml
+    If no --config is provided, searches for: glassalpha.yaml, audit.yaml, audit_config.yaml, config.yaml
     If no --output is provided, uses {config_name}.html
     Strict mode auto-enables for prod*/production* configs
     Repro mode auto-enables in CI environments
@@ -63,7 +63,7 @@ Examples:
 
 **Options:**
 
-- `--config, -c`: Path to audit configuration YAML file (auto-detects glassalpha.yaml, audit.yaml, config.yaml)
+- `--config, -c`: Path to audit configuration YAML file (auto-detects glassalpha.yaml, audit.yaml, audit_config.yaml, config.yaml)
 - `--output, -o`: Path for output report (defaults to {config_name}.html)
 - `--strict, -s`: Enable strict mode for regulatory compliance (auto-enabled for prod*/production* configs)
 - `--profile, -p`: Override audit profile
@@ -71,6 +71,56 @@ Examples:
 - `--verbose, -v`: Enable verbose logging (default: `False`)
 - `--check-shift`: Test model robustness under demographic shifts (e.g., 'gender:+0.1'). Can specify multiple. (default: `[]`)
 - `--fail-on-degradation`: Exit with error if any metric degrades by more than this threshold (e.g., 0.05 for 5pp).
+
+### `glassalpha config-cheat`
+
+Show configuration cheat sheet with common patterns.
+
+Displays quick reference of common configuration patterns
+without leaving the terminal.
+
+Examples:
+    # View cheat sheet
+    glassalpha config-cheat
+
+    # View and search
+    glassalpha config-cheat | grep fairness
+
+### `glassalpha config-list`
+
+List available configuration templates.
+
+Shows all built-in configuration templates with descriptions.
+Templates are organized by use case and complexity.
+
+Examples:
+    # List all templates
+    glassalpha config-list
+
+    # Copy a template
+    glassalpha config-template german_credit > audit.yaml
+
+### `glassalpha config-template`
+
+Output a configuration template to stdout.
+
+Prints the specified template to stdout so you can redirect it to a file.
+Use 'glassalpha config-list' to see available templates.
+
+Examples:
+    # Copy template to new file
+    glassalpha config-template german_credit > audit.yaml
+
+    # View template
+    glassalpha config-template minimal
+
+    # Copy and edit
+    glassalpha config-template custom_template > my_config.yaml
+    # Then edit my_config.yaml with your data paths
+
+**Arguments:**
+
+- `template` (text, required): Template name (e.g., 'german_credit', 'minimal', 'custom_template')
 
 ### `glassalpha docs`
 
@@ -187,7 +237,7 @@ Examples:
 Generate a complete audit project with config and directory structure.
 
 Creates a project directory with:
-- Configuration file (audit_config.yaml)
+- Configuration file (audit.yaml)
 - Directory structure (data/, models/, reports/, configs/)
 - Example run script (run_audit.py)
 - README with next steps
@@ -244,7 +294,7 @@ Examples:
 **Options:**
 
 - `--model, -m`: Path to trained model file (.pkl, .joblib). Generate with: glassalpha audit --save-model model.pkl
-- `--data, -d`: Path to test data file (CSV). Auto-generated if missing using built-in dataset.
+- `--data, -d`: Path to test data file (CSV). MUST be preprocessed data (e.g., models/test_data.csv from audit).
 - `--instance, -i`: Row index of instance to explain (0-based)
 - `--config, -c`: Path to reason codes configuration YAML
 - `--output, -o`: Path for output notice file (defaults to stdout)
@@ -307,6 +357,36 @@ Model Compatibility:
 - `--threshold, -t`: Decision threshold for approved/denied (default: `0.5`)
 - `--top-n, -n`: Number of counterfactual recommendations to generate (default: `5`)
 - `--force-recourse`: Generate recourse recommendations even for approved instances (for testing) (default: `False`)
+
+### `glassalpha setup-env`
+
+Generate environment setup commands for deterministic audits.
+
+This command outputs shell commands to set required environment variables
+for byte-identical, reproducible audit generation.
+
+Required for compliance: Regulators require byte-identical outputs for
+audit verification. These environment variables ensure deterministic behavior.
+
+Examples:
+    # Print commands for current shell
+    glassalpha setup-env
+
+    # Save to file and source
+    glassalpha setup-env --output .glassalpha-env
+    source .glassalpha-env
+
+    # Use in current shell (bash/zsh)
+    eval "$(glassalpha setup-env)"
+
+    # Specific shell syntax
+    glassalpha setup-env --shell fish > glassalpha.fish
+    source glassalpha.fish
+
+**Options:**
+
+- `--shell`: Shell type: bash, zsh, fish. Auto-detects if not specified.
+- `--output, -o`: Write environment file instead of printing to stdout
 
 ### `glassalpha validate`
 

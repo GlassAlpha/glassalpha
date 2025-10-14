@@ -143,18 +143,19 @@ class TestReasonCodeExtraction:
         assert result.reason_codes[1].contribution == -0.3
 
     def test_extract_handles_all_positive_shap(self):
-        """Raise clear error if no negative contributions."""
+        """Raise clear error if no negative contributions (instance was approved)."""
         shap_values = np.array([0.3, 0.5, 0.2, 0.1])  # All positive
         feature_names = ["income", "savings", "employment", "duration"]
         feature_values = pd.Series([50000, 10000, 5, 36])
 
-        with pytest.raises(ValueError, match="No negative contributions"):
+        # Improved error message now explains instance was APPROVED
+        with pytest.raises(ValueError, match="instance 1 was APPROVED"):
             extract_reason_codes(
                 shap_values=shap_values,
                 feature_names=feature_names,
                 feature_values=feature_values,
                 instance_id=1,
-                prediction=0.85,
+                prediction=0.85,  # Above threshold (0.5) - approved
                 top_n=2,
                 seed=42,
             )

@@ -199,7 +199,28 @@ def extract_reason_codes(
     negative_indices = np.where(negative_mask)[0]
 
     if len(negative_indices) == 0:
-        msg = "No negative contributions found - cannot generate reason codes for approved decision"
+        # Calculate prediction for better error message
+        prediction_value = float(prediction) if hasattr(prediction, "__float__") else prediction
+
+        # Determine actual decision based on threshold
+        decision_str = "DENIED" if prediction_value < threshold else "APPROVED"
+        comparison = "<" if prediction_value < threshold else ">="
+
+        msg = (
+            f"Cannot generate reason codes - instance {instance_id} was {decision_str} "
+            f"(score: {prediction_value:.3f} {comparison} threshold {threshold:.3f}).\n\n"
+            f"Reason codes require negative SHAP contributions (features pushing toward denial), "
+            f"but all features had positive contributions for this instance.\n\n"
+            f"Reason codes explain denied decisions. To find denied instances:\n\n"
+            f"  Check predictions using Python:\n"
+            f'     python -c "import joblib, pandas as pd; '
+            f"model = joblib.load('model.pkl')['model']; "
+            f"X = pd.read_csv('test_data.csv'); "
+            f"preds = model.predict_proba(X)[:, 1]; "
+            f"denied = [i for i, p in enumerate(preds) if p < {threshold}]; "
+            f"print(f'Denied instances (first 5): {{denied[:5]}}')\"\n\n"
+            f"Learn more: https://glassalpha.com/guides/reason-codes/#finding-denied-instances"
+        )
         raise ValueError(msg)
 
     # Extract negative contributions

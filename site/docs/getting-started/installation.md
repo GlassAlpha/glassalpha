@@ -171,7 +171,7 @@ If you request a model that isn't installed, GlassAlpha automatically falls back
 
 ```bash
 # This works even without XGBoost installed (use quickstart-generated config or example config)
-glassalpha audit --config src/glassalpha/data/configs/german_credit_simple.yaml --output audit.pdf
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.pdf
 # → Falls back to LogisticRegression with clear message
 ```
 
@@ -703,7 +703,7 @@ Throughout the documentation, you'll see two types of config path references:
 **Repository examples** (when running from cloned repo):
 
 ```bash
-glassalpha audit --config src/glassalpha/data/configs/german_credit_simple.yaml --output audit.html
+glassalpha audit --config configs/german_credit_simple.yaml --output audit.html
 ```
 
 **Custom configs** (when using your own):
@@ -720,7 +720,7 @@ After successful installation:
 
 1. **Try the Quick Start** - [Generate your first audit](quickstart.md)
 2. **Use Your Own Data** - [Custom data tutorial](custom-data.md) with step-by-step guidance
-3. **Browse Example Datasets** - [Freely available data sources](data-sources.md) for testing
+3. **Browse Example Datasets** - [Built-in datasets](datasets.md) for testing
 4. **Explore Examples** - [German Credit tutorial](../examples/german-credit-audit.md)
 5. **Read Configuration Guide** - [Understand all options](configuration.md)
 6. **Choose Your Model** - [Model selection guide](../reference/model-selection.md) with benchmarks

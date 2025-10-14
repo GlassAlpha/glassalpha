@@ -5,9 +5,8 @@ GlassAlpha provides automatic dataset fetching and caching for common benchmark 
 !!! info "Looking for more datasets?"
 This page covers GlassAlpha's **built-in dataset system** (automatic fetching and caching).
 
-    For a curated list of **freely available public datasets** for testing, see:
+    For using **external datasets**, see:
 
-    - [Freely Available Data Sources](data-sources.md) - Curated public datasets with example configs
     - [Using Custom Data](custom-data.md) - Tutorial for using your own datasets
 
 ## Overview
@@ -231,15 +230,14 @@ glassalpha datasets fetch german_credit --force
 ## Next steps
 
 - **Use built-in datasets** - Perfect for quick testing and examples
-- **Browse [public datasets](data-sources.md)** - Curated list with download links and example configs
 - **Use [your own data](custom-data.md)** - Complete tutorial for custom datasets
 
 ## Adding new datasets
 
-To add a new dataset to the built-in registry:
+To add a new dataset to the built-in collection:
 
-1. **Create Dataset Loader**: Implement download and processing logic
-2. **Register Dataset**: Add to `REGISTRY` in `register_builtin.py`
+1. **Create Dataset Loader**: Implement download and processing logic in `src/glassalpha/datasets/loaders/`
+2. **Add to Built-ins**: Add entry to the built-in dataset collection
 3. **Update Documentation**: Add to this page and CLI help
 
 See the source code for examples of dataset registration and implementation.

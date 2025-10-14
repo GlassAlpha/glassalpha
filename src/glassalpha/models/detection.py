@@ -44,6 +44,21 @@ def detect_model_type(model: Any) -> str:
         'xgboost'
 
     """
+    # Handle sklearn Pipeline - extract the final estimator
+    if hasattr(model, "named_steps"):
+        # It's a Pipeline - get the final step
+        try:
+            from sklearn.pipeline import Pipeline
+
+            if isinstance(model, Pipeline):
+                # Get the last step (the actual model)
+                final_step = model.steps[-1][1] if model.steps else model
+                logger.info(f"Detected sklearn Pipeline, extracting final step: {type(final_step).__name__}")
+                # Recursively detect the final estimator's type
+                return detect_model_type(final_step)
+        except (ImportError, IndexError, AttributeError) as e:
+            logger.debug(f"Pipeline extraction failed: {e}, continuing with fallback detection")
+
     model_class = type(model).__name__
     model_module = type(model).__module__
 

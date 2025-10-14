@@ -11,6 +11,7 @@ FRAGILE_PATTERNS=(
     "src/glassalpha/constants.py"             # Contract definitions
     "pyproject.toml"                          # Packaging config
     ".github/workflows/"                      # CI workflow files (YAML syntax)
+    "src/glassalpha/cli/"                     # CLI commands (docs must stay in sync)
 )
 
 # Check if any fragile files are in this commit
@@ -104,6 +105,31 @@ if [ "$workflow_files_changed" -gt 0 ]; then
     echo ""
 else
     echo "   ✅ No workflow files changed"
+    echo ""
+fi
+
+echo "📝 Auto-generating CLI documentation..."
+echo ""
+
+# Check if CLI files changed
+cli_files_changed=$(git diff --cached --name-only | grep -c "src/glassalpha/cli/" || true)
+if [ "$cli_files_changed" -gt 0 ]; then
+    echo "   📋 CLI code changed - regenerating docs..."
+
+    # Generate CLI docs
+    if python3 scripts/generate_cli_docs.py --output site/docs/reference/cli.md; then
+        # Stage the updated docs
+        git add site/docs/reference/cli.md
+        echo "   ✅ CLI docs regenerated and staged"
+        echo ""
+    else
+        echo "   ❌ Failed to generate CLI docs"
+        echo "   Run manually: python scripts/generate_cli_docs.py --output site/docs/reference/cli.md"
+        echo ""
+        exit 1
+    fi
+else
+    echo "   ✅ No CLI changes - docs generation skipped"
     echo ""
 fi
 

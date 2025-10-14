@@ -562,7 +562,7 @@ Evidence pack: SHA256 checksum attached
 
 - [Quickstart Guide](../getting-started/quickstart.md) - Generate your first fairness audit
 - [German Credit Example](../examples/german-credit-audit.md) - Walkthrough with real data
-- [Configuration Patterns](../getting-started/configuration-patterns.md) - Fairness thresholds by industry
+- [Configuration Guide](../getting-started/configuration.md) - Complete configuration reference
 
 ### Regulatory compliance
 

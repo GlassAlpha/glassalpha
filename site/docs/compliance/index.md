@@ -37,7 +37,7 @@ graph TB
 2. **Execution** - Run audit with `--strict` mode for regulatory compliance
 3. **Review** - Analyze results, address failed gates, document warnings
 4. **Stress Testing** - Test model robustness under demographic shifts ([see shift testing guide](../guides/shift-testing.md))
-5. **Evidence** - Export tamper-evident evidence pack with checksums (coming in v0.3.0)
+5. **Evidence** - Export tamper-evident evidence pack with checksums using `glassalpha export-evidence-pack` ([guide](../guides/evidence-packs.md))
 6. **Validation** - Independent review by validator or compliance officer
 7. **Submission** - Submit to regulator with cover letter and verification instructions
 8. **Archive** - Retain all artifacts per regulatory requirements (typically 7 years)

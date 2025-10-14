@@ -65,9 +65,9 @@ pdf = [
 ]
 
 # PDF determinism infrastructure (separate from generation)
-# This is required whenever PDFs are generated to ensure byte-identical outputs
+# This is used for "best effort" PDF metadata normalization to reduce variations
 pdf_determinism = [
-    "pypdf>=3.0,<7.0",  # For PDF metadata normalization
+    "pypdf>=3.0,<7.0",  # For PDF metadata normalization (best effort)
 ]
 
 # Docs alias for backward compatibility
@@ -139,7 +139,7 @@ include-package-data = true
 # Contract compliance: Include templates in wheel for importlib.resources loading
 "glassalpha.report.templates" = ["*.html", "*.css", "*.js", "*.txt"]
 # Include built-in configuration files for wheel-based testing
-"glassalpha.data.configs" = ["*.yaml"]
+"glassalpha.configs" = ["*.yaml"]
 
 [tool.ruff]
 line-length = 120  # Modern standard (vs outdated 100) - matches industry practice

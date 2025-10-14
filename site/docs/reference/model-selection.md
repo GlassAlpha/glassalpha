@@ -4,8 +4,8 @@ Choose the right model for your ML audit based on your data, requirements, and c
 
 !!! info "Quick Links"
 
-- **Already chosen a model?** → [Model Parameters Reference](model-parameters.md) for detailed parameter documentation
-- **Need explainer info?** → [Explainer Selection Guide](explainers.md) to pair your model with the right explainer
+- **Already chosen a model?** → [Model Parameters Reference](../reference/model-parameters.md) for detailed parameter documentation
+- **Need explainer info?** → [Explainer Selection Guide](../reference/explainers.md) to pair your model with the right explainer
 - **Ready to configure?** → [Configuration Guide](../getting-started/configuration.md) for YAML setup
 
 ## Quick Decision: Which Model Should I Use?
@@ -689,17 +689,17 @@ Now that you've chosen your model:
 
 1. **✅ Configure**: Use the examples above to set up your model
 2. **📊 Run audit**: Generate your first audit report
-3. **🔍 Choose explainer**: Learn about [TreeSHAP vs KernelSHAP](explainers.md)
+3. **🔍 Choose explainer**: Learn about [TreeSHAP vs KernelSHAP](../reference/explainers.md)
 4. **⚙️ Tune**: Optimize hyperparameters for your specific data
 
 ## Additional Resources
 
 - [Using Custom Data](../getting-started/custom-data.md) - How to prepare your data
 - [Configuration Guide](../getting-started/configuration.md) - Full configuration reference
-- [Model Parameters Reference](model-parameters.md) - Complete parameter documentation for all models
-- [Explainer Selection](explainers.md) - Choose the right explainer for your model
-- [FAQ](faq.md#model-support) - Common model questions
+- [Model Parameters Reference](../reference/model-parameters.md) - Complete parameter documentation for all models
+- [Explainer Selection](../reference/explainers.md) - Choose the right explainer for your model
+- [FAQ](../reference/faq.md#model-support) - Common model questions
 
 ---
 
-**Questions?** Open an issue on [GitHub](https://github.com/GlassAlpha/glassalpha/issues) or check the [FAQ](faq.md).
+**Questions?** Open an issue on [GitHub](https://github.com/GlassAlpha/glassalpha/issues) or check the [FAQ](../reference/faq.md).

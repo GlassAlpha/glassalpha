@@ -1,5 +1,5 @@
 # GlassAlpha - Wheel-first development workflow
-.PHONY: smoke build install test lint clean clean-temp hooks help dev-setup check check-fast check-workflows check-sigstore check-packaging check-determinism check-venv sync-deps freeze-deps
+.PHONY: smoke build install test lint clean clean-temp hooks help dev-setup check check-fast check-workflows check-sigstore check-packaging check-determinism check-notebooks check-venv sync-deps freeze-deps
 
 # Default target
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "🔐 check-sigstore - Test sigstore signing process locally"
 	@echo "🔍 check-workflows - Validate GitHub Actions workflows"
 	@echo "📦 check-packaging - Validate MANIFEST.in and pyproject.toml"
+	@echo "📓 check-notebooks - Validate example notebooks (imports, structure)"
 	@echo ""
 	@echo "Environment Management:"
 	@echo "🔍 check-venv - Check if venv is in sync with source code"
@@ -122,7 +123,7 @@ dev-setup:
 	@echo "  - Run 'glassalpha audit --config quickstart.yaml --output test.pdf' for a quick test"
 
 # Fast validation loop (skip expensive PDF tests)
-check-fast: smoke check-workflows check-packaging check-docs
+check-fast: smoke check-workflows check-packaging check-notebooks check-docs
 	@echo ""
 	@echo "🏥 Checking environment..."
 	@glassalpha doctor
@@ -130,7 +131,7 @@ check-fast: smoke check-workflows check-packaging check-docs
 	@echo "✅ Fast checks passed!"
 
 # Full pre-commit check (includes PDF determinism)
-check: smoke check-workflows check-sigstore check-packaging check-determinism
+check: clean-temp smoke check-workflows check-sigstore check-packaging check-determinism
 	@echo ""
 	@echo "🏥 Checking environment..."
 	@glassalpha doctor
@@ -144,6 +145,11 @@ check: smoke check-workflows check-sigstore check-packaging check-determinism
 check-docs:
 	@echo "🔍 Checking CLI documentation..."
 	@python3 scripts/generate_cli_docs.py --check
+
+# Validate example notebooks
+check-notebooks:
+	@echo "📓 Validating example notebooks..."
+	@python3 scripts/validate_notebooks.py
 
 # Test sigstore signing process locally
 check-sigstore:

@@ -158,7 +158,7 @@ model:
 glassalpha audit --config your_config.yaml --output audit.pdf
 ```
 
-**Want more examples?** Browse our [freely available data sources](../getting-started/data-sources.md) for curated public datasets.
+**Want more examples?** Browse our [built-in datasets](../getting-started/datasets.md) for automatic dataset fetching.
 
 ### What file formats are supported for data?
 
@@ -219,8 +219,8 @@ GlassAlpha supports models saved with:
 
 **Need help choosing?**
 
-- See the [Model Selection Guide](model-selection.md) for performance benchmarks and use case recommendations
-- See the [Explainer Deep Dive](explainers.md) for guidance on explanation methods
+- See the [Model Selection Guide](../reference/model-selection.md) for performance benchmarks and use case recommendations
+- See the [Explainer Deep Dive](../reference/explainers.md) for guidance on explanation methods
 
 ### How do I add support for a new model type?
 
@@ -626,10 +626,10 @@ For immediate help, check the [Troubleshooting Guide](../reference/troubleshooti
 
 - [Quick Start Guide](../getting-started/quickstart.md) - 5-minute introduction
 - [Using Custom Data](../getting-started/custom-data.md) - Audit your own models
-- [Freely Available Data Sources](../getting-started/data-sources.md) - Public datasets for testing
+- [Built-in Datasets](../getting-started/datasets.md) - Automatic dataset fetching
 - [Configuration Guide](../getting-started/configuration.md) - Complete configuration reference
-- [Model Selection Guide](model-selection.md) - Choose the right model
-- [Explainer Deep Dive](explainers.md) - Understanding explanations
+- [Model Selection Guide](../reference/model-selection.md) - Choose the right model
+- [Explainer Deep Dive](../reference/explainers.md) - Understanding explanations
 - [German Credit Tutorial](../examples/german-credit-audit.md) - Complete walkthrough
 - [CLI Reference](cli.md) - Command-line interface
 
