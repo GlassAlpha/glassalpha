@@ -678,13 +678,30 @@ def reasons(  # pragma: no cover - CLI command
                     typer.echo("  Computing KernelSHAP explanations...")
                     typer.echo("    (This may take 30-60 seconds for linear models)")
 
-                    # Convert to numpy for compatibility
+                    # Load full dataset for background samples (KernelSHAP needs representative background)
+                    # Use the full test data since we already loaded it
+                    X_background = df.drop(columns=["target"], errors="ignore")
+
+                    # Auto-encode categorical columns for background data
+                    X_background_encoded = X_background.copy()
+                    for col in categorical_cols:
+                        if col in X_background_encoded.columns:
+                            X_background_encoded[col] = X_background_encoded[col].astype(str)
+                            from sklearn.preprocessing import LabelEncoder
+
+                            le = LabelEncoder()
+                            X_background_encoded[col] = le.fit_transform(X_background_encoded[col])
+
+                    # Sample 100 background instances for KernelSHAP
+                    background_sample = shap.sample(X_background_encoded, min(100, len(X_background_encoded)))
+
+                    # Convert instance to numpy for compatibility
                     X_sample = (
                         X_instance_encoded.values if hasattr(X_instance_encoded, "values") else X_instance_encoded
                     )
 
                     typer.echo("    Initializing KernelExplainer...", err=True)
-                    explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_sample, 100))
+                    explainer = shap.KernelExplainer(model_obj.predict_proba, background_sample)
 
                     typer.echo("    Computing SHAP values...", err=True)
                     shap_values_raw = explainer.shap_values(X_sample)
@@ -991,9 +1008,29 @@ def recourse(  # pragma: no cover
             seed = getattr(cfg.reproducibility, "random_seed", 42) if hasattr(cfg, "reproducibility") else 42
         else:
             typer.secho(
-                "Warning: No config provided. Using default policy (no constraints).",
+                "⚠️  Warning: No config provided. Using default policy with common protected attributes as immutable.",
                 fg=typer.colors.YELLOW,
             )
+            typer.echo()
+            typer.echo("  Default immutable features: gender, race, age, sex, ethnicity (and one-hot variants)")
+            typer.echo("  To customize, create a config file with recourse.immutable_features")
+            typer.echo()
+            # Use common protected attributes as default immutables
+            # This includes the base names and common one-hot patterns
+            default_immutable_patterns = [
+                "gender",
+                "sex",
+                "race",
+                "ethnicity",
+                "age",
+                "age_years",
+                "age_group",
+                "foreign_worker",
+                "nationality",
+                "national_origin",
+            ]
+            # We'll filter these by actual column names later
+            immutable_features = default_immutable_patterns
 
         # Check if data file exists, look for model-compatible test data first
         if not data.exists():
@@ -1563,8 +1600,32 @@ def recourse(  # pragma: no cover
                 # Fallback to KernelSHAP (use original model_obj for predict interface)
                 import shap
 
-                explainer = shap.KernelExplainer(model_obj.predict_proba, shap.sample(X_instance_encoded, 100))
-                shap_values = explainer.shap_values(X_instance_encoded)[0, :, 1]
+                # Load full dataset for background samples
+                X_background = df.drop(columns=["target"], errors="ignore")
+
+                # Auto-encode categorical columns for background data
+                X_background_encoded = X_background.copy()
+                for col in categorical_cols:
+                    if col in X_background_encoded.columns:
+                        X_background_encoded[col] = X_background_encoded[col].astype(str)
+                        from sklearn.preprocessing import LabelEncoder
+
+                        le = LabelEncoder()
+                        X_background_encoded[col] = le.fit_transform(X_background_encoded[col])
+
+                # Sample 100 background instances
+                background_sample = shap.sample(X_background_encoded, min(100, len(X_background_encoded)))
+
+                explainer = shap.KernelExplainer(model_obj.predict_proba, background_sample)
+                shap_values_raw = explainer.shap_values(X_instance_encoded)
+
+                # Handle different SHAP output formats
+                if isinstance(shap_values_raw, list):
+                    shap_values = shap_values_raw[1][0]  # Positive class, first instance
+                elif len(shap_values_raw.shape) == 3:
+                    shap_values = shap_values_raw[0, :, 1]  # First instance, positive class
+                else:
+                    shap_values = shap_values_raw[0]  # First instance
             else:
                 typer.secho(
                     f"Error generating SHAP values: {e}",
@@ -1580,8 +1641,32 @@ def recourse(  # pragma: no cover
         # Build policy constraints
         from glassalpha.explain.policy import PolicyConstraints
 
+        # Filter immutable features to only include actual column names
+        # Also include one-hot encoded variants (e.g., gender_male, gender_female)
+        actual_immutable_features = []
+        for pattern in immutable_features:
+            # Check for exact match
+            if pattern in feature_names:
+                actual_immutable_features.append(pattern)
+            # Check for one-hot encoded variants (pattern_*)
+            else:
+                matching_cols = [name for name in feature_names if name.startswith(f"{pattern}_")]
+                actual_immutable_features.extend(matching_cols)
+
+        # Show what's being used
+        if actual_immutable_features:
+            typer.echo(
+                f"  Immutable features ({len(actual_immutable_features)}): {', '.join(actual_immutable_features[:5])}{'...' if len(actual_immutable_features) > 5 else ''}"
+            )
+        else:
+            typer.secho(
+                "⚠️  Warning: No immutable features found. All features are mutable.",
+                fg=typer.colors.YELLOW,
+            )
+            typer.echo("  This may generate unrealistic recommendations.")
+
         policy = PolicyConstraints(
-            immutable_features=immutable_features,
+            immutable_features=actual_immutable_features,
             monotonic_constraints=monotonic_constraints,
             feature_costs=feature_costs if feature_costs else dict.fromkeys(feature_names, 1.0),
             feature_bounds=feature_bounds,

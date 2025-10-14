@@ -22,6 +22,7 @@ from .config_cmds import (
 )
 from .evidence import export_evidence_pack, verify_evidence_pack
 from .explain import reasons, recourse
+from .publish_check import publish_check
 from .system import docs, doctor, list_components_cmd
 
 __all__ = [
@@ -33,6 +34,7 @@ __all__ = [
     "doctor",
     "export_evidence_pack",
     "list_components_cmd",
+    "publish_check",
     "reasons",
     "recourse",
     "validate",

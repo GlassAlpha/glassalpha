@@ -65,7 +65,7 @@ pip install "glassalpha[all]"
 glassalpha quickstart
 
 # 3. Run audit (30 seconds)
-cd my-audit-project && python run_audit.py
+cd my-audit-project && glassalpha audit
 
 # 4. Done! Open your professional report
 open reports/audit_report.html  # macOS
@@ -129,11 +129,12 @@ open audit_config.html  # macOS (auto-named from config)
 Generate audits without YAML files using the `from_model()` API:
 
 ```python
-import glassalpha as ga
+from glassalpha.api import from_model
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+import glassalpha as ga
 
 # Load data (GlassAlpha returns file paths, not DataFrames)
 german_path = ga.datasets.fetch('german_credit')
@@ -163,7 +164,7 @@ model = RandomForestClassifier(random_state=42)
 model.fit(X_train, y_train)
 
 # Generate audit (3 lines)
-result = ga.audit.from_model(
+result = from_model(
     model=model,
     X=X_test,
     y=y_test,
@@ -234,7 +235,7 @@ glassalpha quickstart
 
 ```bash
 cd my-audit-project
-python run_audit.py  # Generates audit report in <5 seconds
+glassalpha audit  # Generates audit report in <5 seconds
 ```
 
 **With custom options**:

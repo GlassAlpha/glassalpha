@@ -10,6 +10,8 @@ _Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable wi
 
 ## Quick Start (5 minutes)
 
+> **Requirements**: Python 3.11+ and binary classification models only (multi-class not yet supported)
+
 ### 1. Install
 
 ```bash
@@ -31,7 +33,7 @@ glassalpha quickstart
 cd my-audit-project
 
 # Run audit
-python run_audit.py
+glassalpha audit
 ```
 
 ### 3. View Results
@@ -186,6 +188,8 @@ glassalpha audit --config audit.yaml \
 
 ### Supported Models
 
+**Binary classification only** (multi-class support planned for v0.3.0)
+
 **Every audit includes:**
 
 - **Group fairness** with 95% confidence intervals (demographic parity, equal opportunity, predictive parity)
@@ -211,7 +215,7 @@ glassalpha audit --config audit.yaml \
 - **Reproducibility**: Deterministic execution, version pinning, byte-identical PDFs (same platform+Python)
 - **CI/CD Gates**: Shift testing with `--fail-on-degradation` blocks deployments on metric degradation
 
-- XGBoost, LightGBM, Logistic Regression (more coming)
+- XGBoost, LightGBM, Logistic Regression (binary classification only; multi-class in v0.3.0)
 - **Everything runs locally** - your data never leaves your machine
 
 All Apache 2.0 licensed.

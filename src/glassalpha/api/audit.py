@@ -59,12 +59,78 @@ def _validate_sklearn_compatible(X: pd.DataFrame, model: Any) -> None:
         raise CategoricalDataError(categorical_cols)
 
 
+def _convert_protected_attributes(
+    protected_attributes: Mapping[str, pd.Series | np.ndarray] | Sequence[str] | None,
+    X: pd.DataFrame | np.ndarray,
+) -> Mapping[str, pd.Series | np.ndarray] | None:
+    """Convert protected_attributes from list format to dict format if needed.
+
+    If protected_attributes is a list of attribute names, auto-detect one-hot encoded columns
+    in X and extract the original categorical values.
+
+    Args:
+        protected_attributes: Either a list of attribute names or dict mapping names to arrays
+        X: Feature matrix (used to auto-detect one-hot columns if protected_attributes is a list)
+
+    Returns:
+        Dict mapping attribute names to arrays, or None if protected_attributes is None
+
+    Raises:
+        InvalidProtectedAttributesError: If auto-detection fails
+
+    """
+    import numpy as np
+    import pandas as pd
+
+    if protected_attributes is None:
+        return None
+
+    # If already a dict, return as-is
+    if isinstance(protected_attributes, Mapping):
+        return protected_attributes
+
+    # If list, auto-detect one-hot encoded columns
+    if not isinstance(X, pd.DataFrame):
+        raise InvalidProtectedAttributesError(
+            "When using list format for protected_attributes, X must be a DataFrame with column names. "
+            "Got numpy array instead."
+        )
+
+    result = {}
+    for attr_name in protected_attributes:
+        # Find columns starting with attr_name_
+        prefix = f"{attr_name}_"
+        matching_cols = [col for col in X.columns if col.startswith(prefix)]
+
+        if not matching_cols:
+            raise InvalidProtectedAttributesError(
+                f"Could not find one-hot encoded columns for protected attribute '{attr_name}'. "
+                f"Expected columns like '{prefix}*' in X. "
+                f"Available columns: {list(X.columns[:10])}{'...' if len(X.columns) > 10 else ''}"
+            )
+
+        # Convert one-hot encoding back to categorical
+        # Find which column has value 1 for each row
+        one_hot_df = X[matching_cols]
+
+        # Extract category names (remove prefix)
+        category_names = [col[len(prefix) :] for col in matching_cols]
+
+        # For each row, find which column is 1 (argmax across one-hot columns)
+        category_indices = np.argmax(one_hot_df.values, axis=1)
+        categorical_values = np.array([category_names[idx] for idx in category_indices])
+
+        result[attr_name] = pd.Series(categorical_values, index=X.index if hasattr(X, "index") else None)
+
+    return result
+
+
 def from_model(
     model: Any,
     X: pd.DataFrame | np.ndarray,
     y: pd.Series | np.ndarray,
     *,
-    protected_attributes: Mapping[str, pd.Series | np.ndarray] | None = None,
+    protected_attributes: Mapping[str, pd.Series | np.ndarray] | Sequence[str] | None = None,
     sample_weight: pd.Series | np.ndarray | None = None,
     random_seed: int = 42,
     feature_names: Sequence[str] | None = None,
@@ -80,12 +146,15 @@ def from_model(
     predictions and probabilities from the model, computes fairness metrics,
     and generates a byte-identical reproducible result.
 
+    **Important**: Binary classification only. Multi-class models not yet supported.
+
     Args:
         model: Fitted sklearn-compatible model with predict() method
         X: Feature matrix (n_samples, n_features)
-        y: True labels (n_samples,)
-        protected_attributes: Dict mapping attribute names to arrays.
-            Example: {"gender": gender_array, "race": race_array}
+        y: True labels (n_samples,). Must be binary (2 unique classes)
+        protected_attributes: Protected attributes for fairness analysis. Can be:
+            - List of attribute names (e.g., ["gender", "age_group"]) - auto-detects one-hot encoded columns
+            - Dict mapping attribute names to arrays (e.g., {"gender": gender_array, "race": race_array})
             Missing values (NaN) are mapped to "Unknown" category.
         sample_weight: Sample weights for weighted metrics (optional)
         random_seed: Random seed for deterministic SHAP sampling
@@ -127,6 +196,7 @@ def from_model(
         >>> result = ga.audit.from_model(model, X, y, explain=False)
 
     """
+    import numpy as np
     import pandas as pd
 
     from glassalpha.models.detection import detect_model_type
@@ -135,6 +205,11 @@ def from_model(
     # Convert inputs to numpy arrays for metrics computation
     X_arr = _to_numpy(X)
     y_arr = _to_numpy(y)
+
+    # Validate binary classification early (before any model operations)
+    n_classes = len(np.unique(y_arr))
+    if n_classes != 2:
+        raise NonBinaryClassificationError(n_classes)
 
     # Validate inputs before any model operations
     if isinstance(X, pd.DataFrame):
@@ -172,12 +247,15 @@ def from_model(
     # Compute model fingerprint (hash of model type + parameters)
     model_fingerprint = f"{model_type}:{hash(str(type(model).__name__))}"
 
+    # Convert protected_attributes from list to dict if needed
+    protected_attributes_converted = _convert_protected_attributes(protected_attributes, X)
+
     # Delegate to from_predictions
     result = from_predictions(
         y_true=y_arr,
         y_pred=y_pred,
         y_proba=y_proba,
-        protected_attributes=protected_attributes,
+        protected_attributes=protected_attributes_converted,
         sample_weight=sample_weight,
         random_seed=random_seed,
         class_names=class_names,

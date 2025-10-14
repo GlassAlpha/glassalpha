@@ -70,8 +70,11 @@ pipx install glassalpha
 # 2. Generate a quickstart project
 glassalpha quickstart
 
-# 3. Run audit (lightning fast!)
-cd my-audit-project && python run_audit.py
+# 3. Run audit (choose your path - both work!)
+cd my-audit-project
+python run_audit.py          # Option A: Uses generated script (great for learning)
+# OR
+glassalpha audit             # Option B: Direct CLI (great for CI/CD)
 
 # 4. Done! Open your professional report (~2-3 seconds total)
 open reports/audit_report.html  # macOS

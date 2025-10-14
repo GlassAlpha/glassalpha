@@ -51,7 +51,15 @@ app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
     pretty_exceptions_enable=True,
-    epilog="""For more information, visit: https://glassalpha.com""",
+    epilog="""Common Mistakes:
+  • Running audit before quickstart → Run 'glassalpha quickstart' first
+  • Using multi-class models → Binary classification only (for now)
+  • Missing determinism setup → Automatically handled in quickstart projects
+  • Can't find config file → Run from project directory (cd my-audit-project)
+
+Need help? glassalpha doctor  # Check your environment
+
+For more information, visit: https://glassalpha.com""",
 )
 
 # Command groups removed - simplified to 3 core commands
@@ -141,29 +149,27 @@ def main_callback(
 # Import and register core commands
 from .commands import (
     audit,
-    config_cheat_cmd,
-    config_list_cmd,
-    config_template_cmd,
     docs,
     doctor,
     export_evidence_pack,
     list_components_cmd,
+    publish_check,
     reasons,
     recourse,
     validate,
     verify_evidence_pack,
 )
+from .commands.config_group import config_app
 from .commands.setup_env import setup_env
 from .quickstart import quickstart
 
 # Register commands
 app.command()(audit)
-app.command(name="config-cheat")(config_cheat_cmd)
-app.command(name="config-list")(config_list_cmd)
-app.command(name="config-template")(config_template_cmd)
+app.add_typer(config_app, name="config")  # Config subcommand group
 app.command()(doctor)
 app.command()(docs)
 app.command(name="export-evidence-pack")(export_evidence_pack)
+app.command(name="publish-check")(publish_check)
 app.command()(quickstart)
 app.command()(reasons)
 app.command()(recourse)

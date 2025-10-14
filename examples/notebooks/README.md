@@ -2,6 +2,8 @@
 
 Interactive Jupyter notebooks demonstrating GlassAlpha's audit capabilities.
 
+> **Note**: All examples use binary classification (2 classes). Multi-class models not yet supported (planned for v0.3.0).
+
 ## Quick Start Notebooks
 
 ### 1. Quickstart (8 minutes)

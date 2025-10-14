@@ -16,6 +16,7 @@ data:
   dataset: german_credit # Built-in dataset (no file needed)
   target_column: credit_risk
   protected_attributes:
+    - gender
     - age_group
 
 # Model: Simple and fast

@@ -1,0 +1,241 @@
+# German Credit Dataset Audit Configuration
+# This configuration demonstrates a complete ML audit pipeline for credit risk assessment
+# using the German Credit dataset with fairness and bias analysis.
+
+# =============================================================================
+# AUDIT PROFILE AND BASIC SETTINGS
+# =============================================================================
+
+# Audit profile determines which components and validations are applied
+audit_profile: "tabular_compliance"
+
+# Strict mode enforces regulatory compliance requirements
+# - Explicit random seeds (no defaults)
+# - Locked data schema (no inference)
+# - Full manifest generation
+# - Deterministic plugin selection
+strict_mode: true
+
+# =============================================================================
+# MODEL CONFIGURATION
+# =============================================================================
+
+model:
+  # Model type - triggers XGBoostWrapper from registry
+  type: "xgboost"
+
+  # Path to pre-trained model (required in strict mode)
+  path: "models/german_credit_xgboost.pkl"
+
+  # Additional model parameters (optional)
+  params:
+    max_depth: 6
+    learning_rate: 0.1
+    n_estimators: 100
+    objective: "binary:logistic"
+    eval_metric: "logloss"
+
+# =============================================================================
+# DATA CONFIGURATION
+# =============================================================================
+
+data:
+  # Use built-in German Credit dataset
+  dataset: german_credit
+  fetch: if_missing
+  offline: false
+
+  # Target and feature definitions
+  target_column: "credit_risk"
+
+  # Key features for credit risk assessment
+  feature_columns:
+    - "checking_account_status"
+    - "duration_months"
+    - "credit_history"
+    - "purpose"
+    - "credit_amount"
+    - "savings_account"
+    - "employment_duration"
+    - "installment_rate"
+    - "personal_status_sex"
+    - "other_debtors"
+    - "present_residence_since"
+    - "property"
+    - "age_years"
+    - "other_installment_plans"
+    - "housing"
+    - "existing_credits_count"
+    - "job"
+    - "dependents_count"
+    - "telephone"
+    - "foreign_worker"
+    - "gender" # Gender (extracted from personal_status_sex during preprocessing)
+    - "age_group" # Age groups (young, middle_young, middle_aged, senior)
+
+  # Protected attributes for fairness analysis
+  # These are sensitive demographic characteristics that should not lead to discrimination
+  protected_attributes:
+    - "gender" # Gender (extracted from personal_status_sex)
+    - "age_group" # Age groups (young, middle_young, middle_aged, senior)
+    - "foreign_worker" # Nationality/residency status
+
+# =============================================================================
+# EXPLAINER CONFIGURATION
+# =============================================================================
+
+explainers:
+  # Strategy for selecting explainers (deterministic for reproducibility)
+  strategy: "first_compatible"
+
+  # Priority order - first compatible explainer will be selected
+  priority:
+    - "treeshap" # TreeSHAP - exact SHAP values for tree models (preferred)
+    - "kernelshap" # KernelSHAP - model-agnostic fallback
+    - "noop" # No-op fallback (should not be reached)
+
+  # Explainer-specific configuration
+  config:
+    treeshap:
+      # Maximum samples for SHAP value computation
+      max_samples: 1000
+      # Check additivity property (TreeSHAP should always be additive)
+      check_additivity: true
+
+    kernelshap:
+      # Number of samples for model-agnostic SHAP approximation
+      n_samples: 500
+      # Background dataset size for KernelSHAP
+      background_size: 100
+
+# =============================================================================
+# METRICS CONFIGURATION
+# =============================================================================
+
+metrics:
+  # Performance metrics for model evaluation
+  performance:
+    - "accuracy" # Overall classification accuracy
+    - "precision" # Positive predictive value
+    - "recall" # Sensitivity/true positive rate
+    - "f1" # Harmonic mean of precision and recall
+    - "auc_roc" # Area under ROC curve
+    - "classification_report" # Comprehensive classification metrics
+
+  # Fairness metrics for bias detection
+  fairness:
+    - "demographic_parity" # Statistical parity across demographic groups
+    - "equal_opportunity" # Equal true positive rates across groups
+    - "equalized_odds" # Equal TPR and FPR across groups
+    - "predictive_parity" # Equal precision across demographic groups
+
+  # Drift metrics for model stability (requires reference data)
+  drift:
+    - "population_stability_index" # PSI for distribution shift detection
+    - "kl_divergence" # KL divergence between distributions
+    - "kolmogorov_smirnov" # Two-sample test for distribution changes
+
+# =============================================================================
+# REPRODUCIBILITY CONFIGURATION
+# =============================================================================
+
+reproducibility:
+  # Master random seed for all randomness sources
+  random_seed: 42
+
+  # Enforce deterministic behavior across all components
+  deterministic: true
+
+  # Capture complete execution environment
+  capture_environment: true
+
+# =============================================================================
+# AUDIT MANIFEST CONFIGURATION
+# =============================================================================
+
+manifest:
+  # Enable comprehensive audit trail generation
+  enabled: true
+
+  # Include Git repository information
+  include_git_sha: true
+
+  # Include configuration hash for integrity verification
+  include_config_hash: true
+
+  # Include dataset hash for data integrity verification
+  include_data_hash: true
+
+# =============================================================================
+# REPORT CONFIGURATION
+# =============================================================================
+
+report:
+  # Template for report generation
+  template: "standard_audit"
+
+  # Output format (PDF is primary target)
+  output_format: "pdf"
+
+  # Report sections to include
+  include_sections:
+    - "executive_summary" # High-level findings and risk assessment
+    - "data_overview" # Dataset characteristics and quality
+    - "model_performance" # Performance metrics and validation
+    - "global_explanations" # Feature importance and model behavior
+    - "local_explanations" # Individual prediction explanations
+    - "fairness_analysis" # Bias detection and demographic analysis
+    - "drift_detection" # Model stability and data shift analysis
+    - "audit_manifest" # Complete reproducibility information
+    - "regulatory_compliance" # Compliance checklist and recommendations
+
+  # Report styling and formatting
+  styling:
+    # Professional color scheme suitable for regulatory submission
+    color_scheme: "professional"
+
+    # Include company/organization branding (if applicable)
+    # logo_path: "assets/logo.png"
+
+    # Page layout and formatting
+    page_size: "A4"
+    margins: "standard"
+
+    # Include regulatory compliance statement
+    compliance_statement: true
+
+# =============================================================================
+# RECOURSE CONFIGURATION (Advanced Feature)
+# =============================================================================
+
+recourse:
+  # Enable recourse generation for individual predictions
+  enabled: true
+
+  # Features that cannot be changed (immutable constraints)
+  immutable_features:
+    - "age_years" # Age cannot be changed
+    - "gender" # Gender is protected characteristic
+    - "personal_status_sex" # Personal status is largely fixed
+    - "foreign_worker" # Nationality/residency status
+
+  # Directional constraints (features that can only improve)
+  monotonic_constraints:
+    credit_amount: "decrease_only" # Lower loan amount is safer
+    duration_months: "decrease_only" # Shorter duration is safer
+    savings_account: "increase_only" # More savings is always better
+    employment_duration: "increase_only" # Longer employment is better
+    existing_credits_count: "decrease_only" # Fewer existing credits is better
+
+  # Cost function for feature changes (L1 weighted distance)
+  cost_function: "weighted_l1"
+  max_iterations: 100
+
+# Preprocessing artifact verification (required in strict mode)
+preprocessing:
+  mode: artifact
+  artifact_path: artifacts/german_credit_preprocessor.joblib
+  expected_file_hash: "sha256:9373ae67dbcd5c1558fa4ba7a727e05575f9421358a8604a1d0eb0da80385a26"
+  expected_params_hash: "sha256:cf5e71ee7e1733ca6d857b7f21df94a41f29ebeaaec9c6d46783336757cfcf37"
+  expected_sparse: false
+  fail_on_mismatch: true

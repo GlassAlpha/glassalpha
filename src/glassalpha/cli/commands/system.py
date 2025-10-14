@@ -193,30 +193,34 @@ def doctor(
         if value:
             typer.echo(f"  ✅ {var}={value}")
         else:
-            typer.echo(f"  ❌ {var} not set")
             missing_vars.append(var)
 
     if missing_vars:
         typer.echo()
-        typer.secho("  ⚠️  One-time setup required", fg=typer.colors.YELLOW, bold=True)
-        typer.echo("  Without these variables, reports may not be byte-identical across runs.")
+        typer.secho(
+            "  ℹ️  Determinism Status: Not configured (optional for development)", fg=typer.colors.CYAN, bold=True
+        )
         typer.echo()
-        typer.secho("  🔧 Recommended setup (run once):", fg=typer.colors.CYAN)
-        typer.echo('    eval "$(glassalpha setup-env)"')
+        typer.echo("  Why it matters:")
+        typer.echo("    Regulators require byte-identical audit outputs for verification.")
+        typer.echo("    Without these variables, reports may vary slightly across runs.")
         typer.echo()
-        typer.echo("  For permanent setup (add to shell profile):")
-        typer.echo("    glassalpha setup-env >> ~/.bashrc  # or ~/.zshrc")
-        typer.echo("    source ~/.bashrc")
+        typer.echo("  When to enable:")
+        typer.echo("    • Before production audits or regulatory submission")
+        typer.echo("    • When sharing audits with compliance officers")
+        typer.echo("    • For CI/CD pipelines that verify outputs")
         typer.echo()
-        typer.echo("  Manual setup:")
-        typer.echo("    export TZ=UTC")
-        typer.echo("    export MPLBACKEND=Agg")
-        typer.echo("    export PYTHONHASHSEED=0")
+        typer.secho("  ✅ Quick setup (your quickstart projects include this automatically):", fg=typer.colors.GREEN)
+        typer.echo("    glassalpha quickstart  # Determinism built-in")
         typer.echo()
-        typer.echo("  Why this matters: Regulators require byte-identical outputs for audit verification.")
+        typer.secho("  🔧 Manual setup (for existing projects):", fg=typer.colors.YELLOW)
+        typer.echo('    eval "$(glassalpha setup-env)"  # Current shell session')
+        typer.echo("    glassalpha setup-env >> ~/.bashrc  # Permanent (restart shell after)")
+        typer.echo()
         typer.echo("  Learn more: glassalpha docs determinism")
     else:
-        typer.echo("  ✅ All determinism variables set!")
+        typer.echo("  ✅ Determinism configured!")
+        typer.echo("     Your audits will be byte-identical across runs.")
 
     typer.echo()
 
