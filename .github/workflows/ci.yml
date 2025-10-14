@@ -194,7 +194,7 @@ jobs:
           python -m pip show -f glassalpha | grep "glassalpha/data" || echo "ERROR: glassalpha/data NOT FOUND in wheel"
           echo "=== Verify builtin configs are packaged ==="
           python -m pip show -f glassalpha | grep \
-            "glassalpha/data/configs/german_credit_simple.yaml" \
+            "glassalpha/configs/german_credit_simple.yaml" \
             || (echo "ERROR: packaged configs missing"; exit 1)
           echo "=== Test import surface ==="
           python -c \
