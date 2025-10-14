@@ -46,23 +46,42 @@ def _display_whats_next(
     typer.secho("What's next?", fg=typer.colors.CYAN, bold=True)
     typer.echo()
 
+    # Convert output_path to relative if possible (cleaner display)
+    try:
+        relative_output = output_path.relative_to(Path.cwd())
+    except ValueError:
+        relative_output = output_path
+
     # View report
     if output_format == "html":
         typer.echo("  📄 View report:")
-        typer.echo(f"     open {output_path}  # macOS")
-        typer.echo(f"     xdg-open {output_path}  # Linux")
+        typer.echo(f"     open {relative_output}  # macOS")
+        typer.echo(f"     xdg-open {relative_output}  # Linux")
         typer.echo()
+
+        # PDF export (for regulatory submission)
+        typer.echo("  📋 Export to PDF (for regulatory submission):")
+        typer.echo("     pip install 'glassalpha[all]'  # One-time: install PDF dependencies")
+        relative_pdf = str(relative_output).replace(".html", ".pdf")
+        typer.echo(f"     glassalpha audit --output {relative_pdf}")
+        typer.echo()
+
+    # Evidence pack export
+    typer.echo("  📦 Create evidence pack (verification bundle):")
+    typer.echo(f"     glassalpha export-evidence-pack {relative_output}")
+    typer.echo()
 
     # Advanced features
     typer.echo("  🔍 Advanced:")
     if not shift_analysis_done:
         typer.echo("     glassalpha audit --check-shift gender:+0.1  # Test robustness")
     if model_save_path:
-        typer.echo(f"     glassalpha reasons -m {model_save_path} -d models/test_data.csv -i 0  # Explain instance")
-        typer.echo(f"     glassalpha recourse -m {model_save_path} -d models/test_data.csv -i 0  # Get recommendations")
-    typer.echo(f"     glassalpha export-evidence-pack {output_path}  # Create verification package")
+        typer.echo(f"     glassalpha reasons -m {model_save_path} -i 0  # Explain decision")
+        typer.echo(f"     glassalpha recourse -m {model_save_path} -i 0  # Get recommendations")
 
     # Learn more
+    typer.echo()
+    typer.echo("  💡 Tip: Edit audit.yaml to customize metrics, then re-run: glassalpha audit")
     typer.echo()
     typer.echo("  📚 Learn more: glassalpha docs")
     typer.echo("=" * 50)
@@ -1117,12 +1136,6 @@ def audit(  # pragma: no cover
                 )
                 raise typer.Exit(ExitCode.USER_ERROR)
 
-        # Auto-detect output path if not provided
-        if output is None:
-            # Default to {config_name}_report.html (consistent with quickstart pattern)
-            config_stem = config.stem  # e.g., "audit" from "audit.yaml"
-            output = config.parent / f"{config_stem}_report.html"
-
         # Auto-detect CI environment for repro mode
         repro = is_ci_environment()
 
@@ -1176,26 +1189,6 @@ def audit(  # pragma: no cover
             output_error(error_msg)
             raise typer.Exit(code=ExitCode.USER_ERROR)
 
-        # Validate output directory exists before doing any work
-        output_dir = output.parent if output.parent != Path() else Path.cwd()
-        if not output_dir.exists():
-            output_error(f"Output directory does not exist: {output_dir}. Create it with: mkdir -p {output_dir}")
-            raise typer.Exit(code=ExitCode.USER_ERROR)
-
-        # Check if output directory is writable
-        if not os.access(output_dir, os.W_OK):
-            output_error(f"Output directory is not writable: {output_dir}")
-            raise typer.Exit(code=ExitCode.SYSTEM_ERROR)
-
-        # Validate manifest sidecar path will be writable
-        manifest_path = output.with_suffix(".manifest.json")
-        if manifest_path.exists() and not os.access(manifest_path, os.W_OK):
-            output_error(
-                f"Cannot overwrite existing manifest (read-only): {manifest_path}. "
-                "Make the file writable or remove it before running audit",
-            )
-            raise typer.Exit(code=ExitCode.SYSTEM_ERROR)
-
         # Import here to avoid circular imports
         from glassalpha.cli.preflight import preflight_check_dependencies, preflight_check_model
         from glassalpha.config import load_config
@@ -1220,6 +1213,52 @@ def audit(  # pragma: no cover
             profile_name=profile,
             strict=strict,
         )
+
+        # Auto-detect output path if not provided
+        # Priority: CLI flag > config.report.output_path > auto-detection
+        if output is None:
+            # Check if config has explicit output_path
+            if (
+                hasattr(audit_config, "report")
+                and hasattr(audit_config.report, "output_path")
+                and audit_config.report.output_path is not None
+            ):
+                # Use config's output_path, resolved relative to config file location
+                config_dir = config.parent
+                config_output_path = audit_config.report.output_path
+
+                # Handle relative paths correctly
+                if not config_output_path.is_absolute():
+                    output = config_dir / config_output_path
+                else:
+                    output = config_output_path
+            else:
+                # Fall back to auto-detection: {config_name}_report.html in config directory
+                config_stem = config.stem  # e.g., "audit" from "audit.yaml"
+                output = config.parent / f"{config_stem}_report.html"
+
+        # Ensure output directory exists (create if needed)
+        output_dir = output.parent if output.parent != Path() else Path.cwd()
+        if not output_dir.exists():
+            try:
+                output_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                output_error(f"Failed to create output directory: {output_dir}. Error: {e}")
+                raise typer.Exit(code=ExitCode.SYSTEM_ERROR)
+
+        # Check if output directory is writable
+        if not os.access(output_dir, os.W_OK):
+            output_error(f"Output directory is not writable: {output_dir}")
+            raise typer.Exit(code=ExitCode.SYSTEM_ERROR)
+
+        # Validate manifest sidecar path will be writable
+        manifest_path = output.with_suffix(".manifest.json")
+        if manifest_path.exists() and not os.access(manifest_path, os.W_OK):
+            output_error(
+                f"Cannot overwrite existing manifest (read-only): {manifest_path}. "
+                "Make the file writable or remove it before running audit",
+            )
+            raise typer.Exit(code=ExitCode.SYSTEM_ERROR)
 
         # Validate dataset name early if using built-in dataset
         if audit_config.data.dataset and audit_config.data.dataset not in ["custom", None]:
