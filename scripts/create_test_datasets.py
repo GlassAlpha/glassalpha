@@ -39,7 +39,7 @@ def create_german_credit_test():
 
     # Load schema from the actual German Credit config file
     # This ensures test data matches what tests and configs expect
-    config_path = Path(__file__).parent.parent / "src" / "glassalpha" / "data" / "configs" / "german_credit.yaml"
+    config_path = Path(__file__).parent.parent / "src" / "glassalpha" / "configs" / "german_credit.yaml"
     config = load_config_from_file(config_path)
 
     # Extract expected columns from config

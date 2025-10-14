@@ -135,7 +135,7 @@ Use `source scripts/setup-determinism-env.sh` to match CI environment locally.
 ## Repository Structure
 
 - **`src/glassalpha/`** - Main Python package source code
-  - **`src/glassalpha/data/configs/`** - Example audit configurations (packaged with install)
+  - **`src/glassalpha/configs/`** - Example audit configurations (packaged with install)
 - **`tests/`** - Test suite
 - **`site/`** - User documentation and tutorials ([glassalpha.com](https://glassalpha.com/))
 - **`examples/`** - Jupyter notebooks and tutorials
