@@ -170,8 +170,11 @@ class CoefficientsExplainer(ExplainerBase):
         if hasattr(self.model, "_background_data"):
             background_data = self.model._background_data
         # Use mean of input data as baseline
-        elif hasattr(X, "mean"):  # pandas DataFrame
-            background_data = X.mean(axis=0).values.reshape(1, -1)
+        elif hasattr(X, "mean"):  # pandas DataFrame or numpy with mean method
+            if hasattr(X, "values"):  # pandas DataFrame
+                background_data = X.mean(axis=0).values.reshape(1, -1)
+            else:  # numpy array
+                background_data = np.mean(X, axis=0, keepdims=True)
         else:  # numpy array
             background_data = np.mean(X, axis=0, keepdims=True)
 

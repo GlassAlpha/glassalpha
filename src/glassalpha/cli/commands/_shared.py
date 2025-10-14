@@ -29,16 +29,15 @@ def _check_and_warn_determinism() -> None:
 
     if missing:
         typer.echo()
-        typer.secho("⚠️  Determinism Warning:", fg=typer.colors.YELLOW, bold=True)
-        typer.echo("   Environment variables not set for byte-identical outputs:")
-        for var in missing:
-            typer.echo(f"     • {var}")
+        typer.secho("⚠️  One-time setup required for reproducible audits", fg=typer.colors.YELLOW, bold=True)
         typer.echo()
-        typer.secho("   Quick fix:", fg=typer.colors.CYAN)
+        typer.secho("   Run once to enable byte-identical reports:", fg=typer.colors.CYAN)
         typer.echo('     eval "$(glassalpha setup-env)"')
         typer.echo()
-        typer.echo("   Why this matters: Regulators require reproducible audits.")
-        typer.echo("   Learn more: glassalpha doctor")
+        typer.echo("   Or save to file for permanent setup:")
+        typer.echo("     glassalpha setup-env >> ~/.bashrc  # or ~/.zshrc")
+        typer.echo()
+        typer.secho(f"   Missing variables: {', '.join(missing)}", fg=typer.colors.BRIGHT_BLACK)
         typer.echo()
 
 

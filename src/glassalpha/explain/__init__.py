@@ -183,8 +183,8 @@ def compute_explanations(
     # Fit explainer with wrapper and background data
     explainer.fit(wrapper, X_sample, feature_names=feature_names)
 
-    # Generate explanations
-    result = explainer.explain(X_sample)
+    # Generate explanations (pass model and X for API compatibility)
+    result = explainer.explain(wrapper, X_sample)
 
     # Return summary
     return {

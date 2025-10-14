@@ -27,6 +27,47 @@ from ._shared import (
 logger = logging.getLogger(__name__)
 
 
+def _display_whats_next(
+    output_path: Path,
+    output_format: str,
+    model_save_path: str | None = None,
+    shift_analysis_done: bool = False,
+) -> None:
+    """Display consolidated 'What's next?' guidance.
+
+    Args:
+        output_path: Path to generated audit report
+        output_format: Format of the report (html/pdf)
+        model_save_path: Path to saved model (if any)
+        shift_analysis_done: Whether shift analysis was performed
+
+    """
+    typer.echo("\n" + "=" * 50)
+    typer.secho("What's next?", fg=typer.colors.CYAN, bold=True)
+    typer.echo()
+
+    # View report
+    if output_format == "html":
+        typer.echo("  📄 View report:")
+        typer.echo(f"     open {output_path}  # macOS")
+        typer.echo(f"     xdg-open {output_path}  # Linux")
+        typer.echo()
+
+    # Advanced features
+    typer.echo("  🔍 Advanced:")
+    if not shift_analysis_done:
+        typer.echo("     glassalpha audit --check-shift gender:+0.1  # Test robustness")
+    if model_save_path:
+        typer.echo(f"     glassalpha reasons -m {model_save_path} -d models/test_data.csv -i 0  # Explain instance")
+        typer.echo(f"     glassalpha recourse -m {model_save_path} -d models/test_data.csv -i 0  # Get recommendations")
+    typer.echo(f"     glassalpha export-evidence-pack {output_path}  # Create verification package")
+
+    # Learn more
+    typer.echo()
+    typer.echo("  📚 Learn more: glassalpha docs")
+    typer.echo("=" * 50)
+
+
 def _run_audit_pipeline(
     config,
     output_path: Path,
@@ -455,27 +496,6 @@ def _run_audit_pipeline(
             typer.echo(f"\nManifest: {manifest_path}")
 
         typer.echo("\nThe audit report is ready for review and regulatory submission.")
-
-        # Show "What now?" guidance for new users
-        typer.echo("\n" + "=" * 50)
-        typer.secho("Next Steps:", fg=typer.colors.CYAN, bold=True)
-        typer.echo()
-        if output_format == "html":
-            typer.echo("  📄 View report:")
-            typer.echo(f"     open {output_path}  # macOS")
-            typer.echo(f"     xdg-open {output_path}  # Linux")
-            typer.echo()
-        typer.echo("  🔍 Try advanced features:")
-        typer.echo("     glassalpha audit --check-shift gender:+0.1  # Test demographic shifts")
-        # Show reason codes example if model save path was configured
-        if hasattr(config.model, "save_path") and config.model.save_path:
-            model_save_path = config.model.save_path
-            typer.echo(f"     glassalpha reasons -m {model_save_path} -d models/test_data.csv -i 0")
-        typer.echo(f"     glassalpha export-evidence-pack {output_path}  # Create verification package")
-        typer.echo()
-        typer.echo("  📖 Learn more:")
-        typer.echo("     glassalpha docs quickstart")
-        typer.echo("=" * 50)
 
         # Regulatory compliance message
         if getattr(getattr(config, "runtime", None), "strict_mode", False):
@@ -980,7 +1000,7 @@ def audit(  # pragma: no cover
         None,
         "--output",
         "-o",
-        help="Path for output report (defaults to {config_name}.html)",
+        help="Path for output report (defaults to {config_name}_report.html)",
     ),
     strict: bool | None = typer.Option(
         None,
@@ -1023,7 +1043,7 @@ def audit(  # pragma: no cover
 
     Smart Defaults:
         If no --config is provided, searches for: glassalpha.yaml, audit.yaml, audit_config.yaml, config.yaml
-        If no --output is provided, uses {config_name}.html
+        If no --output is provided, uses {config_name}_report.html
         Strict mode auto-enables for prod*/production* configs
         Repro mode auto-enables in CI environments
 
@@ -1099,8 +1119,9 @@ def audit(  # pragma: no cover
 
         # Auto-detect output path if not provided
         if output is None:
-            # Default to {config_name}.html
-            output = config.with_suffix(".html")
+            # Default to {config_name}_report.html (consistent with quickstart pattern)
+            config_stem = config.stem  # e.g., "audit" from "audit.yaml"
+            output = config.parent / f"{config_stem}_report.html"
 
         # Auto-detect CI environment for repro mode
         repro = is_ci_environment()
@@ -1521,14 +1542,6 @@ def audit(  # pragma: no cover
 
                         # Show next steps for using the model
                         test_data_hint = "models/test_data.csv"  # Standard location from audit
-                        typer.echo()
-                        typer.secho("Next steps:", fg=typer.colors.CYAN, bold=True)
-                        typer.echo(
-                            f"  Generate reason codes: glassalpha reasons -m {save_model_path} -d {test_data_hint} -i 0"
-                        )
-                        typer.echo(
-                            f"  Generate recourse: glassalpha recourse -m {save_model_path} -d {test_data_hint} -i 0"
-                        )
                     except Exception as e:
                         # Only show warning if actual save failed
                         typer.secho(f"⚠️  Failed to save model: {e}", fg=typer.colors.YELLOW)
@@ -1568,6 +1581,18 @@ def audit(  # pragma: no cover
                 "\n✓ Shift analysis complete - no violations detected",
                 fg=typer.colors.GREEN,
             )
+
+        # Show consolidated "What's next?" guidance
+        model_save_path = None
+        if hasattr(audit_config.model, "save_path") and audit_config.model.save_path:
+            model_save_path = str(audit_config.model.save_path)
+
+        _display_whats_next(
+            output_path=output,
+            output_format=output_format,
+            model_save_path=model_save_path,
+            shift_analysis_done=bool(check_shift),
+        )
 
     except typer.Exit:
         # Re-raise typer.Exit without modification - these are intentional exits with custom messages

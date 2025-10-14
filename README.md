@@ -8,95 +8,118 @@ Generate deterministic PDF audit reports with statistical confidence intervals, 
 
 _Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable with 1000+ passing tests and comprehensive documentation. Breaking API changes may occur before v1.0. First stable release expected Q1 2025._
 
-## Installation
+## Quick Start (5 minutes)
 
-### Quick install
-
-**Recommended: Use a virtual environment to avoid conflicts**
+### 1. Install
 
 ```bash
-# Step 1: Create and activate virtual environment
+# Create virtual environment (recommended)
 python3 -m venv glassalpha-env
-source glassalpha-env/bin/activate  # On Windows: glassalpha-env\Scripts\activate
+source glassalpha-env/bin/activate  # Windows: glassalpha-env\Scripts\activate
 
-# Step 2: Install GlassAlpha with all features
-pip install "glassalpha[all]"
-
-# Step 3: Verify installation
-glassalpha --version
-glassalpha doctor
+# Install GlassAlpha
+pip install glassalpha
 ```
 
-> **💡 Troubleshooting**: If you see `externally-managed-environment` error, you must use a virtual environment (Step 1 above). This is required on Python 3.11+ systems with PEP 668.
+> **Note**: Base install includes LogisticRegression with coefficient explanations. For XGBoost/LightGBM with SHAP: `pip install "glassalpha[all]"`
 
-**Base installation** includes LogisticRegression model with coefficient-based explanations (fast, zero extra dependencies).
+### 2. Generate Your First Audit
 
-**Optional features:**
+```bash
+# Create project (uses German Credit dataset by default)
+glassalpha quickstart
+cd my-audit-project
+
+# Run audit
+python run_audit.py
+```
+
+### 3. View Results
+
+```bash
+# Open the report
+open reports/audit_report.html  # macOS
+xdg-open reports/audit_report.html  # Linux
+```
+
+**That's it!** You now have a professional compliance audit with performance metrics, fairness analysis, and feature explanations.
+
+---
+
+## Advanced Usage
+
+### Test Demographic Shifts (Robustness Testing)
+
+```bash
+glassalpha audit --check-shift gender:+0.1
+```
+
+Tests if fairness metrics degrade when gender distribution changes by 10 percentage points.
+
+### Generate Reason Codes (ECOA Compliance)
+
+```bash
+glassalpha reasons -m models/model.pkl -d models/test_data.csv -i 0
+```
+
+Generates adverse action notices with excluded protected attributes.
+
+### Export Evidence Pack (Regulatory Submission)
+
+```bash
+glassalpha export-evidence-pack audit_report.html --output evidence.zip
+```
+
+Creates verifiable audit package with checksums and manifest for regulators.
+
+---
+
+## Optional Features
+
+Install additional capabilities:
 
 ```bash
 pip install "glassalpha[explain]"  # SHAP + XGBoost + LightGBM
-pip install "glassalpha[viz]"      # Enhanced visualizations
-pip install "glassalpha[all]"      # All features (recommended)
+pip install "glassalpha[all]"      # All features (recommended for production)
 ```
 
-### Install from source
+### One-Time Setup for Reproducibility
 
-For development or latest features:
+For byte-identical audit reports (required for regulatory compliance):
 
 ```bash
-# Create virtual environment
-python3 -m venv glassalpha-env
-source glassalpha-env/bin/activate
+eval "$(glassalpha setup-env)"
+```
 
-# Clone and install
+Or add to your shell profile for permanent setup:
+
+```bash
+glassalpha setup-env >> ~/.bashrc  # or ~/.zshrc
+```
+
+---
+
+## Installation (Full Details)
+
+### From PyPI (Recommended)
+
+```bash
+# Base installation
+pip install glassalpha
+
+# With all features
+pip install "glassalpha[all]"
+```
+
+### From Source (Development)
+
+```bash
 git clone https://github.com/GlassAlpha/glassalpha
 cd glassalpha
 pip install -e ".[all]"
 ```
 
-## Development Setup
-
-To ensure your local environment matches CI:
-
-```bash
-# Set up determinism environment (required for compliance)
-source scripts/setup-determinism-env.sh
-
-# Verify determinism works
-./scripts/check-determinism-quick.sh
-```
-
-### Local vs CI Environment
-
-GlassAlpha requires deterministic outputs for compliance. Our CI enforces:
-
-- Single-threaded execution (no pytest-xdist)
-- Fixed random seeds (PYTHONHASHSEED=0)
-- UTC timezone (TZ=UTC)
-- Headless matplotlib (MPLBACKEND=Agg)
-
-Use `source scripts/setup-determinism-env.sh` to match CI environment locally.
-
-Create a project with configuration (interactive wizard)
-
-```bash
-glassalpha quickstart
-```
-
-Generate an audit report
-
-```bash
-glassalpha audit
-```
-
-**Tip**: For faster iteration during development, enable fast mode in your config:
-
-```yaml
-runtime:
-  fast_mode: true # Reduces bootstrap samples (2-3s vs 5-7s)
-```
-
-That's it. You now have a complete audit report with model performance, explanations, and fairness metrics.
+> **Troubleshooting**: If you see `externally-managed-environment` error, use a virtual environment (Python 3.11+ requirement).
 
 **Tip:** Run `glassalpha doctor` anytime to check what features are available and see installation options.
 

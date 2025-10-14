@@ -45,4 +45,4 @@ metrics:
 
 report:
   template: standard_audit
-  output_format: pdf
+  output_format: html

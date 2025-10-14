@@ -61,7 +61,7 @@ Get your first professional audit report in 5 minutes:
 # 1. Install (1-2 minutes)
 pip install "glassalpha[all]"
 
-# 2. Generate project (interactive wizard, 30 seconds)
+# 2. Generate project (30 seconds)
 glassalpha quickstart
 
 # 3. Run audit (30 seconds)
@@ -73,7 +73,7 @@ xdg-open reports/audit_report.html  # Linux
 start reports/audit_report.html  # Windows
 
 # Optional: Create evidence pack for regulatory submission
-glassalpha export-evidence-pack reports/audit_report.html
+glassalpha export-evidence-pack reports/audit_report.html --output evidence.zip
 ```
 
 [Evidence pack guide →](../guides/evidence-packs.md) - Package audits for regulatory submission
@@ -89,7 +89,7 @@ pip install glassalpha
 
 # 2. Create project from example config
 mkdir my-audit && cd my-audit
-glassalpha quickstart --dataset german_credit --model xgboost --no-interactive
+glassalpha quickstart --dataset german_credit --model xgboost
 
 # 3. Run audit
 glassalpha audit
@@ -222,12 +222,6 @@ pip install glassalpha
 glassalpha quickstart
 ```
 
-The interactive wizard will ask you:
-
-1. **Project name**: Where to create the project directory
-2. **Dataset**: German Credit (1K samples) or Adult Income (48K samples)
-3. **Model type**: XGBoost (recommended), LightGBM (fast), or Logistic Regression (simple)
-
 **What you get:**
 
 - Complete project directory structure (data/, models/, reports/)
@@ -243,14 +237,13 @@ cd my-audit-project
 python run_audit.py  # Generates audit report in <5 seconds
 ```
 
-**Non-interactive mode** (for scripts/CI):
+**With custom options**:
 
 ```bash
 glassalpha quickstart \
   --dataset german_credit \
   --model xgboost \
-  --output my-project \
-  --no-interactive
+  --output my-project
 ```
 
 **Skip to:** [Step 3: Review your audit report](#step-3-review-your-audit-report) once your report is generated.
@@ -536,45 +529,87 @@ metrics:
     metrics: [demographic_parity, equal_opportunity]
 ```
 
-## Common pitfalls (and how to avoid them)
+## Common mistakes (and how to fix them)
 
-### Pitfall 1: Absolute vs relative paths
+### Mistake 1: "Directory already exists"
 
-❌ **Don't**: Use absolute paths like `/Users/yourname/data.csv` in configs
+❌ **Error**: `Directory 'my-audit-project' already exists and is not empty`
 
-✅ **Do**: Use relative paths from working directory: `data/train.csv`
+✅ **Solution**: Use `--output` to specify a different directory:
 
-**Why**: Breaks reproducibility across environments. Configs with absolute paths won't work on other machines or in CI/CD.
+```bash
+glassalpha quickstart --output my-project-2
+# Or choose a custom name:
+glassalpha quickstart --output credit-audit-2024
+```
 
-### Pitfall 2: Slow first audit
+**Why it happens**: `glassalpha quickstart` defaults to `my-audit-project`. If you've run it before, you need a different name.
 
-⚠️ **Expected**: First audit takes 30-60 seconds (dataset download + imports)
+### Mistake 2: PDF generation takes too long
 
-✅ **Normal**: Subsequent audits complete in 3-5 seconds
+❌ **Problem**: PDF generation hangs or takes 5+ minutes
 
-**When to worry**: If consistently >2 minutes, reduce `explainer.background_samples` in config
+✅ **Solution**: Use HTML format instead (instant, portable):
 
-### Pitfall 3: Protected attributes not found
+```bash
+glassalpha audit --output audit.html  # Recommended for development
+```
+
+**For regulatory submission**: Generate HTML first, then convert if needed:
+
+```bash
+glassalpha audit --output audit.html
+# Later, if you need PDF:
+glassalpha html-to-pdf audit.html
+```
+
+**Why**: HTML is instant (<1 second), byte-identical, and works everywhere. PDF generation is slow due to WeasyPrint rendering. Use HTML for development, PDF only for final regulatory submission.
+
+### Mistake 3: Config file not found
+
+❌ **Error**: `Config file not found: audit.yaml`
+
+✅ **Solution**: Run `glassalpha quickstart` first to generate a project:
+
+```bash
+glassalpha quickstart --output my-project
+cd my-project
+python run_audit.py  # Now it will find audit.yaml
+```
+
+**Why it happens**: The audit command looks for config files in the current directory. Make sure you're in the project directory created by quickstart.
+
+### Mistake 4: Protected attributes not found
 
 ❌ **Error**: `DataSchemaError: Column 'gender' not found`
 
-✅ **Fix**: Check spelling, ensure column exists in CSV, verify data loading
+✅ **Fix**: Check spelling and verify column names match exactly (case-sensitive)
 
-**Tip**: Print `df.columns` before running audit to verify column names match exactly (case-sensitive)
+**Debugging steps**:
 
-### Pitfall 4: Small sample size warnings
+1. Print column names: `python -c "import pandas as pd; print(pd.read_csv('data.csv').columns)"`
+2. Update config to match exact column names
+3. Note: Column names are case-sensitive (`Gender` ≠ `gender`)
 
-⚠️ **Warning**: "Group has n<30 samples - low statistical power"
-
-✅ **Options**: (1) Collect more data, (2) Aggregate groups, (3) Document limitation in report
-
-**Don't ignore**: Low power means unreliable fairness metrics - statistical tests lack sensitivity
-
-### Pitfall 5: Model type mismatch
+### Mistake 5: Model type mismatch
 
 ❌ **Error**: `ExplainerCompatibilityError: treeshap not compatible with LogisticRegression`
 
-✅ **Fix**: Use `coefficients` explainer for linear models, `treeshap` for tree models (XGBoost, LightGBM, RandomForest)
+✅ **Fix**: Use `coefficients` explainer for linear models, `treeshap` for tree models
+
+**In your config**:
+
+```yaml
+# For LogisticRegression:
+explainers:
+  priority:
+    - coefficients  # Fast, accurate for linear models
+
+# For XGBoost/LightGBM:
+explainers:
+  priority:
+    - treeshap  # Best for tree models
+```
 
 **Reference**: See [Model-Explainer Compatibility](../reference/model-explainer-compatibility.md) for full matrix
 
@@ -587,7 +622,7 @@ Enable strict mode for regulatory compliance:
 ```bash
 glassalpha audit \
   --config german_credit_simple.yaml \
-  --output regulatory_audit.pdf \
+  --output regulatory_audit.html \
   --strict
 ```
 
@@ -596,7 +631,7 @@ Use a different model (edit config file: model.type: lightgbm):
 ```bash
 glassalpha audit \
   --config german_credit_simple.yaml \
-  --output lightgbm_audit.pdf
+  --output lightgbm_audit.html
 ```
 
 ### Explore more options
