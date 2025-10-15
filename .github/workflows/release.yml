@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write # Required for PyPI Trusted Publishing
+  id-token: write # Required for PyPI Trusted Publishing and Sigstore OIDC
 
 jobs:
   build:
@@ -53,6 +53,7 @@ jobs:
           for file in dist/*.whl dist/*.tar.gz dist/sbom.json; do
             if [ -f "$file" ]; then
               echo "Signing $file..."
+              # Use GitHub Actions built-in OIDC identity token
               cosign sign-blob --yes "$file" --output-signature "${file}.sig"
             fi
           done
