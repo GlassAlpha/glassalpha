@@ -130,7 +130,7 @@ class _ProgressWrapper:
             yield item
 
             if not self.disabled and self.total and self.n == self.total:
-                    logger.info(f"{self.desc}: {self.n}/{self.total} (100%)")
+                logger.info(f"{self.desc}: {self.n}/{self.total} (100%)")
 
     def __enter__(self) -> _ProgressWrapper:
         """Context manager entry."""

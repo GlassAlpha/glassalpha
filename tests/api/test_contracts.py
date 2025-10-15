@@ -78,9 +78,17 @@ class TestLazyLoading:
         """Audit module loads when accessed"""
         import glassalpha as ga
 
-        # Remove audit module if present
-        if "glassalpha.api" in sys.modules:
-            del sys.modules["glassalpha.api"]
+        # Remove audit module if present (and any submodules)
+        modules_to_remove = [key for key in sys.modules.keys() if key.startswith("glassalpha.api")]
+        for module in modules_to_remove:
+            del sys.modules[module]
+
+        # Also remove main glassalpha module to ensure clean state
+        if "glassalpha" in sys.modules:
+            del sys.modules["glassalpha"]
+
+        # Re-import glassalpha fresh
+        import glassalpha as ga
 
         # Access audit attribute (will trigger lazy load)
         _ = ga.audit

@@ -1883,7 +1883,15 @@ class AuditPipeline:
             return
 
         stability_config = self.config.metrics.stability
-        if stability_config is None or not stability_config.enabled:
+        # Handle both dict and object config formats
+        stability_enabled = True
+        if stability_config is not None:
+            if isinstance(stability_config, dict):
+                stability_enabled = stability_config.get("enabled", True)
+            elif hasattr(stability_config, "enabled"):
+                stability_enabled = stability_config.enabled
+
+        if stability_config is None or not stability_enabled:
             logger.debug("Stability metrics disabled, skipping")
             self.results.stability_analysis = {}
             return

@@ -111,9 +111,13 @@ Examples:
     # Verbose output with package versions
     glassalpha doctor --verbose
 
+    # JSON output for CI integration
+    glassalpha doctor --json
+
 **Options:**
 
 - `--verbose, -v`: Show detailed environment information including package versions and paths (default: `False`)
+- `--json`: Output as JSON for CI integration (default: `False`)
 
 ### `glassalpha export-evidence-pack`
 

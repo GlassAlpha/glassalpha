@@ -58,6 +58,7 @@ def generate_run_manifest(
 
     manifest = {
         "manifest_version": "1.0",
+        "schema_version": "1.0.0",
         "generated_at": get_deterministic_timestamp(seed=seed).isoformat(),
         "glassalpha_version": _get_glassalpha_version(),
     }

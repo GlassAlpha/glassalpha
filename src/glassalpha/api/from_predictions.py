@@ -386,7 +386,8 @@ def from_predictions(
         None
 
     """
-    from datetime import UTC, datetime
+
+    import numpy as np
 
     import glassalpha
     from glassalpha.utils.canonicalization import compute_result_id, hash_data_for_manifest
@@ -459,19 +460,16 @@ def from_predictions(
 
     # Build manifest
     manifest = {
-        "tool_version": glassalpha.__version__,
-        "timestamp_utc": datetime.now(UTC).isoformat(),
+        "glassalpha_version": glassalpha.__version__,
+        "schema_version": "1.0.0",
         "random_seed": random_seed,
         "model_fingerprint": model_fingerprint or "unknown",
-        "data_hash_y_true": hash_data_for_manifest(y_true_arr),
-        "data_hash_y_pred": hash_data_for_manifest(y_pred_arr),
+        "n_samples": len(y_true_arr),
+        "data_hash_y": hash_data_for_manifest(y_true_arr),
+        "protected_attributes_categories": {
+            name: list(np.unique(arr.astype(str))) for name, arr in (protected_attrs_normalized or {}).items()
+        },
     }
-
-    if y_proba_arr is not None:
-        manifest["data_hash_y_proba"] = hash_data_for_manifest(y_proba_arr)
-
-    if protected_attrs_normalized is not None:
-        manifest["protected_attributes"] = list(protected_attrs_normalized.keys())
 
     # Compute result ID (deterministic hash of manifest)
     result_id = compute_result_id(manifest)

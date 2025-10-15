@@ -20,6 +20,13 @@ repos:
         args: [--maxkb=500]
       - id: check-case-conflict # Catch case-sensitive filename issues
 
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types: [yaml]
+        exclude: ^site/mkdocs\.yml$
+
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.35.1
     hooks:

@@ -39,12 +39,8 @@ TEMP_FILES=(
     "*.temp"
     "models/saved_model.*"      # Generated model artifacts
     "models/test_model.*"       # Test model artifacts
-    "models/test_data.csv"      # Test data files
-    "models/test_labels.csv"    # Test labels files
+    # Note: examples/models/*.csv and *.meta.json are permanent example files, not temp files
     "models/quickstart_model.pkl"  # Specific generated model mentioned in .gitignore
-    "examples/models/quickstart_model.meta.json"
-    "examples/models/test_data.csv"
-    "examples/models/test_labels.csv"
 )
 
 # AI-generated test outputs (configs, reports, manifests)

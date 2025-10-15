@@ -1,41 +1,46 @@
-extends: default
+# GitHub Actions workflow YAML configuration
+# Focused rules for CI/CD workflows - no duplication, minimal conflicts
 
 rules:
-  # Allow longer lines in YAML files (GitHub Actions workflows need long run commands)
-  # Disabled: Workflows legitimately need long lines for env vars and complex commands
-  line-length: disable
-
-  # GitHub Actions workflows use 2-space indentation
+  # Core formatting rules for GitHub Actions
   indentation:
     spaces: 2
     indent-sequences: true
     check-multi-line-strings: false
 
-  # Allow empty values in some contexts (GitHub Actions matrix)
+  # Allow longer lines for complex workflow commands
+  line-length:
+    max: 200
+    level: warning
+
+  # Allow empty values in workflow matrices and optional fields
   empty-values:
     forbid-in-block-mappings: false
     forbid-in-flow-mappings: false
 
-  # GitHub Actions uses specific comment style
+  # GitHub Actions workflows use flexible comment styles
   comments-indentation: disable
-  comments: disable
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 1
 
-  # Allow trailing spaces in some contexts
+  # Allow reasonable empty line spacing
   empty-lines:
     max-start: 2
     max-end: 1
     max: 2
 
-  # GitHub Actions workflows need specific formatting
+  # Bracket spacing for readability
   brackets:
     min-spaces-inside: 0
     max-spaces-inside: 1
 
-  # Allow flow style for short arrays (using valid yamllint rule)
-  # Note: flow-list-sequences is not a valid yamllint rule, removed to fix validation
-
-  # GitHub Actions uses specific quoting style - quotes rule disabled to avoid configuration issues
-
-  # GitHub Actions uses 'on:' keyword which triggers truthy warnings
+  # GitHub Actions uses 'on' keyword for triggers
   truthy:
     allowed-values: ["true", "false", "on"]
+
+  # Document structure
+  document-start: disable
+
+  # Key ordering for consistency (warning only)
+  key-ordering: disable

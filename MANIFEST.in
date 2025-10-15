@@ -1,7 +1,7 @@
 # User-facing files that should be in the source distribution
 
 # Core package files
-include README.md LICENSE NOTICE CONSTRAINTS.md
+include README.md LICENSE NOTICE CONSTRAINTS.md CODE_OF_CONDUCT.md
 include CHANGELOG.md SECURITY.md TRADEMARK.md CONTRIBUTING.md
 include pyproject.toml
 include constraints.txt

@@ -61,7 +61,7 @@ echo ""
 source "$SCRIPT_DIR/setup-determinism-env.sh"
 
 # Verify environment setup
-if [ -z "$GLASSALPHA_STRICT" ]; then
+if [ -z "${GLASSALPHA_STRICT:-}" ]; then
     echo "⚠️  Warning: GLASSALPHA_STRICT not set"
     echo "   Setting strict mode for testing..."
     export GLASSALPHA_STRICT=1

@@ -165,6 +165,15 @@ check-sigstore:
 check-workflows:
 	@echo "🔍 Validating GitHub Actions workflows..."
 	@echo ""
+	@echo "🔧 Auto-fixing YAML formatting..."
+	@if command -v prettier >/dev/null 2>&1; then \
+		prettier --write .github/workflows/*.yml 2>/dev/null || true; \
+		echo "   ✓ YAML files formatted with prettier"; \
+	else \
+		echo "   ⚠️  prettier not installed, skipping auto-fix"; \
+		echo "   💡 Install with: npm install -g prettier"; \
+	fi
+	@echo ""
 	@echo "📋 Checking workflow YAML syntax..."
 	@for file in .github/workflows/*.yml .github/workflows/*.yaml; do \
 		if [ -f "$$file" ]; then \

@@ -99,19 +99,23 @@ class TestCriticalRegressions:
         output1 = tmp_path / "audit1.html"
         output2 = tmp_path / "audit2.html"
 
-        cmd = ["python", "-m", "glassalpha", "audit", "-c", str(config_path)]
+        cmd = ["python3", "-m", "glassalpha", "audit", "-c", str(config_path)]
 
         # First run
         result1 = subprocess.run(
             cmd + ["-o", str(output1)],
             capture_output=True,
             text=True,
+            encoding="utf-8",
             check=False,
             env={
                 **os.environ,
                 "PYTHONHASHSEED": "0",
                 "TZ": "UTC",
                 "MPLBACKEND": "Agg",
+                "PYTHONIOENCODING": "utf-8",
+                "LC_ALL": "C.UTF-8",
+                "LANG": "C.UTF-8",
             },
         )
         assert result1.returncode == 0, f"First run failed: {result1.stderr}"
@@ -121,12 +125,16 @@ class TestCriticalRegressions:
             cmd + ["-o", str(output2)],
             capture_output=True,
             text=True,
+            encoding="utf-8",
             check=False,
             env={
                 **os.environ,
                 "PYTHONHASHSEED": "0",
                 "TZ": "UTC",
                 "MPLBACKEND": "Agg",
+                "PYTHONIOENCODING": "utf-8",
+                "LC_ALL": "C.UTF-8",
+                "LANG": "C.UTF-8",
             },
         )
         assert result2.returncode == 0, f"Second run failed: {result2.stderr}"
