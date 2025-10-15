@@ -479,11 +479,11 @@ def list_components_cmd(  # pragma: no cover
 
                 if comp_type == "models":
                     if (item == "xgboost" and not has_xgboost) or (item == "lightgbm" and not has_lightgbm):
-                        status = "⚠️"
+                        status = "[WARN]"
                         note = " (requires: pip install 'glassalpha[explain]')"
                 elif comp_type == "explainers":
                     if item in ("treeshap", "kernelshap") and not has_shap:
-                        status = "⚠️"
+                        status = "[WARN]"
                         note = " (requires: pip install 'glassalpha[explain]')"
 
                 if verbose:

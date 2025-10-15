@@ -14,11 +14,14 @@ from ..exit_codes import ExitCode
 logger = logging.getLogger(__name__)
 
 
-def _check_and_warn_determinism() -> None:
+def _check_and_warn_determinism(show_warning: bool = True) -> None:
     """Check if determinism environment variables are set and warn if missing.
 
     This provides immediate feedback during audit generation, not just in doctor command.
     Only shows warning if variables are actually missing (suppresses noise after setup).
+
+    Args:
+        show_warning: Whether to display the determinism warning
     """
     required_vars = {
         "TZ": "UTC",
@@ -28,10 +31,10 @@ def _check_and_warn_determinism() -> None:
 
     missing = [var for var in required_vars if not os.environ.get(var)]
 
-    # Only show warning if variables are missing
-    if missing:
+    # Only show warning if variables are missing AND warning is enabled
+    if missing and show_warning:
         typer.echo()
-        typer.secho("⚠️  One-time setup required for reproducible audits", fg=typer.colors.YELLOW, bold=True)
+        typer.secho("[WARN] One-time setup required for reproducible audits", fg=typer.colors.YELLOW, bold=True)
         typer.echo()
         typer.secho("   Run once to enable byte-identical reports:", fg=typer.colors.CYAN)
         typer.echo('     eval "$(glassalpha setup-env)"')
@@ -81,13 +84,18 @@ def output_error(message: str) -> None:
     typer.echo(message, err=True)
 
 
-def print_banner(title: str = "GlassAlpha Audit Generation") -> None:
-    """Print a standardized banner for CLI commands."""
+def print_banner(title: str = "GlassAlpha Audit Generation", show_determinism_warning: bool = True) -> None:
+    """Print a standardized banner for CLI commands.
+
+    Args:
+        title: Title to display in banner
+        show_determinism_warning: Whether to show determinism environment warning
+    """
     typer.echo(title)
     typer.echo("=" * 40)
 
-    # Check determinism environment and warn if not set
-    _check_and_warn_determinism()
+    # Check determinism environment and warn if not set (only in strict/production mode)
+    _check_and_warn_determinism(show_warning=show_determinism_warning)
 
 
 def ensure_docs_if_pdf(output_path: str) -> None:

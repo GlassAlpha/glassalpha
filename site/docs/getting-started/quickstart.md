@@ -140,9 +140,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import glassalpha as ga
 
-# Load data (GlassAlpha returns file paths, not DataFrames)
-german_path = ga.datasets.fetch('german_credit')
-df = pd.read_csv(german_path)
+# Load data (GlassAlpha returns DataFrames directly)
+df = ga.datasets.load_german_credit()
 
 # Encode categorical columns for sklearn compatibility
 categorical_cols = df.select_dtypes(include=['object']).columns

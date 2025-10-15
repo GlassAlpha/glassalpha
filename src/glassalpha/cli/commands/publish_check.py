@@ -68,16 +68,16 @@ def publish_check(
         if changelog_path.exists():
             changelog_content = changelog_path.read_text()
             if f"## [{__version__}]" in changelog_content or f"## {__version__}" in changelog_content:
-                typer.secho(f"✅ Version tag matches CHANGELOG (v{__version__})", fg=typer.colors.GREEN)
+                typer.secho(f"[SUCCESS] Version tag matches CHANGELOG (v{__version__})", fg=typer.colors.GREEN)
                 checks_passed += 1
             else:
-                typer.secho(f"❌ Version v{__version__} not found in CHANGELOG", fg=typer.colors.RED)
+                typer.secho(f"[ERROR] Version v{__version__} not found in CHANGELOG", fg=typer.colors.RED)
                 issues.append(f"Add v{__version__} entry to CHANGELOG.md")
         else:
-            typer.secho("⚠️  CHANGELOG.md not found", fg=typer.colors.YELLOW)
+            typer.secho("[WARN] CHANGELOG.md not found", fg=typer.colors.YELLOW)
             issues.append("Create CHANGELOG.md")
     except Exception as e:
-        typer.secho(f"❌ Version check failed: {e}", fg=typer.colors.RED)
+        typer.secho(f"[ERROR] Version check failed: {e}", fg=typer.colors.RED)
         issues.append("Fix version detection")
 
     # Check 2: Tests passing
@@ -94,28 +94,28 @@ def publish_check(
         if result.returncode == 0:
             # Count tests
             test_count = len([line for line in result.stdout.split("\n") if line.strip().startswith("tests/")])
-            typer.secho(f"✅ All tests collected successfully ({test_count} tests)", fg=typer.colors.GREEN)
+            typer.secho(f"[SUCCESS] All tests collected successfully ({test_count} tests)", fg=typer.colors.GREEN)
             checks_passed += 1
         else:
-            typer.secho("❌ Test collection failed", fg=typer.colors.RED)
+            typer.secho("[ERROR] Test collection failed", fg=typer.colors.RED)
             issues.append("Fix test collection errors")
             if verbose:
                 typer.echo(f"  Error: {result.stderr[:200]}")
     except subprocess.TimeoutExpired:
-        typer.secho("❌ Test collection timed out", fg=typer.colors.RED)
+        typer.secho("[ERROR] Test collection timed out", fg=typer.colors.RED)
         issues.append("Fix test collection performance")
     except FileNotFoundError:
-        typer.secho("⚠️  pytest not installed", fg=typer.colors.YELLOW)
+        typer.secho("[WARN] pytest not installed", fg=typer.colors.YELLOW)
         issues.append("Install pytest: pip install pytest")
 
     # Check 3: Determinism verified
     checks_total += 1
     determinism_script = project_root / "scripts" / "test_determinism.sh"
     if determinism_script.exists():
-        typer.secho("✅ Determinism verification script exists", fg=typer.colors.GREEN)
+        typer.secho("[SUCCESS] Determinism verification script exists", fg=typer.colors.GREEN)
         checks_passed += 1
     else:
-        typer.secho("⚠️  Determinism script not found", fg=typer.colors.YELLOW)
+        typer.secho("[WARN] Determinism script not found", fg=typer.colors.YELLOW)
         issues.append("Create scripts/check-determinism-quick.sh")
 
     # Check 4: Example configs valid
@@ -162,13 +162,13 @@ def publish_check(
     if notebooks_path.exists():
         notebook_files = list(notebooks_path.glob("*.ipynb"))
         if notebook_files:
-            typer.secho(f"ℹ️  Example notebooks found ({len(notebook_files)} notebooks)", fg=typer.colors.CYAN)
+            typer.secho(f"[INFO] Example notebooks found ({len(notebook_files)} notebooks)", fg=typer.colors.CYAN)
             typer.echo("   Note: Run manual validation for notebooks")
             checks_passed += 1
         else:
-            typer.secho("⚠️  No notebooks found", fg=typer.colors.YELLOW)
+            typer.secho("[WARN] No notebooks found", fg=typer.colors.YELLOW)
     else:
-        typer.secho("⚠️  Notebooks directory not found", fg=typer.colors.YELLOW)
+        typer.secho("[WARN] Notebooks directory not found", fg=typer.colors.YELLOW)
 
     # Summary
     typer.echo()

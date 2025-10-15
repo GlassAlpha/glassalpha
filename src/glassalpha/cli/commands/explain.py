@@ -973,7 +973,7 @@ def recourse(  # pragma: no cover
     Model Compatibility:
         Recourse works best with sklearn-compatible models:
         ✅ logistic_regression, linear_regression, random_forest (sklearn)
-        ⚠️  xgboost, lightgbm (limited support - known issues with feature modification)
+        [WARN] xgboost, lightgbm (limited support - known issues with feature modification)
 
         For XGBoost models, consider using 'glassalpha reasons' instead for ECOA-compliant
         adverse action notices. See: https://glassalpha.com/guides/recourse/#known-limitations
@@ -1010,7 +1010,7 @@ def recourse(  # pragma: no cover
             seed = getattr(cfg.reproducibility, "random_seed", 42) if hasattr(cfg, "reproducibility") else 42
         else:
             typer.secho(
-                "⚠️  Warning: No config provided. Using default policy with common protected attributes as immutable.",
+                "[WARN] Warning: No config provided. Using default policy with common protected attributes as immutable.",
                 fg=typer.colors.YELLOW,
             )
             typer.echo()
@@ -1662,7 +1662,7 @@ def recourse(  # pragma: no cover
             )
         else:
             typer.secho(
-                "⚠️  Warning: No immutable features found. All features are mutable.",
+                "[WARN] Warning: No immutable features found. All features are mutable.",
                 fg=typer.colors.YELLOW,
             )
             typer.echo("  This may generate unrealistic recommendations.")
@@ -1781,23 +1781,23 @@ def recourse(  # pragma: no cover
                 typer.echo(f"   Prediction: {result.original_prediction:.1%} >= threshold {result.threshold:.1%}")
             elif result.total_candidates == 0:
                 typer.secho(
-                    "\n⚠️  Could not generate recourse candidates",
+                    "\n[WARN] Could not generate recourse candidates",
                     fg=typer.colors.YELLOW,
                 )
                 typer.echo("\nPossible reasons:")
                 typer.echo("  • All features marked as immutable (nothing can be changed)")
                 typer.echo("  • Feature bounds too restrictive")
                 typer.echo("  • Model does not support feature modification")
-                typer.echo("\n💡 Try:")
+                typer.echo("\n[TIP] Try:")
                 typer.echo("  • Review immutable_features in config")
                 typer.echo("  • Check feature bounds and constraints")
                 typer.echo("  • Use 'glassalpha reasons' for simpler explanations")
             else:
                 typer.secho(
-                    f"\n⚠️  No feasible recourse found (evaluated {result.total_candidates} candidates)",
+                    f"\n[WARN] No feasible recourse found (evaluated {result.total_candidates} candidates)",
                     fg=typer.colors.YELLOW,
                 )
-                typer.echo("\n💡 Try:")
+                typer.echo("\n[TIP] Try:")
                 typer.echo("  • Relax monotonic constraints (allow more feature directions)")
                 typer.echo("  • Reduce immutable features (allow more features to change)")
                 typer.echo("  • Increase feature change bounds (allow larger changes)")

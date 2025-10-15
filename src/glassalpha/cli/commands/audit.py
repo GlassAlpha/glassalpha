@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import typer
 
@@ -25,6 +26,30 @@ from ._shared import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _apply_determinism_env_if_present() -> None:
+    """Apply determinism environment settings if .glassalpha-env file exists in current directory.
+
+    This enables byte-identical audits without requiring manual environment setup.
+    """
+    env_file = Path.cwd() / ".glassalpha-env"
+    if env_file.exists():
+        try:
+            # Read the environment file and apply settings
+            with open(env_file) as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("export ") and "=" in line:
+                        # Parse: export VAR="value"
+                        _, var_value = line.split("=", 1)
+                        if var_value.startswith('"') and var_value.endswith('"'):
+                            var_value = var_value[1:-1]  # Remove quotes
+                        var_name, value = var_value.split("=", 1)
+                        os.environ[var_name] = value
+        except Exception:
+            # If we can't read the file, silently continue (don't break audit)
+            pass
 
 
 def _display_whats_next(
@@ -54,25 +79,25 @@ def _display_whats_next(
 
     # View report
     if output_format == "html":
-        typer.echo("  📄 View report:")
+        typer.echo("  [INFO] View report:")
         typer.echo(f"     open {relative_output}  # macOS")
         typer.echo(f"     xdg-open {relative_output}  # Linux")
         typer.echo()
 
         # PDF export (for regulatory submission)
-        typer.echo("  📋 Export to PDF (for regulatory submission):")
+        typer.echo("  [TIP] Export to PDF (for regulatory submission):")
         typer.echo("     pip install 'glassalpha[all]'  # One-time: install PDF dependencies")
         relative_pdf = str(relative_output).replace(".html", ".pdf")
         typer.echo(f"     glassalpha audit --output {relative_pdf}")
         typer.echo()
 
-    # Evidence pack export
-    typer.echo("  📦 Create evidence pack (verification bundle):")
+        # Evidence pack export
+        typer.echo("  [TIP] Create evidence pack (verification bundle):")
     typer.echo(f"     glassalpha export-evidence-pack {relative_output}")
     typer.echo()
 
     # Advanced features
-    typer.echo("  🔍 Advanced:")
+    typer.echo("  [ADVANCED] Advanced:")
     if not shift_analysis_done:
         typer.echo("     glassalpha audit --check-shift gender:+0.1  # Test robustness")
     if model_save_path:
@@ -81,9 +106,9 @@ def _display_whats_next(
 
     # Learn more
     typer.echo()
-    typer.echo("  💡 Tip: Edit audit.yaml to customize metrics, then re-run: glassalpha audit")
+    typer.echo("  [TIP] Tip: Edit audit.yaml to customize metrics, then re-run: glassalpha audit")
     typer.echo()
-    typer.echo("  📚 Learn more: glassalpha docs")
+    typer.echo("  [INFO] Learn more: glassalpha docs")
     typer.echo("=" * 50)
 
 
@@ -138,14 +163,14 @@ def _run_audit_pipeline(
     # CLI flag (--output extension) overrides config for better UX
     if output_format == "pdf" and output_path.suffix.lower() in [".html", ".htm"]:
         typer.secho(
-            f"⚠️  Format mismatch: config specifies PDF but output file is {output_path.suffix}",
+            f"[WARN] Format mismatch: config specifies PDF but output file is {output_path.suffix}",
             fg=typer.colors.YELLOW,
         )
         typer.echo("   Using HTML format to match file extension (CLI flag overrides config)\n")
         output_format = "html"
     elif output_format == "html" and output_path.suffix.lower() == ".pdf":
         typer.secho(
-            f"⚠️  Format mismatch: config specifies HTML but output file is {output_path.suffix}",
+            f"[WARN] Format mismatch: config specifies HTML but output file is {output_path.suffix}",
             fg=typer.colors.YELLOW,
         )
         typer.echo("   Using PDF format to match file extension (CLI flag overrides config)\n")
@@ -166,8 +191,8 @@ def _run_audit_pipeline(
 
     # Fallback to HTML if PDF requested but not available
     if output_format == "pdf" and not _PDF_AVAILABLE:
-        typer.echo("⚠️  PDF dependencies not installed. Generating HTML report instead.")
-        typer.echo("💡 For PDF export: pip install 'glassalpha[all]'")
+        typer.echo("[WARN] PDF dependencies not installed. Generating HTML report instead.")
+        typer.echo("[TIP] For PDF export: pip install 'glassalpha[all]'")
         typer.echo("   (HTML reports are faster and work everywhere—PDF is optional)\n")
         output_format = "html"
         # Update output path extension if needed
@@ -176,7 +201,7 @@ def _run_audit_pipeline(
     elif output_format == "pdf" and _PDF_AVAILABLE:
         # Warn about potential slow PDF generation
         typer.secho(
-            "⚠️  PDF generation takes 1-3 minutes. HTML format is faster and fully deterministic.",
+            "[WARN] PDF generation takes 1-3 minutes. HTML format is faster and fully deterministic.",
             fg=typer.colors.YELLOW,
         )
         typer.echo("   Tip: Use --output report.html or set 'output_format: html' in config.\n")
@@ -339,20 +364,20 @@ def _run_audit_pipeline(
             if file_size_mb > 50:
                 # Very large file (>50MB) - critical warning
                 typer.secho(
-                    f"⚠️  Large report size ({file_size_mb:.1f} MB) detected",
+                    f"[WARN] Large report size ({file_size_mb:.1f} MB) detected",
                     fg=typer.colors.YELLOW,
                 )
-                typer.echo("💡 Note: You used --full-report which includes all individual fairness pairs")
+                typer.echo("[TIP] Note: You used --full-report which includes all individual fairness pairs")
                 typer.echo("   • Use default (compact mode) for <1MB reports")
                 typer.echo("   • Enable runtime.fast_mode in config for faster iteration (reduces bootstrap samples)")
                 typer.echo("   • Full data always available in manifest.json sidecar")
             elif file_size_mb > 1:
                 # Moderate file (1-50MB) - gentle warning
                 typer.secho(
-                    f"⚠️  Report size ({file_size_mb:.1f} MB) is larger than expected",
+                    f"[WARN] Report size ({file_size_mb:.1f} MB) is larger than expected",
                     fg=typer.colors.YELLOW,
                 )
-                typer.echo("💡 Tip: Default compact mode should produce <1MB reports")
+                typer.echo("[TIP] Default compact mode should produce <1MB reports")
 
             typer.echo(f"Total time: {total_time:.2f}s")
             typer.echo(f"   Pipeline: {pipeline_time:.2f}s")
@@ -400,7 +425,7 @@ def _display_audit_summary(audit_results) -> None:
 
                 # Warn about very high accuracy (>98%) which may indicate data leakage or overfitting
                 if accuracy > 0.98:
-                    typer.echo(f"     ⚠️  High {name}: {accuracy:.1%}")
+                    typer.echo(f"     [WARN] High {name}: {accuracy:.1%}")
                     typer.secho(
                         "     Note: Verify on held-out test set. High training accuracy may indicate overfitting.",
                         fg=typer.colors.YELLOW,
@@ -626,7 +651,7 @@ def _validate_shift_specs_against_config(
 
 
 def _run_shift_analysis(
-    audit_config,
+    audit_config: Any,
     output: Path,
     shift_specs: list[str],
     threshold: float | None,
@@ -797,7 +822,7 @@ def _run_shift_analysis(
         with shift_json_path.open("w") as f:
             json.dump(export_data, f, indent=2)
 
-        typer.echo(f"\n📄 Shift analysis results: {shift_json_path}")
+        typer.echo(f"\n[INFO] Shift analysis results: {shift_json_path}")
 
         # Return exit code based on violations
         if has_violations and threshold is not None:
@@ -1012,12 +1037,12 @@ def audit(  # pragma: no cover
                     if any(keyword in f.name.lower() for keyword in ["audit", "config", "glassalpha"])
                 ]
                 if likely_configs:
-                    error_msg += f"\n💡 Did you mean: glassalpha audit --config {likely_configs[0].name}\n"
+                    error_msg += f"\n[TIP] Did you mean: glassalpha audit --config {likely_configs[0].name}\n"
             else:
-                error_msg += "\n⚠️  No YAML config files found in current directory\n"
+                error_msg += "\n[WARN] No YAML config files found in current directory\n"
 
             error_msg += """
-💡 Quick fixes:
+[TIP] Quick fixes:
   1. Change to project directory:
      cd /path/to/project && glassalpha audit
 
@@ -1042,7 +1067,7 @@ def audit(  # pragma: no cover
         # Bootstrap basic components before any preflight checks
         bootstrap_components()
 
-        print_banner()
+        # Note: print_banner moved after config loading to check strict mode
 
         # Preflight checks - ensure dependencies are available
         if not preflight_check_dependencies():
@@ -1059,6 +1084,16 @@ def audit(  # pragma: no cover
             profile_name=profile,
             strict=strict,
         )
+
+        # Check for determinism environment file and apply if present
+        _apply_determinism_env_if_present()
+
+        # Determine if we should show determinism warning (only in strict mode)
+        strict_mode_enabled = (
+            getattr(audit_config.runtime, "strict_mode", False) if hasattr(audit_config, "runtime") else False
+        )
+
+        print_banner(show_determinism_warning=strict_mode_enabled)
 
         # Auto-detect output path if not provided
         # Priority: CLI flag > config.report.output_path > auto-detection
@@ -1161,14 +1196,14 @@ def audit(  # pragma: no cover
                     shift_value = float(shift_str)
                     if abs(shift_value) > 0.5:
                         typer.secho(
-                            f"⚠️  Warning: Large shift value ({shift_value}) for '{attribute}'\n"
+                            f"[WARN] Warning: Large shift value ({shift_value}) for '{attribute}'\n"
                             f"   Typical range: -0.2 to +0.2 (±20 percentage points)\n"
                             f"   Values >0.5 may produce unrealistic distributions",
                             fg=typer.colors.YELLOW,
                         )
                 except ValueError:
                     typer.secho(
-                        f"❌ Invalid shift value: '{shift_str}' for attribute '{attribute}'\n\n"
+                        f"[ERROR] Invalid shift value: '{shift_str}' for attribute '{attribute}'\n\n"
                         f"Shift value must be a number (e.g., +0.1, -0.05)\n\n"
                         f"Examples:\n"
                         f"  gender:+0.1   # Increase gender=1 proportion by 10pp\n"
@@ -1224,7 +1259,7 @@ def audit(  # pragma: no cover
 
             if successful < total:
                 typer.secho(
-                    "⚠️  Some determinism controls failed - results may not be fully reproducible",
+                    "[WARN] Some determinism controls failed - results may not be fully reproducible",
                     fg=typer.colors.YELLOW,
                 )
 
@@ -1240,10 +1275,10 @@ def audit(  # pragma: no cover
             getattr(audit_config.runtime, "strict_mode", False) if hasattr(audit_config, "runtime") else False
         )
         if strict_mode_enabled:
-            typer.secho("⚠️  Strict mode enabled - enforcing regulatory compliance", fg=typer.colors.YELLOW)
+            typer.secho("[INFO] Strict mode enabled - enforcing regulatory compliance", fg=typer.colors.YELLOW)
 
         if repro:
-            typer.secho("🔒 Repro mode enabled - results will be deterministic", fg=typer.colors.BLUE)
+            typer.secho("[INFO] Repro mode enabled - results will be deterministic", fg=typer.colors.BLUE)
 
         # Validate components exist
         available = _check_available_components()
@@ -1329,7 +1364,7 @@ def audit(  # pragma: no cover
             file_size = output.stat().st_size / 1024  # KB
             typer.echo()
             typer.secho(
-                "⚠️  Output file exists and will be overwritten:",
+                "[WARN] Output file exists and will be overwritten:",
                 fg=typer.colors.YELLOW,
             )
             typer.echo(f"   {output} ({file_size:.1f} KB)")
@@ -1423,12 +1458,12 @@ def audit(  # pragma: no cover
                         test_data_hint = "models/test_data.csv"  # Standard location from audit
                     except Exception as e:
                         # Only show warning if actual save failed
-                        typer.secho(f"⚠️  Failed to save model: {e}", fg=typer.colors.YELLOW)
+                        typer.secho(f"[WARN] Failed to save model: {e}", fg=typer.colors.YELLOW)
                 else:
-                    typer.secho("⚠️  No model available to save", fg=typer.colors.YELLOW)
+                    typer.secho("[WARN] No model available to save", fg=typer.colors.YELLOW)
             except Exception as e:
                 # Catch errors in model extraction/preparation
-                typer.secho(f"⚠️  Failed to prepare model for saving: {e}", fg=typer.colors.YELLOW)
+                typer.secho(f"[WARN] Failed to prepare model for saving: {e}", fg=typer.colors.YELLOW)
 
         # Run shift analysis if requested (E6.5)
         if check_shift:
@@ -1451,15 +1486,15 @@ def audit(  # pragma: no cover
             # If shift analysis detected violations and we should fail, exit with error
             if shift_exit_code != 0:
                 typer.secho(
-                    "\n✗ Shift analysis detected metric degradation exceeding threshold",
+                    "\n[ERROR] Shift analysis detected metric degradation exceeding threshold",
                     fg=typer.colors.RED,
                     bold=True,
                 )
                 raise typer.Exit(shift_exit_code)
-            typer.secho(
-                "\n✓ Shift analysis complete - no violations detected",
-                fg=typer.colors.GREEN,
-            )
+                typer.secho(
+                    "\n[SUCCESS] Shift analysis complete - no violations detected",
+                    fg=typer.colors.GREEN,
+                )
 
         # Show consolidated "What's next?" guidance
         model_save_path = None

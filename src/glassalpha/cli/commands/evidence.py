@@ -125,25 +125,25 @@ def verify_evidence_pack(
 
         if result.is_valid:
             typer.secho(
-                f"\n✅ Verified - all {result.artifacts_verified} artifacts match canonical.jsonl",
+                f"\n[SUCCESS] Verified - all {result.artifacts_verified} artifacts match canonical.jsonl",
                 fg=typer.colors.GREEN,
             )
             if result.sha256:
-                typer.echo(f"🔒 SHA256: {result.sha256}")
-            typer.echo("📄 Audit report verified")
-            typer.echo("📋 Manifest verified")
-            typer.echo("🎯 Badge verified" if verbose else "")
-            typer.echo("✓ Reproducible proof confirmed")
+                typer.echo(f"[HASH] SHA256: {result.sha256}")
+            typer.echo("[INFO] Audit report verified")
+            typer.echo("[INFO] Manifest verified")
+            typer.echo("[INFO] Badge verified" if verbose else "")
+            typer.echo("[SUCCESS] Reproducible proof confirmed")
 
         else:
-            typer.secho("\n❌ Verification FAILED", fg=typer.colors.RED)
+            typer.secho("\n[ERROR] Verification FAILED", fg=typer.colors.RED)
             for error in result.errors:
-                typer.echo(f"✗ {error}")
+                typer.echo(f"[ERROR] {error}")
             if result.warnings:
-                typer.secho("⚠️  Warnings:", fg=typer.colors.YELLOW)
+                typer.secho("[WARN] Warnings:", fg=typer.colors.YELLOW)
                 for warning in result.warnings:
                     typer.echo(f"  {warning}")
-            typer.echo("⚠️  Pack may be corrupted or tampered")
+            typer.echo("[WARN] Pack may be corrupted or tampered")
             raise typer.Exit(ExitCode.VALIDATION_ERROR)
 
     except FileNotFoundError as e:
