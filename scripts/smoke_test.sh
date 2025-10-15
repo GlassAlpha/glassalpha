@@ -49,7 +49,7 @@ trap cleanup EXIT
 echo "Test 1: German Credit quickstart..."
 TESTS_TOTAL=$((TESTS_TOTAL + 1))
 if glassalpha quickstart --dataset german_credit --output test-german --no-interactive > /dev/null 2>&1; then
-    if cd test-german && python run_audit.py > /dev/null 2>&1; then
+    if cd test-german && python3 run_audit.py > /dev/null 2>&1; then
         cd ..
         pass_test "German Credit quickstart and audit"
     else
@@ -64,7 +64,7 @@ fi
 echo "Test 2: Adult Income quickstart..."
 TESTS_TOTAL=$((TESTS_TOTAL + 1))
 if glassalpha quickstart --dataset adult_income --output test-adult --no-interactive > /dev/null 2>&1; then
-    if cd test-adult && python run_audit.py > /dev/null 2>&1; then
+    if cd test-adult && python3 run_audit.py > /dev/null 2>&1; then
         cd ..
         pass_test "Adult Income quickstart and audit"
     else

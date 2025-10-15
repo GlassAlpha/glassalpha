@@ -769,7 +769,7 @@ class AuditPipeline:
                         "preprocessing": preprocessing_info,
                         "n_features": len(X_processed.columns),
                     }
-                    meta_path.write_text(json.dumps(metadata, indent=2))
+                    meta_path.write_text(json.dumps(metadata, indent=2) + "\n")
                     logger.info(f"Model metadata saved to: {meta_path}")
 
                     # Auto-save test data for reasons/recourse commands

@@ -524,6 +524,7 @@ class XGBoostWrapper(BaseTabularWrapper):
             # Write the combined structure (overwrite the XGBoost file)
             with path.open("w") as f:
                 json.dump(save_data, f, indent=2)
+                f.write("\n")
 
             logger.debug(
                 f"Saved XGBoost model to {path} in test-compatible format",

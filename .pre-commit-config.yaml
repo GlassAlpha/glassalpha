@@ -43,9 +43,10 @@ repos:
         pass_filenames: false
       - id: smoke-test
         name: Quick smoke test
-        entry: python3 -m pytest tests/test_import_surface.py -q
+        entry: bash scripts/smoke_test.sh
         language: system
         pass_filenames: false
+        stages: [push]
 # MyPy disabled during architectural foundation phase
 # Will re-enable when Phase 1 implementation is complete
 # - repo: https://github.com/pre-commit/mirrors-mypy

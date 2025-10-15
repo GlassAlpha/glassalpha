@@ -593,6 +593,7 @@ if SKLEARN_AVAILABLE:
             # Save as JSON for version compatibility
             with path_obj.open("w", encoding="utf-8") as f:
                 json.dump(save_data, f, indent=2)
+                f.write("\n")
 
         def load(self, path: str | Path) -> LogisticRegressionWrapper:
             """Load model from file in current JSON format."""

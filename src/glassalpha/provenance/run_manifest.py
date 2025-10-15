@@ -539,6 +539,7 @@ def write_manifest_sidecar(manifest: dict[str, Any], output_path: str | Path) ->
 
     with manifest_path.open("w") as f:
         json.dump(manifest, f, indent=2, default=str)
+        f.write("\n")
 
     logger.info(f"Wrote manifest sidecar: {manifest_path}")
     return manifest_path
