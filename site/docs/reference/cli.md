@@ -323,7 +323,7 @@ Configuration File:
 Model Compatibility:
     Recourse works best with sklearn-compatible models:
     ✅ logistic_regression, linear_regression, random_forest (sklearn)
-    ⚠️  xgboost, lightgbm (limited support - known issues with feature modification)
+    [WARN] xgboost, lightgbm (limited support - known issues with feature modification)
 
     For XGBoost models, consider using 'glassalpha reasons' instead for ECOA-compliant
     adverse action notices. See: https://glassalpha.com/guides/recourse/#known-limitations
