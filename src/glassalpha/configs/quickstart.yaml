@@ -1,5 +1,4 @@
-reproducibility:
-  random_seed: 42
+random_seed: 42
 
 data:
   dataset: german_credit

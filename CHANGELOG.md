@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - v0.2.1 Pre-PyPI Simplification
 
-### Changed
+### Changed (Breaking)
 
 - **BREAKING**: Renamed `GAConfig` → `AuditConfig` for clarity and consistency
 - **BREAKING**: Moved example configs from `src/glassalpha/data/configs/` → `src/glassalpha/configs/` for clearer structure
+- **BREAKING**: Simplified reproducibility configuration structure
+  - **Migration**: Move `reproducibility:` fields to root level:
+    - `reproducibility.random_seed` → `random_seed`
+    - `reproducibility.strict` → `strict`
+    - `reproducibility.thread_control` → `thread_control`
+  - **Rationale**: Eliminates nested structure as part of v0.2.0 simplification. No backward compatibility provided since no external users yet (pre-PyPI).
 - **CLI Command Organization** (Complete Refactor)
   - Extracted 4530-line `_legacy.py` monolith into 5 focused modules:
     - `audit.py` (1562 lines): Core audit command with shift analysis

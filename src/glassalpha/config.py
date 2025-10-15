@@ -246,15 +246,6 @@ class AuditConfig(BaseModel):
         description="Warn if some determinism controls fail to apply",
     )
 
-    # Backward compatibility: accept 'reproducibility' dict and flatten it
-    @field_validator("random_seed", mode="before")
-    @classmethod
-    def extract_from_reproducibility(cls, v: Any, info: Any) -> int:
-        """Extract random_seed from reproducibility dict if present."""
-        if isinstance(info.data.get("reproducibility"), dict):
-            return info.data["reproducibility"].get("random_seed", 42)
-        return v if v is not None else 42
-
     def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary (backwards compatibility)."""
         return self.model_dump()

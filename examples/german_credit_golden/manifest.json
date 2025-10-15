@@ -1,18 +1,13 @@
 {
   "glassalpha_version": "0.2.0",
-  "schema_version": "0.2.0",
-  "timestamp": "2025-10-12T17:19:03.616251+00:00",
+  "schema_version": "1.0.0",
   "random_seed": 42,
-  "model_fingerprint": "xgboost:362145615923260583",
-  "model_type": "xgboost",
+  "model_fingerprint": "xgboost:-8896938105043778974",
   "n_samples": 300,
-  "n_features": 53,
-  "class_names": [
-    "0",
-    "1"
-  ],
   "data_hash_y": "sha256:1b8559cea37e90a3962947a4b385607f0bc7d8c6925446f6a51d17cbe7b0f9f4",
   "protected_attributes_categories": {},
+  "model_type": "xgboost",
+  "n_features": 53,
   "feature_names": [
     "duration_months",
     "credit_amount",

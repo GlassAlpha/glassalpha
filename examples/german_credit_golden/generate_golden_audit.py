@@ -79,7 +79,7 @@ try:
         model,
         X_test,
         y_test,
-        random_seed=config.reproducibility.random_seed,
+        random_seed=config.random_seed,
     )
 
     print("✅ Audit completed successfully!")

@@ -84,15 +84,14 @@ metrics:
 # REPRODUCIBILITY CONFIGURATION
 # =============================================================================
 
-reproducibility:
-  # Master random seed for all randomness sources
-  random_seed: 42
+# Master random seed for all randomness sources
+random_seed: 42
 
-  # Enforce strict determinism controls (thread control, advanced seeding)
-  strict: true
+# Enforce strict determinism controls (thread control, advanced seeding)
+strict: true
 
-  # Control thread counts for deterministic parallel processing
-  thread_control: true
+# Control thread counts for deterministic parallel processing
+thread_control: true
 
 # =============================================================================
 # REPORT CONFIGURATION

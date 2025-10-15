@@ -139,15 +139,14 @@ metrics:
 # REPRODUCIBILITY CONFIGURATION
 # =============================================================================
 
-reproducibility:
-  # Master random seed for all randomness sources
-  random_seed: 42
+# Master random seed for all randomness sources
+random_seed: 42
 
-  # Enforce deterministic behavior across all components
-  deterministic: true
+# Enforce strict determinism controls (thread control, advanced seeding)
+strict: true
 
-  # Capture complete execution environment
-  capture_environment: true
+# Control thread counts for deterministic parallel processing
+thread_control: true
 
 # =============================================================================
 # AUDIT MANIFEST CONFIGURATION

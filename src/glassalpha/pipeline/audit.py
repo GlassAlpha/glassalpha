@@ -675,7 +675,7 @@ class AuditPipeline:
             # Create temporary config with default model
             temp_config = SimpleNamespace()
             temp_config.model = default_model_config
-            temp_config.reproducibility = getattr(self.config, "reproducibility", None)
+            temp_config.random_seed = getattr(self.config, "random_seed", None)
 
             # Extract features and target for training
             X, y, _ = self.data_loader.extract_features_target(data, schema)
@@ -1245,8 +1245,8 @@ class AuditPipeline:
             )
 
             # Get random state from config if available
-            if hasattr(self.config, "reproducibility") and self.config.reproducibility:
-                model_seed = getattr(self.config.reproducibility, "random_state", model_seed)
+            if hasattr(self.config, "random_seed"):
+                model_seed = self.config.random_seed
 
             # Use wrapper fit method with proper parameters
             if hasattr(self.config, "model") and hasattr(self.config.model, "params"):
@@ -1415,7 +1415,7 @@ class AuditPipeline:
             "start_time": getattr(self, "_start_time", None),
             "end_time": getattr(self, "_end_time", None),
             "success": True,  # If we're here, it succeeded
-            "random_seed": getattr(self.config.reproducibility, "random_seed", None)
+            "random_seed": getattr(self.config, "random_seed", None)
             if hasattr(self.config, "reproducibility")
             else None,
         }
@@ -1428,7 +1428,7 @@ class AuditPipeline:
             model_info=model_info,
             selected_components=selected_components,
             execution_info=execution_info,
-            seed=getattr(self.config.reproducibility, "random_seed", None),
+            seed=getattr(self.config, "random_seed", None),
         )
 
         # Store in results for PDF embedding
@@ -1907,8 +1907,12 @@ class AuditPipeline:
                 protected_features = list(sensitive_features.columns)
 
             # Get perturbation config
-            epsilon_values = stability_config.epsilon_values
-            threshold = stability_config.threshold
+            if isinstance(stability_config, dict):
+                epsilon_values = stability_config.get("epsilon_values", [0.01, 0.05, 0.1])
+                threshold = stability_config.get("threshold", 0.05)
+            else:
+                epsilon_values = stability_config.epsilon_values
+                threshold = stability_config.threshold
             seed = get_component_seed("stability_perturbation")
 
             # Preprocess features to handle categorical columns (prevent "could not convert string to float" errors)

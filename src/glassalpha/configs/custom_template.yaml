@@ -54,14 +54,19 @@ audit_profile: tabular_compliance
 #   - Document your git commit for complete lineage tracking
 # ----------------------------------------------------------------------------
 
-reproducibility:
-  # Random seed for all stochastic operations
-  # Integer value ensures exact reproducibility across runs
-  # Same seed = byte-identical PDF reports
-  random_seed: 42
+# Random seed for all stochastic operations
+# Integer value ensures exact reproducibility across runs
+# Same seed = byte-identical PDF reports
+random_seed: 42
 
-  # Configuration hash and git tracking
-  # Note: These are automatically captured in the audit manifest
+# Enforce strict determinism controls (thread control, advanced seeding)
+strict: true
+
+# Control thread counts for deterministic parallel processing
+thread_control: true
+
+# Configuration hash and git tracking
+# Note: These are automatically captured in the audit manifest
 
 # ----------------------------------------------------------------------------
 # DATA CONFIGURATION (Required)

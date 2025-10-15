@@ -16,4 +16,4 @@ model:
   params:
     random_state: 42
     max_iter: 2000 # Increased to prevent convergence warnings
-reproducibility: { random_seed: 42 }
+random_seed: 42

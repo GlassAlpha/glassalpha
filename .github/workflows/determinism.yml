@@ -123,14 +123,14 @@ jobs:
       - name: Run determinism regression test
         run: |
           echo "=== Running determinism test (single run) ==="
-          PYTHONHASHSEED=0 TZ=UTC MPLBACKEND=Agg SOURCE_DATE_EPOCH=1577836800 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 BLIS_NUM_THREADS=1 GLASSALPHA_NO_PROGRESS=1 GLASSALPHA_DETERMINISTIC=1 LC_ALL=C python3 -m pytest tests/test_critical_regression_guards.py::TestCriticalRegressions::test_cli_determinism_regression_guard -v --tb=short
+          python3 -m pytest tests/test_critical_regression_guards.py::TestCriticalRegressions::test_cli_determinism_regression_guard -v --tb=short
 
       - name: Run multi-run validation (5 consecutive runs)
         run: |
           echo "=== Running determinism test 5 times ==="
           for i in {1..5}; do
             echo "Run $i/5..."
-            PYTHONHASHSEED=0 TZ=UTC MPLBACKEND=Agg SOURCE_DATE_EPOCH=1577836800 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 BLIS_NUM_THREADS=1 GLASSALPHA_NO_PROGRESS=1 GLASSALPHA_DETERMINISTIC=1 LC_ALL=C python3 -m pytest tests/test_critical_regression_guards.py::TestCriticalRegressions::test_cli_determinism_regression_guard -v --tb=line || exit 1
+            python3 -m pytest tests/test_critical_regression_guards.py::TestCriticalRegressions::test_cli_determinism_regression_guard -v --tb=line || exit 1
           done
           echo "✅ All 5 runs passed"
 
@@ -146,10 +146,10 @@ jobs:
           python -c "
           from glassalpha.config import load_config
           cfg = load_config('$CONFIG_FILE')
-          print(f'Config strict mode: {cfg.reproducibility.strict}')
-          print(f'Config thread_control: {cfg.reproducibility.thread_control}')
-          assert cfg.reproducibility.strict == True, 'strict must be True'
-          assert cfg.reproducibility.thread_control == True, 'thread_control must be True'
+          print(f'Config strict mode: {cfg.strict}')
+          print(f'Config thread_control: {cfg.thread_control}')
+          assert cfg.strict == True, 'strict must be True'
+          assert cfg.thread_control == True, 'thread_control must be True'
           print('✅ Determinism config validated')
           "
 
