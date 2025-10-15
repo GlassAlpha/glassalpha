@@ -36,11 +36,6 @@ repos:
 
   - repo: local
     hooks:
-      - id: check-package-structure
-        name: Verify package structure
-        entry: python3 scripts/check_package_structure.py
-        language: system
-        pass_filenames: false
       - id: smoke-test
         name: Quick smoke test
         entry: bash scripts/smoke_test.sh

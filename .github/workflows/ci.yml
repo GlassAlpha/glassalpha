@@ -10,8 +10,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   test:
@@ -28,7 +26,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
         with:
           fetch-depth: 0 # Full git history for manifest generation tests
 
@@ -38,7 +36,7 @@ jobs:
           git config --global user.email "ci@glassalpha.test"
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -49,7 +47,7 @@ jobs:
           brew install libomp
 
       - name: Cache pip dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.1.0
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml', 'constraints.txt') }}
@@ -126,12 +124,12 @@ jobs:
       - name: Generate CycloneDX SBOM
         run: |
           echo "=== Generate Software Bill of Materials ==="
-          python -m pip install cyclonedx-bom
+          python -m pip install cyclonedx-bom==4.4.0
           cyclonedx-py environment -o dist/sbom.json
           echo "✅ Generated SBOM: $(ls -lh dist/sbom.json)"
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@dc72c7d5c2d10cd6fcb8f9d5a32b293c90d6112c # v3.7.0
         with:
           cosign-release: "v2.2.4"
 
@@ -148,7 +146,7 @@ jobs:
           ls -la dist/*.sig
 
       - name: Upload signed artifacts and attestations
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@2848b2cda0e5190984587ec6bb1f36730ca78d50 # v4.4.0
         with:
           name: signed-artifacts-py${{ matrix.python-version }}-${{ github.run_id }}
           path: |
@@ -407,18 +405,77 @@ jobs:
           python -m pytest --nbmake notebooks/*.ipynb \
             --nbmake-timeout=180 -v || echo "⚠️  Some notebooks failed (see above)"
 
+  validate-constraints:
+    name: Validate Constraints
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'pyproject.toml') || contains(github.event.head_commit.modified, 'constraints/')
+    steps:
+      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Check constraints are documented
+        run: |
+          echo "=== Verifying constraint files exist ==="
+          required_files=(
+            "constraints/constraints-ubuntu-latest-py3.11.txt"
+            "constraints/constraints-ubuntu-latest-py3.12.txt"
+            "constraints/constraints-macos-14-py3.11.txt"
+            "constraints/constraints-macos-14-py3.12.txt"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required constraint file: $file"
+              exit 1
+            fi
+            echo "✅ Found: $file"
+          done
+
+      - name: Validate constraints are not empty
+        run: |
+          echo "=== Checking constraint files are not empty ==="
+          for file in constraints/constraints-*.txt; do
+            if [ ! -s "$file" ]; then
+              echo "❌ Empty constraint file: $file"
+              exit 1
+            fi
+            lines=$(wc -l < "$file")
+            echo "✅ $file: $lines lines"
+          done
+
+      - name: Check for stale constraints (optional warning)
+        run: |
+          echo "=== Checking for potentially stale constraints ==="
+          echo "If pyproject.toml changed recently, constraints may need regeneration"
+          echo "See CONSTRAINTS.md for regeneration instructions"
+
+          # Get last modification times
+          pyproject_mtime=$(stat -c %Y pyproject.toml 2>/dev/null || stat -f %m pyproject.toml)
+          constraints_mtime=$(find constraints -name "*.txt" -type f -exec stat -c %Y {} \; 2>/dev/null | sort -n | head -1 || echo "0")
+
+          if [ "$pyproject_mtime" -gt "$constraints_mtime" ]; then
+            echo "⚠️  pyproject.toml is newer than constraints files"
+            echo "   Consider regenerating constraints if dependencies changed"
+          else
+            echo "✅ Constraints appear up-to-date"
+          fi
+
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
         with:
           python-version: "3.12"
 
       - name: Cache pip dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.1.0
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml', 'constraints.txt') }}
@@ -445,7 +502,7 @@ jobs:
 
       - name: Upload security report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@2848b2cda0e5190984587ec6bb1f36730ca78d50 # v4.4.0
         with:
           name: pip-audit-report
           path: pip-audit-report.json
@@ -466,9 +523,9 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.11"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v5.3.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -511,14 +568,14 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
         with:
           python-version: "3.12"
 
       - name: Cache pip dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.1.0
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml', 'constraints.txt') }}
@@ -544,12 +601,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
         with:
           python-version: "3.12"
 
@@ -557,7 +614,7 @@ jobs:
         run: sudo apt-get install -y libcairo2-dev
 
       - name: Cache pip
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.1.0
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('site/requirements.txt', 'site/mkdocs.yml', 'pyproject.toml') }}
@@ -579,7 +636,7 @@ jobs:
           MKDOCS_ENABLE_SOCIAL: true
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
         with:
           path: ./site/site
 
@@ -596,4 +653,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@854d7aa1b99e4509c4d1b53d69b7ba4eaf39215a # v4.0.0

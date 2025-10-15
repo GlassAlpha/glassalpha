@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write # For PyPI Trusted Publishing (future)
+  id-token: write # Required for PyPI Trusted Publishing
 
 jobs:
   build:
@@ -15,16 +15,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v5.0.0
         with:
           python-version: "3.11"
 
       - name: Install build tools
         run: |
-          python -m pip install --upgrade pip build twine cyclonedx-bom
+          python -m pip install --upgrade pip==24.2 build==1.2.1 twine==5.1.1 cyclonedx-bom==4.4.0
 
       - name: Build package
         run: |
@@ -43,7 +43,7 @@ jobs:
           echo "✅ Distribution checks passed"
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@dc72c7d5c2d10cd6fcb8f9d5a32b293c90d6112c # v3.7.0
         with:
           cosign-release: "v2.2.4"
 

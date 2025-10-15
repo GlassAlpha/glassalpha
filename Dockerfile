@@ -32,7 +32,7 @@ COPY pyproject.toml README.md MANIFEST.in ./
 COPY src ./src
 
 # Build wheel
-RUN pip install --upgrade pip build && \
+RUN pip install --upgrade pip==24.2 build==1.2.1 && \
     python -m build --wheel
 
 # Runtime stage
