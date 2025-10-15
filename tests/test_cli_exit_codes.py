@@ -66,7 +66,7 @@ reproducibility:
             )
 
             # Should exit with success code
-            assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}: {result.stderr}"
+            assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}: {result.output}"
 
         finally:
             Path(config_path).unlink(missing_ok=True)
@@ -92,7 +92,7 @@ reproducibility:
         )
 
         # Should exit with USER_ERROR (1) for missing config
-        assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}: {result.stderr}"
+        assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}: {result.output}"
 
     def test_audit_exits_2_on_data_error(self, tmp_path):
         """Missing data file exits with code 1 (USER_ERROR)."""
@@ -138,7 +138,7 @@ reproducibility:
             )
 
             # Should exit with USER_ERROR (1) for missing data file
-            assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}: {result.stderr}"
+            assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}: {result.output}"
 
         finally:
             Path(config_path).unlink(missing_ok=True)
@@ -193,9 +193,9 @@ reproducibility:
             # Should exit with VALIDATION_ERROR (3) if violations detected
             # Note: This test might pass if no violations are detected, but that's OK
             # The important thing is that if violations ARE detected, it exits with 3
-            if "degradation exceeding threshold" in (result.stdout + result.stderr):
+            if "degradation exceeding threshold" in result.output:
                 assert result.exit_code == 3, (
-                    f"Expected exit code 3 for violations, got {result.exit_code}: {result.stderr}"
+                    f"Expected exit code 3 for violations, got {result.exit_code}: {result.output}"
                 )
 
         finally:
@@ -249,9 +249,9 @@ reproducibility:
             )
 
             # Should exit with SUCCESS (0) if no violations detected
-            if "no violations detected" in (result.stdout + result.stderr):
+            if "no violations detected" in result.output:
                 assert result.exit_code == 0, (
-                    f"Expected exit code 0 for no violations, got {result.exit_code}: {result.stderr}"
+                    f"Expected exit code 0 for no violations, got {result.exit_code}: {result.output}"
                 )
 
         finally:
@@ -295,7 +295,7 @@ invalid_yaml: [
 
             # Should exit with USER_ERROR (1) for invalid YAML
             assert result.exit_code == 1, (
-                f"Expected exit code 1 for invalid YAML, got {result.exit_code}: {result.stderr}"
+                f"Expected exit code 1 for invalid YAML, got {result.exit_code}: {result.output}"
             )
 
         finally:

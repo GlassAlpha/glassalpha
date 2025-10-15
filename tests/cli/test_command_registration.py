@@ -109,8 +109,13 @@ def test_no_duplicate_command_names():
         # (should appear exactly once in the commands section)
         import re
 
-        # Look for command in the commands list section (after "Commands:")
-        commands_section = help_output.split("Commands:")[1] if "Commands:" in help_output else help_output
+        # Look for command in the commands list section (after "Commands" marker)
+        commands_section = help_output
+        if "Commands:" in help_output:
+            commands_section = help_output.split("Commands:")[1]
+        elif "─ Commands ─" in help_output:
+            # Handle table format with Unicode box drawing
+            commands_section = help_output.split("─ Commands ─")[1]
 
         # Match command name as standalone word
         pattern = rf"\b{command}\b"
