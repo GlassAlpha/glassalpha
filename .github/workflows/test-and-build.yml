@@ -74,7 +74,7 @@ jobs:
       - name: Run core contract tests (fast)
         run: |
           echo "=== Run core contract guard tests (fast subset) ==="
-          pytest tests/test_contracts/ -v --tb=short
+          pytest tests/contracts/ -v --tb=short
 
       - name: Run unit tests (fast)
         run: |
