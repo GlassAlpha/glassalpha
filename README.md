@@ -5,6 +5,10 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/glassalpha/glassalpha/badge)](https://securityscorecards.dev/viewer/?uri=github.com/glassalpha/glassalpha)
 [![Python versions](https://img.shields.io/pypi/pyversions/glassalpha.svg)](https://pypi.org/project/glassalpha/)
 
+[![Test & Build](https://github.com/glassalpha/glassalpha/workflows/Test%20&%20Build/badge.svg)](https://github.com/glassalpha/glassalpha/actions/workflows/test-and-build.yml)
+[![Determinism](https://github.com/glassalpha/glassalpha/workflows/Determinism%20Validation/badge.svg)](https://github.com/glassalpha/glassalpha/actions/workflows/determinism.yml)
+[![Security](https://github.com/glassalpha/glassalpha/workflows/OpenSSF%20Scorecard/badge.svg)](https://github.com/glassalpha/glassalpha/actions/workflows/scorecards.yml)
+
 **Ever tried explaining your ML model to a regulator?**
 
 GlassAlpha is an ([open source](https://glassalpha.com/reference/trust-deployment/#licensing-dependencies)) ML compliance toolkit that makes tabular models **transparent, auditable, and regulator-ready**.
@@ -236,6 +240,23 @@ All Apache 2.0 licensed.
 - **Built-in datasets**: German Credit and Adult Income for quick testing
 - **Self-diagnosable errors**: Clear What/Why/Fix error messages
 - **Automation support**: `--json-errors` flag for CI/CD pipelines
+
+## Workflow Overview
+
+```
+Push to main
+├─> Test & Build        (test-and-build.yml) - Always runs
+│   ├─> Unit Tests      (fast contract tests)
+│   ├─> Integration Tests (medium integration tests)
+│   └─> Smoke Tests     (notebooks, security, linting - optional)
+├─> Determinism         (determinism.yml) - Always runs
+├─> CLI Docs Check      (cli-docs.yml) - If CLI changed
+└─> OpenSSF Scorecard   (scorecards.yml) - Weekly + on push
+
+Release published
+└─> Publish to PyPI     (release.yml) - Only on release
+    └─ Uses artifacts from Test & Build? No, rebuilds
+```
 
 ## CI/CD Integration
 
