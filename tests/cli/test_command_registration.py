@@ -4,11 +4,18 @@ This test ensures that commands defined in commands.py are actually
 registered in main.py and show up in --help output.
 """
 
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences from text."""
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
+    return ansi_escape.sub("", text)
 
 
 def test_all_commands_appear_in_help():
@@ -24,7 +31,8 @@ def test_all_commands_appear_in_help():
 
     assert result.returncode == 0, f"--help failed: {result.stderr}"
 
-    help_output = result.stdout
+    # Strip ANSI color codes for consistent parsing across environments
+    help_output = strip_ansi(result.stdout)
 
     # Expected commands that should be registered
     expected_commands = [
@@ -102,13 +110,13 @@ def test_no_duplicate_command_names():
 
     assert result.returncode == 0, f"--help failed: {result.stderr}"
 
-    help_output = result.stdout
+    # Strip ANSI color codes for consistent parsing across environments
+    help_output = strip_ansi(result.stdout)
     commands = ["audit", "doctor", "docs", "list", "quickstart", "reasons", "recourse", "validate"]
 
     for command in commands:
         # Count occurrences of command as standalone word in help output
         # (should appear exactly once in the commands section)
-        import re
 
         # Look for command in the commands table (after "Commands" marker)
         commands_section = help_output
