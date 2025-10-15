@@ -232,7 +232,7 @@ def test_specific_config_examples_exist() -> None:
     required_examples = [
         "quickstart.yaml",
         "german_credit_simple.yaml",
-        "adult_income_simple.yaml",
+        "adult_income.yaml",
     ]
 
     for example in required_examples:
