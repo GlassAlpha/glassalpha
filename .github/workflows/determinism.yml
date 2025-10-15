@@ -86,7 +86,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip==24.2 setuptools==75.1.0 wheel==0.44.0
           pip install -c constraints.txt -e ".[all,dev]"
-          pip install shap==0.46.0  # Required for deterministic explainer selection
+          pip install shap==0.48.0  # Required for deterministic explainer selection
 
       - name: Verify dependencies
         run: |

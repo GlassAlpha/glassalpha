@@ -2,7 +2,7 @@
 
 # Core package files
 include README.md LICENSE NOTICE CONSTRAINTS.md CODE_OF_CONDUCT.md
-include CHANGELOG.md SECURITY.md TRADEMARK.md CONTRIBUTING.md
+include CHANGELOG.md SECURITY.md SECURITY_POSTURE.md TRADEMARK.md CONTRIBUTING.md
 include pyproject.toml
 include constraints.txt
 include pytest.ini

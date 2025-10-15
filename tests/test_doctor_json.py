@@ -2,12 +2,13 @@
 
 import json
 import subprocess
+import sys
 
 
 def test_doctor_json_output():
     """Verify doctor --json produces valid JSON."""
     result = subprocess.run(
-        ["python", "-m", "glassalpha", "doctor", "--json"],
+        [sys.executable, "-m", "glassalpha", "doctor", "--json"],
         capture_output=True,
         text=True,
         check=False,
@@ -38,7 +39,7 @@ def test_doctor_json_output():
 def test_doctor_json_output_has_versions():
     """Verify doctor --json includes package version information."""
     result = subprocess.run(
-        ["python", "-m", "glassalpha", "doctor", "--json"],
+        [sys.executable, "-m", "glassalpha", "doctor", "--json"],
         capture_output=True,
         text=True,
         check=False,

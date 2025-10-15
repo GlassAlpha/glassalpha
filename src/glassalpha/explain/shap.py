@@ -32,13 +32,33 @@ def _import_shap():
         raise ImportError(msg) from e
 
 
-# Check if shap is available for registration (but don't import yet)
-try:
-    import shap  # noqa: F401
+# Check if shap is available for registration (lazy import to avoid NumPy 2.x compatibility issues)
+def _import_shap():
+    """Lazy import of SHAP to avoid NumPy 2.x compatibility issues during module load.
 
-    SHAP_AVAILABLE = True
-except ImportError:
-    SHAP_AVAILABLE = False
+    Returns:
+        tuple: (shap_module, available) where shap_module is the imported module
+               if available, None otherwise, and available is a boolean.
+    """
+    try:
+        import shap
+
+        return shap, True
+    except (ImportError, TypeError) as e:
+        # TypeError can occur with NumPy 2.x compatibility issues
+        import warnings
+
+        warnings.warn(
+            f"SHAP import failed (likely NumPy 2.x compatibility): {e}. "
+            "Install compatible version with: pip install 'shap==0.48.0'",
+            ImportWarning,
+            stacklevel=2,
+        )
+        return None, False
+
+
+# Global availability check (for module-level registration)
+_shap_module, SHAP_AVAILABLE = _import_shap()
 
 _TREE_CLASS_NAMES = {
     "DecisionTreeClassifier",

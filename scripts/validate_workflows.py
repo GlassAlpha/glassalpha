@@ -2,46 +2,48 @@
 """Validate GitHub Actions workflow files for syntax and structure."""
 
 import sys
-import yaml
 from pathlib import Path
+
+import yaml
 
 
 def validate_workflow_structure(workflow_file: Path) -> bool:
     """Validate that a workflow file has the required structure."""
+    errors = []
+
     try:
         with open(workflow_file, encoding="utf-8") as f:
             content = yaml.safe_load(f)
     except Exception as e:
-        print(f"❌ Error reading {workflow_file}: {e}")
+        errors.append(f"Error reading {workflow_file}: {e}")
         return False
 
     # Every workflow should have these top-level keys
     if "name" not in content:
-        print(f"❌ Workflow {workflow_file.name} missing 'name' field")
-        return False
+        errors.append(f"Workflow {workflow_file.name} missing 'name' field")
 
     # Note: YAML parser interprets 'on:' as boolean True key (PyYAML quirk)
     if True not in content:
-        print(f"❌ Workflow {workflow_file.name} missing 'on' field (parsed as True key)")
-        return False
+        errors.append(f"Workflow {workflow_file.name} missing 'on' field (parsed as True key)")
 
     if "jobs" not in content:
-        print(f"❌ Workflow {workflow_file.name} missing 'jobs' field")
-        return False
+        errors.append(f"Workflow {workflow_file.name} missing 'jobs' field")
 
     # Every job should have runs-on and steps
-    for job_name, job_config in content["jobs"].items():
-        if "runs-on" not in job_config:
-            print(f"❌ Job '{job_name}' in {workflow_file.name} missing 'runs-on' field")
-            return False
-        if "steps" not in job_config:
-            print(f"❌ Job '{job_name}' in {workflow_file.name} missing 'steps' field")
-            return False
-        if not isinstance(job_config["steps"], list):
-            print(f"❌ Job '{job_name}' steps should be a list")
-            return False
+    if "jobs" in content:
+        for job_name, job_config in content["jobs"].items():
+            if "runs-on" not in job_config:
+                errors.append(f"Job '{job_name}' in {workflow_file.name} missing 'runs-on' field")
+            if "steps" not in job_config:
+                errors.append(f"Job '{job_name}' in {workflow_file.name} missing 'steps' field")
+            elif not isinstance(job_config["steps"], list):
+                errors.append(f"Job '{job_name}' steps should be a list")
 
-    return True
+    # Print all errors at once
+    for error in errors:
+        print(f"❌ {error}")
+
+    return len(errors) == 0
 
 
 def main():

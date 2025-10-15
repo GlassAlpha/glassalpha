@@ -313,6 +313,7 @@ def _set_sklearn_determinism(warn_on_failure: bool) -> dict[str, Any]:
 def _set_shap_determinism(seed: int, warn_on_failure: bool) -> dict[str, Any]:
     """Set SHAP deterministic behavior."""
     try:
+        # Lazy import to avoid NumPy 2.x compatibility issues during module load
         import shap
 
         # SHAP uses numpy random, which we've already set
@@ -326,6 +327,11 @@ def _set_shap_determinism(seed: int, warn_on_failure: bool) -> dict[str, Any]:
         }
     except ImportError:
         return {"success": True, "note": "SHAP not available"}
+    except (TypeError, AttributeError) as e:
+        # TypeError can occur with NumPy 2.x compatibility issues during SHAP import
+        if warn_on_failure:
+            logger.warning(f"Failed to configure SHAP determinism (likely NumPy 2.x compatibility): {e}")
+        return {"success": False, "error": str(e), "note": "Try: pip install 'shap==0.48.0'"}
     except Exception as e:
         if warn_on_failure:
             logger.warning(f"Failed to configure SHAP determinism: {e}")
@@ -417,8 +423,17 @@ def get_repro_status() -> dict[str, Any]:
     libraries = ["numpy", "pandas", "sklearn", "xgboost", "lightgbm", "shap"]
     for lib in libraries:
         try:
-            module = __import__(lib)
-            status["library_versions"][lib] = getattr(module, "__version__", "unknown")
+            if lib == "shap":
+                # Special handling for SHAP to avoid NumPy 2.x compatibility issues
+                try:
+                    module = __import__(lib)
+                    status["library_versions"][lib] = getattr(module, "__version__", "unknown")
+                except (ImportError, TypeError) as e:
+                    # TypeError can occur with NumPy 2.x compatibility issues
+                    status["library_versions"][lib] = f"import_error: {e}"
+            else:
+                module = __import__(lib)
+                status["library_versions"][lib] = getattr(module, "__version__", "unknown")
         except ImportError:
             status["library_versions"][lib] = "not_available"
 

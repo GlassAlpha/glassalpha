@@ -630,7 +630,13 @@ def reasons(  # pragma: no cover - CLI command
         shap_values = None
         try:
             # Try SHAP first (best for tree models and non-linear models)
-            import shap
+            try:
+                import shap
+            except (ImportError, TypeError) as e:
+                # TypeError can occur with NumPy 2.x compatibility issues
+                typer.echo(f"❌ SHAP import failed: {e}")
+                typer.echo("   Try installing compatible version: pip install 'shap==0.48.0'")
+                raise typer.Exit(1)
 
             try:
                 typer.echo("  Computing TreeSHAP explanations...")
@@ -1539,7 +1545,13 @@ def recourse(  # pragma: no cover
 
         # Generate SHAP values (use TreeSHAP for tree models)
         try:
-            import shap
+            try:
+                import shap
+            except (ImportError, TypeError) as e:
+                # TypeError can occur with NumPy 2.x compatibility issues
+                typer.echo(f"❌ SHAP import failed: {e}")
+                typer.echo("   Try installing compatible version: pip install 'shap==0.48.0'")
+                raise typer.Exit(1)
 
             typer.echo("  Computing TreeSHAP explanations...")
             typer.echo("    (This may take 10-30 seconds for tree models)")
@@ -1600,7 +1612,13 @@ def recourse(  # pragma: no cover
                     fg=typer.colors.YELLOW,
                 )
                 # Fallback to KernelSHAP (use original model_obj for predict interface)
-                import shap
+                try:
+                    import shap
+                except (ImportError, TypeError) as e:
+                    # TypeError can occur with NumPy 2.x compatibility issues
+                    typer.echo(f"❌ SHAP import failed: {e}")
+                    typer.echo("   Try installing compatible version: pip install 'shap==0.48.0'")
+                    raise typer.Exit(1)
 
                 # Load full dataset for background samples
                 X_background = df.drop(columns=["target"], errors="ignore")
