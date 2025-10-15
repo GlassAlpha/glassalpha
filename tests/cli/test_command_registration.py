@@ -44,7 +44,7 @@ def test_all_commands_appear_in_help():
         # Look for command in the commands table
         command_pattern = f"│ {command}"  # Table format with Unicode box
         assert command_pattern in help_output, (
-            f"Command '{command}' not found in --help output. Looking for pattern: {command_pattern!r}"
+            f"Command '{command}' not found in --help output. Commands section: {help_output.count('│') > 0}"
         )
 
 
@@ -114,9 +114,9 @@ def test_no_duplicate_command_names():
         commands_section = help_output
         if "Commands:" in help_output:
             commands_section = help_output.split("Commands:")[1]
-        elif "─ Commands ─" in help_output:
-            # Handle table format with Unicode box drawing
-            commands_section = help_output.split("─ Commands ─")[1]
+        elif "╭─ Commands ─" in help_output:
+            # Handle table format with Unicode box drawing (top border)
+            commands_section = help_output.split("╭─ Commands ─")[1]
 
         # Commands appear in table format: │ command_name
         command_pattern = f"│ {command}"
