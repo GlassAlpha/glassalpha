@@ -2697,6 +2697,7 @@ class AuditPipeline:
             FileNotFoundError: If dataset cannot be fetched or is not available
 
         """
+        import importlib
         import shutil
         import time
 
@@ -2766,8 +2767,8 @@ class AuditPipeline:
 
             # Fetch if needed
             if not final_cache_path.exists():
-                logger.info(f"Fetching dataset {dataset_key} into cache")
-                module_name, func_name = BUILT_IN_DATASETS[dataset_key]
+                logger.info(f"Fetching dataset {ds_key} into cache")
+                module_name, func_name = BUILT_IN_DATASETS[ds_key]
                 module = importlib.import_module(module_name)
                 loader = getattr(module, func_name)
                 produced = Path(loader(encoded=True)).resolve()
