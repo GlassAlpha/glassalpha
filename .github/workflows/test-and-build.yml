@@ -131,7 +131,8 @@ jobs:
       - name: Build and install package
         run: |
           python -m build
-          python -m pip install dist/*.whl
+          python -m pip install -c constraints.txt dist/*.whl
+          python -m pip install -c constraints.txt xgboost lightgbm weasyprint
           python -m pip install pytest pytest-cov
 
       - name: Run integration tests
@@ -188,7 +189,8 @@ jobs:
       - name: Build and install package
         run: |
           python -m build
-          python -m pip install dist/*.whl
+          python -m pip install -c constraints.txt dist/*.whl
+          python -m pip install -c constraints.txt xgboost lightgbm shap
 
       - name: Install notebook dependencies
         run: |
