@@ -12,6 +12,13 @@ import warnings
 from pathlib import Path
 from typing import Any
 
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import rcParams
+from matplotlib.figure import Figure
+
 
 # Guard against GUI backends in headless environments
 def _ensure_headless_backend():
@@ -21,23 +28,13 @@ def _ensure_headless_backend():
         return
     # On macOS, the default Cocoa backend will crash in non-GUI contexts
     if sys.platform == "darwin":
-        import matplotlib
-
         matplotlib.use("Agg", force=True)
     # On Linux CI without DISPLAY, use Agg
     if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
-        import matplotlib
-
         matplotlib.use("Agg", force=True)
 
 
 _ensure_headless_backend()
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from matplotlib import rcParams
-from matplotlib.figure import Figure
 
 # Optional: seaborn for enhanced styling (graceful fallback if not available)
 try:

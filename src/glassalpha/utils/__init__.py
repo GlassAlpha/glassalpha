@@ -47,22 +47,17 @@ from .seeds import (
 
 # Public API - commonly used utilities
 __all__ = [
-    # Manifest
     "AuditManifest",
     "ManifestGenerator",
-    # Features
+    "SeedManager",
     "align_features",
-    # Seeds
     "get_component_seed",
     "get_seeds_manifest",
-    # Hashing
     "hash_config",
     "hash_dataframe",
     "hash_file",
     "hash_object",
-    # Seeds
     "set_global_seed",
-    "SeedManager",
     "with_component_seed",
     "with_seed",
 ]
