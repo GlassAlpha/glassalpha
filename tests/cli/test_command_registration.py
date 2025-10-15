@@ -40,10 +40,11 @@ def test_all_commands_appear_in_help():
 
     # Verify each command appears in help output
     for command in expected_commands:
-        # Commands appear as standalone words in help (not as substrings of other words)
-        # Use word boundaries to avoid false positives
-        assert f" {command} " in help_output or f"\n  {command} " in help_output, (
-            f"Command '{command}' not found in --help output"
+        # Commands appear in table format: │ command_name
+        # Look for command in the commands table
+        command_pattern = f"│ {command}"  # Table format with Unicode box
+        assert command_pattern in help_output, (
+            f"Command '{command}' not found in --help output. Looking for pattern: {command_pattern!r}"
         )
 
 
@@ -109,7 +110,7 @@ def test_no_duplicate_command_names():
         # (should appear exactly once in the commands section)
         import re
 
-        # Look for command in the commands list section (after "Commands" marker)
+        # Look for command in the commands table (after "Commands" marker)
         commands_section = help_output
         if "Commands:" in help_output:
             commands_section = help_output.split("Commands:")[1]
@@ -117,12 +118,14 @@ def test_no_duplicate_command_names():
             # Handle table format with Unicode box drawing
             commands_section = help_output.split("─ Commands ─")[1]
 
-        # Match command name as standalone word
-        pattern = rf"\b{command}\b"
-        matches = re.findall(pattern, commands_section)
+        # Commands appear in table format: │ command_name
+        command_pattern = f"│ {command}"
+        matches = [m for m in commands_section.split("\n") if command_pattern in m]
 
-        # Each command should appear at least once (may appear in description too)
-        assert len(matches) >= 1, f"Command '{command}' appears {len(matches)} times (expected >= 1)"
+        # Each command should appear at least once
+        assert len(matches) >= 1, (
+            f"Command '{command}' appears {len(matches)} times (expected >= 1) in commands section"
+        )
 
 
 if __name__ == "__main__":
