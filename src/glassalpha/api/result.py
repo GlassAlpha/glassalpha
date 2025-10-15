@@ -247,8 +247,8 @@ class AuditResult:
             if self_metrics.keys() != other_metrics.keys():
                 return False
 
-            for key in self_metrics:
-                v1, v2 = self_metrics[key], other_metrics[key]
+            for key, v1 in self_metrics.items():
+                v2 = other_metrics[key]
 
                 # Handle None gracefully
                 if v1 is None and v2 is None:

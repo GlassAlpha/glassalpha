@@ -215,7 +215,7 @@ def compute_proxy_correlations(
             elif not protected_is_numeric and not feature_is_numeric:
                 # Cramér's V for categorical-categorical
                 contingency_table = pd.crosstab(data[protected_attr], data[feature])
-                chi2, p_value, _, _ = chi2_contingency(contingency_table)
+                _chi2, p_value, _, _ = chi2_contingency(contingency_table)
 
                 # Cramér's V
                 corr = _cramers_v(contingency_table.values)
@@ -550,7 +550,7 @@ def detect_split_imbalance(
             continue
 
         # Chi-square test
-        chi2, p_value, dof, expected = chi2_contingency(contingency_table)
+        chi2, p_value, _dof, _expected = chi2_contingency(contingency_table)
 
         # Compute train/test distributions
         train_dist = contingency_table.loc["train"].to_dict()

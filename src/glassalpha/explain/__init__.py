@@ -6,9 +6,7 @@ Replaces registry pattern with simple if/elif dispatch.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
-
-from glassalpha.explain.noop import noop as _noop
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +59,12 @@ def select_explainer(model_type: str, requested_priority: list[str] | None = Non
             # Check availability for each explainer type
             if first_choice == "treeshap":
                 try:
-                    from glassalpha.explain.shap import TreeSHAPExplainer
+                    import importlib.util
 
-                    logger.info(f"Explainer: selected {first_choice} for {model_type} (priority)")
-                    return first_choice
+                    if importlib.util.find_spec("glassalpha.explain.shap") is not None:
+                        logger.info(f"Explainer: selected {first_choice} for {model_type} (priority)")
+                        return first_choice
+                    raise ImportError("TreeSHAP not available")
                 except ImportError:
                     # Try next priority or fall back to default
                     if len(valid_priority) > 1:

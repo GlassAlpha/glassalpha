@@ -380,7 +380,7 @@ def _generate_candidates(
             # Preserve dtype to avoid pandas FutureWarning
             original_dtype = feature_values[feature].dtype
             if original_dtype.kind in ("i", "u"):  # Integer types
-                counterfactual[feature] = int(round(new_value))
+                counterfactual[feature] = round(new_value)
             else:
                 counterfactual[feature] = new_value
 

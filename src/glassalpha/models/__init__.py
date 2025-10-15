@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from glassalpha.config import ModelConfig
 
 from glassalpha.exceptions import ModelLoadError
+from glassalpha.models.passthrough import PassThroughModel
 
 
 def load_model(model_type: str, model_path: Path | None = None, **kwargs: Any) -> Any:
@@ -113,8 +114,6 @@ def load_model_from_config(model_config: ModelConfig) -> Any:
         **(model_config.params or {}),
     )
 
-
-from glassalpha.models.passthrough import PassThroughModel
 
 __all__ = [
     "ModelLoadError",

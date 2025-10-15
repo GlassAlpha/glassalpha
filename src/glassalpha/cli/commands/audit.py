@@ -38,8 +38,8 @@ def _apply_determinism_env_if_present() -> None:
         try:
             # Read the environment file and apply settings
             with open(env_file) as f:
-                for line in f:
-                    line = line.strip()
+                for raw_line in f:
+                    line = raw_line.strip()
                     if line.startswith("export ") and "=" in line:
                         # Parse: export VAR="value"
                         _, var_value = line.split("=", 1)
