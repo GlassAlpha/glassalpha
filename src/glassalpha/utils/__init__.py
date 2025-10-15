@@ -50,20 +50,21 @@ __all__ = [
     # Manifest
     "AuditManifest",
     "ManifestGenerator",
+    # Features
+    "align_features",
     # Seeds
-    "SeedManager",
     "get_component_seed",
     "get_seeds_manifest",
-    "set_global_seed",
-    "with_component_seed",
-    "with_seed",
     # Hashing
     "hash_config",
     "hash_dataframe",
     "hash_file",
     "hash_object",
-    # Features
-    "align_features",
+    # Seeds
+    "set_global_seed",
+    "SeedManager",
+    "with_component_seed",
+    "with_seed",
 ]
 
 # Note: Specialized utilities should be imported from their specific modules:

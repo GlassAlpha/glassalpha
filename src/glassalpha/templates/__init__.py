@@ -1,6 +1,6 @@
 # Templates package
 
 # Export test template for backwards compatibility
-from .testing import *
+from . import testing
 
 __all__ = ["testing"]

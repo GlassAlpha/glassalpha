@@ -677,7 +677,7 @@ class AuditPlotter:
         angles = np.linspace(0, 2 * np.pi, len(key_metrics), endpoint=False).tolist()
         angles += angles[:1]  # Complete the circle
 
-        values = list(key_metrics.values()) + [list(key_metrics.values())[0]]
+        values = list(key_metrics.values()) + [next(iter(key_metrics.values()))]
 
         ax = plt.subplot(111, projection="polar")
         ax.plot(angles, values, "o-", linewidth=2, color=PROFESSIONAL_COLORS["secondary"])
@@ -739,7 +739,7 @@ class AuditPlotter:
 
         # Create pie chart
         colors = [PROFESSIONAL_COLORS["success"], PROFESSIONAL_COLORS["error"]]
-        wedges, texts, autotexts = ax.pie(
+        _wedges, _texts, _autotexts = ax.pie(
             bias_counts.values(),
             labels=bias_counts.keys(),
             colors=colors,
