@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import types
 from collections.abc import Iterator, Mapping
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -151,7 +151,7 @@ class PerformanceMetrics(ReadonlyMetrics):
     """
 
     # Metrics requiring y_proba
-    _PROBA_REQUIRED: set[str] = {"roc_auc", "pr_auc", "brier_score", "log_loss"}
+    _PROBA_REQUIRED: ClassVar[set[str]] = {"roc_auc", "pr_auc", "brier_score", "log_loss"}
 
     def plot_confusion_matrix(self, ax=None, normalize=False, cmap="Blues", title="Confusion Matrix"):
         """Plot confusion matrix from stored metrics.

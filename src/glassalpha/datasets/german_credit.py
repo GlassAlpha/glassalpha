@@ -87,7 +87,7 @@ class GermanCreditDataset:
         logger.info("Downloading German Credit dataset from UCI repository...")
 
         try:
-            urllib.request.urlretrieve(GERMAN_CREDIT_URL, self.data_file)
+            urllib.request.urlretrieve(GERMAN_CREDIT_URL, self.data_file)  # noqa: S310
             logger.info(f"Downloaded German Credit dataset to {self.data_file}")
         except Exception as e:
             raise RuntimeError(f"Failed to download German Credit dataset: {e}") from e

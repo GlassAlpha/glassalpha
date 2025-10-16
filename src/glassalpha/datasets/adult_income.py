@@ -81,7 +81,7 @@ class AdultIncomeDataset:
         else:
             logger.info("Downloading Adult Income training data from UCI repository...")
             try:
-                urllib.request.urlretrieve(ADULT_TRAIN_URL, self.train_file)
+                urllib.request.urlretrieve(ADULT_TRAIN_URL, self.train_file)  # noqa: S310
                 logger.info(f"Downloaded training data to {self.train_file}")
             except Exception as e:
                 raise RuntimeError(f"Failed to download Adult Income training data: {e}") from e
@@ -92,7 +92,7 @@ class AdultIncomeDataset:
         else:
             logger.info("Downloading Adult Income test data from UCI repository...")
             try:
-                urllib.request.urlretrieve(ADULT_TEST_URL, self.test_file)
+                urllib.request.urlretrieve(ADULT_TEST_URL, self.test_file)  # noqa: S310
                 logger.info(f"Downloaded test data to {self.test_file}")
             except Exception as e:
                 raise RuntimeError(f"Failed to download Adult Income test data: {e}") from e
