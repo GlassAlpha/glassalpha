@@ -15,7 +15,7 @@ GlassAlpha is an ([open source](https://glassalpha.com/reference/trust-deploymen
 
 Generate deterministic audit reports with statistical confidence intervals, fairness analysis, and deployment gates for CI/CD. HTML by default (fast, portable), PDF export available for regulatory submissions. No dashboards. No black boxes. Byte-stable outputs for regulatory reproducibility.
 
-_Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable with 1000+ passing tests and comprehensive documentation. Breaking API changes may occur before v1.0. First stable release expected Q1 2025._
+_Note: GlassAlpha is currently in beta (v0.2.0). Core functionality is stable with 1000+ passing tests and comprehensive documentation. Breaking API changes may occur before v1.0._
 
 ## Quick Start (5 minutes)
 
