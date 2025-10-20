@@ -3,7 +3,7 @@
 # Use with: pip install -c constraints.txt
 
 # Core dependencies
-numpy==1.26.4
+numpy==2.3.4
 pandas==2.2.2
 scipy==1.11.4
 
