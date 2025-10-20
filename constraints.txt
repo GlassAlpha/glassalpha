@@ -9,9 +9,9 @@ scipy==1.16.2
 
 # ML libraries (installed with [trees,explain] extras)
 scikit-learn==1.7.2
-xgboost==3.0.5
+xgboost==3.1.0
 lightgbm==4.6.0
-shap==0.48.0
+shap==0.49.1
 
 # Configuration and validation
 pydantic==2.11.10

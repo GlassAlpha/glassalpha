@@ -2,8 +2,8 @@ numpy==2.3.3
 scipy==1.16.2
 pandas==2.3.3
 scikit-learn==1.7.2
-shap==0.48.0
-xgboost==3.0.5
+shap==0.49.1
+xgboost==3.1.0
 lightgbm==4.6.0
 matplotlib==3.10.6
 seaborn==0.13.2
