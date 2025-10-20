@@ -3,7 +3,7 @@
 # Use with: pip install -c constraints.txt -e ".[all,dev]"
 
 # Scientific stack - NumPy 2.x for all Python versions
-numpy==2.3.3
+numpy==2.3.4
 pandas==2.3.3
 scipy==1.16.2
 
