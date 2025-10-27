@@ -71,7 +71,7 @@ jobs:
       url: https://test.pypi.org/p/glassalpha
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v6
         with:
           name: dist-${{ github.run_id }}
           path: dist/
@@ -92,7 +92,7 @@ jobs:
       url: https://pypi.org/p/glassalpha
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v6
         with:
           name: dist-${{ github.run_id }}
           path: dist/
@@ -127,7 +127,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v6
         with:
           name: dist-${{ github.run_id }}
           path: dist/
