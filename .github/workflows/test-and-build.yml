@@ -35,7 +35,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
         with:
           fetch-depth: 0
 
@@ -102,7 +102,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
         with:
           fetch-depth: 0
 
@@ -160,7 +160,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
         with:
           fetch-depth: 0
 
@@ -222,7 +222,7 @@ jobs:
       id-token: write # Required for Sigstore OIDC signing
       contents: read
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
 
       - name: Set up Python
         uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
@@ -262,7 +262,7 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.head_commit.modified, 'pyproject.toml') || contains(github.event.head_commit.modified, 'constraints/')
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
 
       - name: Set up Python
         uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
@@ -319,7 +319,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
 
       - name: Set up Python
         uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
@@ -375,7 +375,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.11"]
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
       - name: Set up Python
         uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v5.3.0
         with:
@@ -420,7 +420,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
       - name: Set up Python
         uses: actions/setup-python@18566f86b301499665bd3eb1a2247e0849c64fa5 # v6.0.0
         with:
@@ -453,7 +453,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5.0.0
         with:
           fetch-depth: 0
 
