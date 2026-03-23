@@ -67,4 +67,4 @@ llvmlite==0.45.1
 slicer==0.0.8
 tqdm==4.67.1
 threadpoolctl==3.6.0
-joblib==1.5.2
+joblib==1.5.3
