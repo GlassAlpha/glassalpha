@@ -248,7 +248,7 @@ jobs:
           inputs: dist/*.whl dist/sbom.json
 
       - name: Upload signed artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: signed-artifacts-${{ github.run_id }}
           path: |
@@ -354,7 +354,7 @@ jobs:
 
       - name: Upload security report
         if: always()
-        uses: actions/upload-artifact@2848b2cda0e5190984587ec6bb1f36730ca78d50 # v4.4.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v4.4.0
         with:
           name: pip-audit-report
           path: pip-audit-report.json
