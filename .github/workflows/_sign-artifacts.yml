@@ -28,7 +28,7 @@ jobs:
           inputs: ${{ inputs.artifact-pattern }}
 
       - name: Upload signed artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: signed-artifacts-${{ github.run_id }}
           path: |
