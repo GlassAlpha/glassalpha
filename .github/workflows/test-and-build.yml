@@ -82,7 +82,7 @@ jobs:
           pytest tests/ -k "not (integration or notebook or smoke or slow)" -v --tb=short --cov=src/glassalpha
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           file: ./coverage.xml
           flags: unit-tests
@@ -141,7 +141,7 @@ jobs:
           pytest tests/ -k "integration" -v --tb=short --cov=glassalpha --cov-append
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           file: ./coverage.xml
           flags: integration-tests
