@@ -28,7 +28,7 @@ weasyprint==63.1
 # WeasyPrint dependencies
 pydyf==0.11.0
 cffi==2.0.0
-tinyhtml5==2.0.0
+tinyhtml5==2.1.0
 tinycss2==1.4.0
 cssselect2==0.8.0
 pyphen==0.17.2
