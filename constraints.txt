@@ -63,7 +63,7 @@ platformdirs==4.9.4
 
 # Supporting libraries
 numba==0.64.0
-llvmlite==0.45.1
+llvmlite==0.46.0
 slicer==0.0.8
 tqdm==4.67.1
 threadpoolctl==3.6.0
