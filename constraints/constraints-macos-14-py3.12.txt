@@ -34,7 +34,7 @@ typing_extensions==4.15.0
 typing-inspection==0.4.2
 joblib==1.5.3
 threadpoolctl==3.6.0
-rich==13.9.4
+rich==14.3.3
 weasyprint==63.1
 pydyf==0.11.0
 cffi==2.0.0
