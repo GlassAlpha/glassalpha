@@ -7,5 +7,5 @@ livereload>=2.6.3  # Required for mkdocs serve auto-reload
 mkdocs-open-in-new-tab>=1.0.8
 
 # Dependencies for material theme extensions
-pymdown-extensions==10.21
+pymdown-extensions==10.21.2
 pygments>=2.16
