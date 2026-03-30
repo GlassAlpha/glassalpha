@@ -19,7 +19,7 @@ pyyaml==6.0.3
 
 # CLI and utilities
 typer==0.19.2
-rich==13.9.4
+rich==14.3.3
 click==8.1.8
 
 # Report generation
