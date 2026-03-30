@@ -42,7 +42,7 @@ tinyhtml5==2.0.0
 tinycss2==1.4.0
 cssselect2==0.8.0
 pyphen==0.17.2
-pillow==11.3.0
+pillow==12.1.1
 fonttools==4.60.1
 cairocffi==1.7.1
 cairosvg==2.8.2
