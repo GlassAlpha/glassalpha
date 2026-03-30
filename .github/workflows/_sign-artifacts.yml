@@ -23,7 +23,7 @@ jobs:
           find . -name "*.whl" -o -name "*.json" | head -10
 
       - name: Sign artifacts with Sigstore
-        uses: sigstore/gh-action-sigstore-python@v2.1.0
+        uses: sigstore/gh-action-sigstore-python@v3.3.0
         with:
           inputs: ${{ inputs.artifact-pattern }}
 
