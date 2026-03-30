@@ -18,7 +18,7 @@ pydantic==2.11.10
 pyyaml==6.0.3
 
 # CLI and utilities
-typer==0.19.2
+typer==0.24.1
 rich==13.9.4
 click==8.1.8
 
